@@ -1,0 +1,8 @@
+Đóng gói và nén dữ liệu
+
+Tar thông thường chỉ giúp đóng gói dữ liệu. Để nén dữ liệu giảm thiểu dung lượng, 
+bạn dùng cần các tùy chọn nén z cho gzip (định dạng .gz) hoặc j cho bunzip (định dạng .bz2)
+
+# tar -czvf filename.tar.gz file1 file2 folder1 folder2
+hoặc
+# tar -cjvf filename.tar.bz2 file1 file2 folder1 folder2
