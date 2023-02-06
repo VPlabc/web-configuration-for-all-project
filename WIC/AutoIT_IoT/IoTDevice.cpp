@@ -39,7 +39,7 @@ const byte AnalogPins[] = { 32, 33, 34, 35 ,36 ,39};
 
 #define SWITCHPIN 32
 #define RELAYPIN 33
-#define ANALOGPIN1 36
+#define  ANALOGPIN1 36
 #define ANALOGPIN2 39
 // #include "WifiFunc.h"
 // #include "updatefirmware.h"
@@ -333,7 +333,7 @@ void IoT_Device::WifiMode()
 
 
 #ifndef ARDUINO_ARCH_ESP8266
-  int IoT_Device::check_protocol()
+int IoT_Device::check_protocol()
 {
     char error_buf1[100];
   if(Debug){
@@ -593,7 +593,7 @@ byte          receiver_status = 1;    // tracks the ESPNow receiver status
 bool Statement = false;
 void IoT_Device::loop() {
 
-if(checkFW && RunMode == WIFIMODE)UDFW.repeatedCall();
+if(checkFW && RunMode == WIFIMODE  && (WiFi.status() == WL_CONNECTED))UDFW.repeatedCall();
 
 #ifndef ARDUINO_ARCH_ESP8266
   button.Update();
@@ -725,6 +725,7 @@ if(checkFW && RunMode == WIFIMODE)UDFW.repeatedCall();
   }//RunMode == MESHSLAVE
   if(RunMode == WIFIMODE){
     mqttcommu.loop();
+    NodeDataUpdate();
     if (RF_Serial.available()) {//Data recive from RF module  
       received_msg_length = RF_Serial.readBytesUntil('\n', incomingData, sizeof(incomingData));
         if (received_msg_length == sizeof(incomingData)) {  // got a msg from a sensor
@@ -832,12 +833,22 @@ void IoT_Device::sendDataNode(){
 /// Node Sendata to Gateway
 /// @brief Node Send To Gateway
 
+ESPResponseStream espresponse;
 void IoT_Device::NodeDataUpdate(){
   static uint32_t last_node_update= 0;
   uint32_t now_node = millis();
   if (now_node - last_node_update > 30000) {//Node Update after 5000 ms
         last_node_update = now_node;
-    sendDataNode();
+    if(ROLE == Node)sendDataNode();
+    String msg = "";
+    // msg = "Master WS: update";
+    // ESPCOM::println(msg.c_str(), WS_PIPE, &espresponse);
+    ESPCOM::println("Master WEB: update", WEB_PIPE, &espresponse);
+    // msg = "Master SERIAL: update";
+    // ESPCOM::println(msg.c_str(), SERIAL_PIPE, &espresponse);
+    // msg = "Master TCP: update";
+    // ESPCOM::println(msg.c_str(), TCP_PIPE, &espresponse);
+    // LOGLN("Master update");
   }//if (now_dht - last_dht_update > 5000) {
 }
 /// @brief Node Category

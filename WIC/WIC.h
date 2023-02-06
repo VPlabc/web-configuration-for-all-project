@@ -29,6 +29,9 @@
 #include "config.h"
 #include "FS.h"
 
+
+
+
 class WIC
 {
 public:
@@ -45,6 +48,12 @@ public:
     WIC();
     void begin(uint16_t startdelayms = 1000, uint16_t recoverydelayms = 1000);
     void process();
+    #ifdef LOOKLINE_UI
+    void checkFW();
+    void OnceCheckFW();
+    #endif//LooklineUI
+
+
 
 };
 #endif

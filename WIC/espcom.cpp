@@ -224,6 +224,14 @@ void ESPCOM::print (String & data, tpipe output, ESPResponseStream  *espresponse
 {
     ESPCOM::print (data.c_str(), output, espresponse);
 }
+void ESPCOM::webprint (String & data)
+{
+    ESPCOM::print (data.c_str(), WEB_PIPE);
+}
+void ESPCOM::webprintln (String & data)
+{
+    ESPCOM::println (data.c_str(), WEB_PIPE);
+}
 void ESPCOM::print (const char * data, tpipe output, ESPResponseStream  *espresponse)
 {
     if ((DEFAULT_PRINTER_PIPE == output) && ( block_2_printer || CONFIG::is_locked(FLAG_BLOCK_SERIAL))) {

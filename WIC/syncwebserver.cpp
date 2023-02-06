@@ -1627,7 +1627,7 @@ void handle_web_command()
         }
         //send command to serial as no need to transfer ESP command
         //to avoid any pollution if Uploading file to SDCard
-        if ((web_interface->blockserial) == false) {
+        if ((web_interface->blockserial) == false) {  
             //block every query
             web_interface->blockserial = true;
             log_esp3d("Block Serial");

@@ -1,9 +1,8 @@
 #include <Arduino.h>
 #include "config.h"
+#ifdef Gyro_UI
 #include <WIC.h>
 WIC wics;
-#ifdef Gyro_UI
-
 
 
 #include <MPU9250.h>

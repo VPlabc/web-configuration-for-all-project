@@ -180,12 +180,13 @@ bool CONFIG::GetState()
 
 void CONFIG::InitFirmwareTarget()
 {
-    uint8_t b = UNKNOWN_FW;
+    CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ;
+    uint8_t b = LOOKLINE;
     if (!CONFIG::read_byte (EP_TARGET_FW, &b ) ) {
-        b = UNKNOWN_FW;
+        b = LOOKLINE;
     }
     if (!SetFirmwareTarget (b) ) {
-        SetFirmwareTarget (UNKNOWN_FW) ;
+        SetFirmwareTarget (LOOKLINE) ;
     }
 }
 void CONFIG::InitOutput()
@@ -927,9 +928,54 @@ bool CONFIG::reset_config()
         return false;
     }
 
-    if (!CONFIG::write_byte (EP_TARGET_FW, UNKNOWN_FW) ) {
+    if (!CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ) {
         return false;
     }
+#if defined(LOOKLINE_UI)
+    if (!CONFIG::write_byte (EP_EEPROM_PLAN, DEFAULT_PLAN) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PLAN_SET, DEFAULT_PLANSET) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_RESULT, DEFAULT_RESULT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_RESULT_SET, DEFAULT_RESULTSET) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PLANMAX, DEFAULT_PLANLIMIT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIME_PLAN, DEFAULT_TIMEPLAN) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT, DEFAULT_TIMESENT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PCS, DEFAULT_PCS) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
+        return false;
+    }
+
+#endif//LOOKLINE_UI
 #if defined(TIMESTAMP_FEATURE)
     if (!CONFIG::write_byte (EP_TIMEZONE, DEFAULT_TIME_ZONE) ) {
         return false;
@@ -964,7 +1010,23 @@ bool CONFIG::reset_config()
         return false;
     }
 #endif
+#ifdef IOTDEVICE_UI
+    if (!CONFIG::write_string (EP_EEPROM_NAME, FPSTR (DEFAULT_BOARD_NAME) ) ) {
+        return false;
+    }
+#endif//IOTDEVICE_UI
+#ifdef LOOKLINE_UI
 
+
+
+    if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {
+        return false;
+    }
+#endif//LOOKLINE_UI
 #ifdef NOTIFICATION_FEATURE
     if (!CONFIG::write_byte (ESP_NOTIFICATION_TYPE, DEFAULT_NOTIFICATION_TYPE) ) {
         return false;
@@ -2048,10 +2110,10 @@ void CONFIG::print_config (tpipe output, bool plaintext, ESPResponseStream  *esp
 }
 
 #ifdef DEBUG_OUTPUT_SOCKET
-#if defined(ARDUINO_ARCH_ESP8266)
-#define NODEBUG_WEBSOCKETS
 #include <WebSocketsServer.h>
 extern WebSocketsServer * socket_server;
+#if defined(ARDUINO_ARCH_ESP8266)
+#define NODEBUG_WEBSOCKETS
 const char * pathToFileName(const char * path)
 {
     size_t i = 0;

@@ -9,7 +9,9 @@ public:
 const String FirmwareVer={"1.1"};
  void repeatedCall();
  void ShowMess(String txt);
+ void FirmwareUpdate();
  byte FirmwareVersionCheck(void);
+ 
 };
 extern UpdateFW UPDATEFW;
 #endif//UpdateFW_

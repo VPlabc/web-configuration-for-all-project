@@ -80,7 +80,7 @@ extern "C" {
 #include "syncwebserver.h"
 #endif
 
-
+bool WiFiOnce1 = true; //
 #include "WIC.h"
 WIC wic;
 #if defined(TIMESTAMP_FEATURE) && defined(ARDUINO_ARCH_ESP8266)
@@ -165,7 +165,16 @@ void  WIFI_CONFIG::Safe_Setup()
     IPAddress subnet (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
     String ssid = FPSTR (DEFAULT_AP_SSID);
     String pwd = FPSTR (DEFAULT_AP_PASSWORD);
+    #ifdef LOOKLINE_UI
+        String sbuf = "";
+        byte b_ID = 0;
+        CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
+        CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+        WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
+    #else
     WiFi.softAP (ssid.c_str(), pwd.c_str() );
+    #endif//LOOKLINE_UI
     CONFIG::wait (500);
     WiFi.softAPConfig ( local_ip,  gateway,  subnet);
     CONFIG::wait (1000);
@@ -644,6 +653,7 @@ bool WIFI_CONFIG::Setup (bool force_ap)
 #endif//ESP_OLED_FEATURE
         ESPCOM::println (currentIP.toString().c_str(), PRINTER_PIPE);
 #endif//        
+
 #ifdef ESP_OLED_FEATURE
         #ifdef Moto_UI
         WiFi.softAP("VPlab Moto", pwd);
@@ -694,9 +704,16 @@ bool WIFI_CONFIG::Setup (bool force_ap)
         ESPCOM::print(currentIP.toString().c_str(), OLED_PIPE);
 #endif//        
     } else if (WiFi.getMode() != WIFI_STA) {
-        ESPCOM::print("AP Ready", SERIAL_PIPE);
+        if(WiFiOnce1){WiFiOnce1 = false;ESPCOM::println("AP Ready", SERIAL_PIPE);}
     }
 #endif
+    if (force_ap) {
+
+    } else if ((WiFi.getMode() == WIFI_STA) && (WiFi.status() == WL_CONNECTED)) {
+        ESPCOM::print("Connected", SERIAL_PIPE);
+    } else if ((WiFi.getMode() == WIFI_AP_STA) && (WiFi.status() == WL_CONNECTED)) {
+        ESPCOM::print("Connected(AP)", SERIAL_PIPE);
+    }
     ESPCOM::flush (DEFAULT_PRINTER_PIPE);
     return true;
 }
@@ -716,6 +733,22 @@ bool WIFI_CONFIG::Enable_servers()
     if (WiFi.getMode() != WIFI_STA ) {
         // if DNSServer is started with "*" for domain name, it will reply with
         // provided IP to all DNS request
+        #ifdef LOOKLINE_UI
+        String sbuf = "";
+        String pwds = "";
+        if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {
+            return false;
+        }
+        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
+            return false;
+        }
+        byte b_ID = 0;
+        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
+            return false;
+        }
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+        WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
+        #endif//LOOKLINE_UI
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
     }

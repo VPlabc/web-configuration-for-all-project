@@ -42,6 +42,8 @@ public:
     static void println (const __FlashStringHelper *data, tpipe output, ESPResponseStream  *espresponse = NULL);
     static void println (String & data, tpipe output, ESPResponseStream  *espresponse = NULL);
     static void println (const char * data, tpipe output, ESPResponseStream  *espresponse = NULL);
+    static void webprint (String & data);
+    static void webprintln (String & data);
     static uint8_t current_socket_id;
 #ifdef TCP_IP_DATA_FEATURE
     static void processFromTCP2Serial();

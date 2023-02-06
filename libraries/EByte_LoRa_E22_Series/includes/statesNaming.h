@@ -1,6 +1,6 @@
 #include "Arduino.h"
-#define FREQUENCY_915
-#define E22_30
+// #define FREQUENCY_915
+// #define E22_30
 
 #ifdef FREQUENCY_433
 	#define OPERATING_FREQUENCY 410
@@ -376,6 +376,94 @@ static String getRSSIEnableByteByParams(byte RSSIEnableByte)
 	}
 }
 
+enum WIRELESS_WAKE_UP_TIME
+{
+  WAKE_UP_250 = B000,
+  WAKE_UP_500 = B001,
+  WAKE_UP_750 = B010,
+  WAKE_UP_1000 = B011,
+  WAKE_UP_1250 = B100,
+  WAKE_UP_1500 = B101,
+  WAKE_UP_1750 = B110,
+  WAKE_UP_2000 = B111
+};
+
+
+static String getWirelessWakeUPTimeDescriptionByParams(byte wirelessWakeUPTime)
+{
+	switch (wirelessWakeUPTime)
+	{
+	  case WAKE_UP_250:
+		return F("250ms (default)");
+		break;
+	  case WAKE_UP_500:
+		return F("500ms");
+		break;
+	  case WAKE_UP_750:
+		return F("750ms");
+		break;
+	  case WAKE_UP_1000:
+		return F("1000ms");
+		break;
+	  case WAKE_UP_1250:
+		return F("1250ms");
+		break;
+	  case WAKE_UP_1500:
+		return F("1500ms");
+		break;
+	  case WAKE_UP_1750:
+		return F("1750ms");
+		break;
+	  case WAKE_UP_2000:
+		return F("2000ms");
+		break;
+	  default:
+		return F("Invalid wireless wake-up mode!");
+	}
+}
+enum FORWARD_ERROR_CORRECTION_SWITCH
+{
+  FEC_0_OFF = B0,
+  FEC_1_ON = B1
+};
+
+
+static String getFECDescriptionByParams(byte fec)
+{
+	switch (fec)
+	{
+	  case FEC_0_OFF:
+		return F("Turn off Forward Error Correction Switch");
+		break;
+	  case FEC_1_ON:
+		return F("Turn on Forward Error Correction Switch (Default)");
+		break;
+	  default:
+		return F("Invalid FEC param");
+	}
+}
+enum IO_DRIVE_MODE
+{
+  IO_D_MODE_OPEN_COLLECTOR = B0,
+  IO_D_MODE_PUSH_PULLS_PULL_UPS = B1
+};
+
+
+static String getIODriveModeDescriptionDescriptionByParams(byte ioDriveMode)
+{
+	switch (ioDriveMode)
+	{
+	  case IO_D_MODE_OPEN_COLLECTOR:
+		return F("TXD, RXD, AUX are open-collectors");
+		break;
+	  case IO_D_MODE_PUSH_PULLS_PULL_UPS:
+		return F("TXD, RXD, AUX are push-pulls/pull-ups");
+		break;
+	  default:
+		return F("Invalid IO drive mode!");
+	}
+}
+
 enum FIDEX_TRANSMISSION
 {
   FT_TRANSPARENT_TRANSMISSION = B0,
@@ -398,6 +486,127 @@ static String getFixedTransmissionDescriptionByParams(byte fixedTransmission)
 	}
 }
 
+#ifdef E32_TTL_100
+	enum TRANSMISSION_POWER
+	{
+	  POWER_20 = B00,
+	  POWER_17 = B01,
+	  POWER_14 = B10,
+	  POWER_10 = B11
+
+	};
+
+	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	{
+		switch (transmissionPower)
+		{
+		  case POWER_20:
+			return F("20dBm (Default)");
+			break;
+		  case POWER_17:
+			return F("17dBm");
+			break;
+		  case POWER_14:
+			return F("14dBm");
+			break;
+		  case POWER_10:
+			return F("10dBm");
+			break;
+		  default:
+			return F("Invalid transmission power param");
+		}
+	}
+#elif defined(E32_TTL_500)
+	enum TRANSMISSION_POWER
+	{
+	  POWER_27 = B00,
+	  POWER_24 = B01,
+	  POWER_21 = B10,
+	  POWER_18 = B11
+
+	};
+
+	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	{
+		switch (transmissionPower)
+		{
+		  case POWER_27:
+			return F("27dBm (Default)");
+			break;
+		  case POWER_24:
+			return F("24dBm");
+			break;
+		  case POWER_21:
+			return F("21dBm");
+			break;
+		  case POWER_18:
+			return F("18dBm");
+			break;
+		  default:
+			return F("Invalid transmission power param");
+		}
+	}
+#elif defined(E32_TTL_1W)
+	enum TRANSMISSION_POWER
+	{
+	  POWER_30 = B00,
+	  POWER_27 = B01,
+	  POWER_24 = B10,
+	  POWER_21 = B11
+
+	};
+
+	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	{
+		switch (transmissionPower)
+		{
+		  case POWER_30:
+			return F("30dBm (Default)");
+			break;
+		  case POWER_27:
+			return F("27dBm");
+			break;
+		  case POWER_24:
+			return F("24dBm");
+			break;
+		  case POWER_21:
+			return F("21dBm");
+			break;
+		  default:
+			return F("Invalid transmission power param");
+		}
+	}
+#else
+	enum TRANSMISSION_POWER
+	{
+	  POWER_20 = B00,
+	  POWER_17 = B01,
+	  POWER_14 = B10,
+	  POWER_10 = B11
+
+	};
+
+	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
+	{
+		switch (transmissionPower)
+		{
+		  case POWER_20:
+			return F("20dBm (Default)");
+			break;
+		  case POWER_17:
+			return F("17dBm");
+			break;
+		  case POWER_14:
+			return F("14dBm");
+			break;
+		  case POWER_10:
+			return F("10dBm");
+			break;
+		  default:
+			return F("Invalid transmission power param");
+		}
+	}
+#endif
 #ifdef E22_22
 	enum TRANSMISSION_POWER
 	{
@@ -459,33 +668,5 @@ static String getFixedTransmissionDescriptionByParams(byte fixedTransmission)
 		}
 	}
 #else
-	enum TRANSMISSION_POWER
-	{
-	  POWER_22 = B00,
-	  POWER_17 = B01,
-	  POWER_13 = B10,
-	  POWER_10 = B11
 
-	};
-
-	static String getTransmissionPowerDescriptionByParams(byte transmissionPower)
-	{
-		switch (transmissionPower)
-		{
-		  case POWER_22:
-			return F("22dBm (Default)");
-			break;
-		  case POWER_17:
-			return F("17dBm");
-			break;
-		  case POWER_13:
-			return F("13dBm");
-			break;
-		  case POWER_10:
-			return F("10dBm");
-			break;
-		  default:
-			return F("Invalid transmission power param");
-		}
-	}
 #endif

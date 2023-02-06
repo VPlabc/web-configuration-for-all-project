@@ -25,9 +25,11 @@
 //#define Gyro_UI
 //#define RFHub_UI
 //#define MESHCOM_UI
-#define IOTDEVICE_UI
+// #define IOTDEVICE_UI
 // #define AUTOITGW_UI
 // #define Moto_UI
+#define LOOKLINE_UI
+
 #ifdef ARDUINO_ARCH_ESP8266
 // #ifndef IOTDEVICE_UI
 // #define Switch_UI
@@ -53,10 +55,14 @@
 //like ESP_XXXXXX (eg:ESP_028E41) to avoid overlap if several WIC
 #define ESP_HOST_NAME ESP_DEFAULT_NAME
 
+
 //To allow webupdate using small updater
 //#define USE_AS_UPDATER_ONLY
 
 //FEATURES - comment to disable //////////////////////////////////////////////////////////
+
+//TIMER_INTER_FEATURES: allow to internal timer use
+#define TIMER_INTER_FEATURES
 
 //WEB_UPDATE_FEATURE: allow to flash fw using web UI
 #define WEB_UPDATE_FEATURE
@@ -69,7 +75,7 @@
 //#define SERIAL_COMMAND_FEATURE
 
 //TCP_IP_DATA_FEATURE: allow to connect serial from TCP/IP
-#define TCP_IP_DATA_FEATURE
+// #define TCP_IP_DATA_FEATURE
 
 //NOTIFICATION_FEATURE : allow to push notifications
 //#define NOTIFICATION_FEATURE
@@ -100,10 +106,10 @@
 //#define ESP_OLED_FEATURE
 
 //DHT_FEATURE: send update of temperature / humidity based on DHT 11/22
-//#define DHT_FEATURE
+#define DHT_FEATURE
 
 //AUTHENTICATION_FEATURE: protect pages by login password
-//#define AUTHENTICATION_FEATURE
+// #define AUTHENTICATION_FEATURE
 
 //WS_DATA_FEATURE: allow to connect serial from Websocket
 #define WS_DATA_FEATURE
@@ -119,7 +125,8 @@
 //Serial rx buffer size is 256 but can be extended
 #define SERIAL_RX_BUFFER_SIZE 512
 
-
+//USE_LORA: use lora module
+// #define USE_LORA
 
 #ifdef AUTOITGW_UI
 #define MQTT_USE
@@ -185,13 +192,14 @@
 #endif//MESHCOM_UI
 
 #ifdef IOTDEVICE_UI
+#define USE_SERIAL_0
 #define ESP_OLED_FEATURE
 // #ifdef ESP_OLED_FEATURE
 // #undef ESP_OLED_FEATURE
 // #endif//ESP_OLED_FEATURE
-#ifdef TCP_IP_DATA_FEATURE
-#undef TCP_IP_DATA_FEATURE
-#endif//TCP_IP_DATA_FEATURE
+// #ifdef TCP_IP_DATA_FEATURE
+// #undef TCP_IP_DATA_FEATURE
+// #endif//TCP_IP_DATA_FEATURE
 #define MQTT_USE
 #endif//IOTDEVICE_UI
 
@@ -299,9 +307,9 @@
 //#define DEBUG_ESP3D
 //#define DEBUG_OUTPUT_SPIFFS
 #define DEBUG_OUTPUT_SERIAL
-//#define DEBUG_OUTPUT_TCP
-//#define DEBUG_OUTPUT_SOCKET
-
+// #define DEBUG_OUTPUT_TCP
+// #define DEBUG_OUTPUT_SOCKET
+#define DEBUG_WIC
 //Sanity check
 #ifdef SDCARD_FEATURE
 #ifdef TIMESTAMP_FEATURE
@@ -363,7 +371,12 @@ using fs::File;
 #ifdef DEBUG_OUTPUT_SOCKET
 extern void log_socket(const char *format, ...);
 extern const char * pathToFileName(const char * path);
-#define log_esp3d(format, ...) log_socket("\n[ESP3D][%s:%u] %s(): " format "\n", pathToFileName(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define log_esp3d(format, ...) log_socket("\n[VPLAB][%s:%u] %s(): " format "\n", pathToFileName(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
+
+// #include "espcom.h"
+// #define LOG(string) {ESPCOM::webprint(string);}    
+// #define LOGLN(string) {ESPCOM::webprintln(string);}    
+
 #else
 #define log_esp3d(format, ...)
 #endif
@@ -382,7 +395,10 @@ extern const char * pathToFileName(const char * path);
 #define DEBUG_PIPE SERIAL_PIPE
 #define LOG(string) {Serial.print(string);}
 #define LOGLN(string) {Serial.println(string);}
-#endif
+#else
+#define LOG(string) {}
+#define LOGLN(string) {}
+#endif 
 #ifdef DEBUG_OUTPUT_TCP
 #include "espcom.h"
 #define LOG(string) {ESPCOM::send2TCP(string, false);}
@@ -441,11 +457,13 @@ typedef enum {
 #define DEFAULT_PRINTER_PIPE SERIAL1_PIPE
 #else
 #define DEFAULT_PRINTER_PIPE SERIAL_PIPE
+// #define DEFAULT_PRINTER_PIPE SERIAL1_PIPE
 #endif//MESHCOM_UI
 typedef enum {
     LEVEL_GUEST = 0,
     LEVEL_USER = 1,
-    LEVEL_ADMIN = 2
+    LEVEL_ADMIN = 2,
+    LEVEL_STAFF = 3
 } level_authenticate_type;
 
 
@@ -467,47 +485,47 @@ typedef enum {
 #define EP_STA_PASSWORD         34   //65 bytes 64 +1 = string ;warning does not support multibyte char like chinese
 #define EP_STA_IP_MODE          99   //1 byte = flag
 #define EP_STA_IP_VALUE         100  //4  bytes xxx.xxx.xxx.xxx
-#define EP_STA_MASK_VALUE           104  //4  bytes xxx.xxx.xxx.xxx
-#define EP_STA_GATEWAY_VALUE            108  //4  bytes xxx.xxx.xxx.xxx
+#define EP_STA_MASK_VALUE       104  //4  bytes xxx.xxx.xxx.xxx
+#define EP_STA_GATEWAY_VALUE    108  //4  bytes xxx.xxx.xxx.xxx
 #define EP_BAUD_RATE            112  //4  bytes = int
 #define EP_STA_PHY_MODE         116  //1 byte = flag
 #define EP_SLEEP_MODE           117  //1 byte = flag
-#define EP_CHANNEL          118 //1 byte = flag
+#define EP_CHANNEL              118 //1 byte = flag
 #define EP_AUTH_TYPE            119 //1 byte = flag
 #define EP_SSID_VISIBLE         120 //1 byte = flag
-#define EP_WEB_PORT         121 //4  bytes = int
+#define EP_WEB_PORT             121 //4  bytes = int
 #define EP_DATA_PORT            125 //4  bytes = int
 #define EP_OUTPUT_FLAG          129 //1  bytes = flag
 #define EP_HOSTNAME             130//33 bytes 32+1 = string  ; warning does not support multibyte char like chinese
 #define EP_DHT_INTERVAL         164//4  bytes = int
-#define ESP_NOTIFICATION_TYPE   168     //1 byte = flag
+#define ESP_NOTIFICATION_TYPE   168//1 byte = flag
 #define ESP_AUTO_NOTIFICATION   170//1  bytes = flag
 #define EP_FREE_BYTE1           171//1  bytes = flag
 #define EP_FREE_INT3            172//4  bytes = int
 #define EP_ADMIN_PWD            176//21  bytes 20+1 = string  ; warning does not support multibyte char like chinese
-#define EP_USER_PWD         197//21  bytes 20+1 = string  ; warning does not support multibyte char like chinese
-#define EP_AP_SSID              218    //33 bytes 32+1 = string  ; warning does not support multibyte char like chinese
-#define EP_AP_PASSWORD          251   //65 bytes 64 +1 = string ;warning does not support multibyte char like chinese
+#define EP_USER_PWD             197//21  bytes 20+1 = string  ; warning does not support multibyte char like chinese
+#define EP_AP_SSID              218//33 bytes 32+1 = string  ; warning does not support multibyte char like chinese
+#define EP_AP_PASSWORD          251//65 bytes 64 +1 = string ;warning does not support multibyte char like chinese
 #define EP_AP_IP_VALUE          316  //4  bytes xxx.xxx.xxx.xxx
-#define EP_AP_MASK_VALUE            320  //4  bytes xxx.xxx.xxx.xxx
-#define EP_AP_GATEWAY_VALUE         324  //4  bytes xxx.xxx.xxx.xxx
-#define EP_AP_IP_MODE           329   //1 byte = flag
+#define EP_AP_MASK_VALUE        320  //4  bytes xxx.xxx.xxx.xxx
+#define EP_AP_GATEWAY_VALUE     324  //4  bytes xxx.xxx.xxx.xxx
+#define EP_AP_IP_MODE           329  //1 byte = flag
 #define EP_AP_PHY_MODE          330  //1 byte = flag
 #define EP_SD_SPEED_DIV         331  //1 byte = flag
-#define ESP_NOTIFICATION_TOKEN1 332    //64 bytes 63+1 = string  ; warning does not support multibyte char like chinese
-#define ESP_NOTIFICATION_TOKEN2 396    //64 bytes 63+1 = string  ; warning does not support multibyte char like chinese
-#define EP_DHT_TYPE     460 //1  bytes = flag
-#define EP_TARGET_FW        461 //1  bytes = flag
-#define EP_TIMEZONE         462//1  bytes = flag
-#define EP_TIME_ISDST       463//1  bytes = flag
-#define EP_TIME_SERVER1 464//128 bytes 127+1 = string  ; warning does not support multibyte char like chinese  
-#define EP_TIME_SERVER2  593 //128 bytes 127+1 = string  ; warning does not support multibyte char like chinese
-#define EP_TIME_SERVER3  722 //128 bytes 127+1 = string  ; warning does not support multibyte char like chinese
-#define EP_IS_DIRECT_SD   850//1  bytes = flag
-#define EP_PRIMARY_SD   851//1  bytes = flag
-#define EP_SECONDARY_SD   852//1  bytes = flag
-#define EP_DIRECT_SD_CHECK   853//1  bytes = flag
-#define EP_SD_CHECK_UPDATE_AT_BOOT   854//1  bytes = flag
+#define ESP_NOTIFICATION_TOKEN1 332  //64 bytes 63+1 = string  ; warning does not support multibyte char like chinese
+#define ESP_NOTIFICATION_TOKEN2 396  //64 bytes 63+1 = string  ; warning does not support multibyte char like chinese
+#define EP_DHT_TYPE             460 //1  bytes = flag
+#define EP_TARGET_FW            461 //1  bytes = flag
+#define EP_TIMEZONE             462//1  bytes = flag
+#define EP_TIME_ISDST           463//1  bytes = flag
+#define EP_TIME_SERVER1         464//128 bytes 127+1 = string  ; warning does not support multibyte char like chinese  
+#define EP_TIME_SERVER2         593 //128 bytes 127+1 = string  ; warning does not support multibyte char like chinese
+#define EP_TIME_SERVER3         722 //128 bytes 127+1 = string  ; warning does not support multibyte char like chinese
+#define EP_IS_DIRECT_SD         850//1  bytes = flag
+#define EP_PRIMARY_SD           851//1  bytes = flag
+#define EP_SECONDARY_SD         852//1  bytes = flag
+#define EP_DIRECT_SD_CHECK      853//1  bytes = flag
+#define EP_SD_CHECK_UPDATE_AT_BOOT 854//1  bytes = flag
 #define ESP_NOTIFICATION_SETTINGS 855//128 bytes 127+1 = string  ; warning does not support multibyte char like chinese
 
 
@@ -625,35 +643,73 @@ typedef enum {
 #define LAST_EEPROM_ADDRESS 1122
 // #define TIMESTAMP_FEATURE
 #endif//IOTDEVICE_UI
+#ifdef LOOKLINE_UI
+#define TestDisplayIntro
+// #define TEST_MODE
+#define DEBUG_
+#define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>
+#define EP_EEPROM_WIFI_MODE     1079// 1 bytes
+#define EP_EEPROM_UPDATE_MODE   1083// 1 bytes
+#define EP_EEPROM_DEBUG         1087// 1 bytes
+#define EP_EEPROM_ID            1091// 1 bytes
+#define EP_EEPROM_NETID         1095// 1 bytes
+#define EP_EEPROM_CHANELS       1099// 1 bytes
+#define EP_EEPROM_ROLE          1103// 1 bytes Node|gateway|repearter
+#define EP_EEPROM_RUN           1107// 1 bytes Run/Stop/Sleep
+#define EP_EEPROM_AMOUNTNODE    1111// 1 bytes
+#define EP_EEPROM_COM_MODE      1115// 1 bytes
+#define EP_EEPROM_MODULE_TYPE   1119// 1 bytes
+#define EP_EEPROM_PLAN          1123// 4 bytes
+#define EP_EEPROM_RESULT        1127// 4 bytes
+#define EP_EEPROM_PLANMAX       1131// 4 bytes
+#define EP_EEPROM_PCS           1135// 4 bytes
+#define EP_EEPROM_TIME_PLAN     1139// 4 bytes
+#define EP_EEPROM_TIMESENT      1143// 4 bytes
+#define EP_EEPROM_URL_VER       1147// 100 bytes
+#define EP_EEPROM_URL_FW        1247// 100 bytes
+#define EP_EEPROM_PLAN_SET      1347// 4 bytes
+#define EP_EEPROM_RESULT_SET    1351// 4 bytes
+#define EP_EEPROM_ON_OFF        1355// 1 bytes
+#define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
+
+#define LAST_EEPROM_ADDRESS 1360
+#define TIMESTAMP_FEATURE
+// #define MQTT_Mode
+// #define Mesh_Network
+#define USE_LORA
+#endif//LOOKLINE_UI
 //default values
 #define DEFAULT_WIFI_MODE           AP_MODE
 #ifdef MESHCOM_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "MeshVPlab";
-//MESHCOM_UI
-#elseif Gyro_UI
+#endif//MESHCOM_UI
+#ifdef Gyro_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab Gyro";
-//Gyro_UI
-#elseif Switch_UI
+#endif//Gyro_UI
+#ifdef Switch_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab Smart Light";
-//Switch_UI
-#elseif ESP3D_UI
+#endif//Switch_UI
+#ifdef ESP3D_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab 3D";
-//ESP3D_UI
-#elseif Moto_UI
+#endif//ESP3D_UI
+#ifdef Moto_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab Moto";
-//ESP3D_UI
-#elseif CircuitTesting_UI
+#endif//ESP3D_UI
+#ifdef CircuitTesting_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "CircuitTesting";
-//CircuitTesting_UI
-#elseif IOTDEVICE_UI
+#endif//CircuitTesting_UI
+#ifdef IOTDEVICE_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "IoT Device";
-//IOTDEVICE_UI
-#elseif AutoIT_UI
+#endif//IOTDEVICE_UI
+#ifdef LOOKLINE_UI
+const char DEFAULT_AP_SSID []  PROGMEM =        "Lookline";
+#endif//LOOKLINE_UI
+#ifdef AutoIT_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "AutoIT";
-//Switch_UI
-#else 
-const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab";
-#endif//
+#endif//AutoIT_UI
+
+// const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab";
+
 
 const char DEFAULT_AP_PASSWORD [] PROGMEM = "12345678";
 
@@ -676,11 +732,16 @@ const int DEFAULT_WEB_PORT =            80;
 const int DEFAULT_DATA_PORT =           8888;
 const char DEFAULT_ADMIN_PWD []  PROGMEM =  "admin";
 const char DEFAULT_USER_PWD []  PROGMEM =   "user";
+const char DEFAULT_STAFF_PWD []  PROGMEM =   "staff";
 const char DEFAULT_ADMIN_LOGIN []  PROGMEM =    "admin";
 const char DEFAULT_USER_LOGIN []  PROGMEM = "user";
+const char DEFAULT_STAFF_LOGIN []  PROGMEM = "staff";
 const char DEFAULT_TIME_SERVER1 []  PROGMEM =   "1.pool.ntp.org";
 const char DEFAULT_TIME_SERVER2 []  PROGMEM =   "2.pool.ntp.org";
 const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
+const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "0.pool.ntp.org";
+const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "0.pool.ntp.org";
+const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
 #define DEFAULT_TIME_ZONE           0
 #define DEFAULT_TIME_DST            0
 #define DEFAULT_PRIMARY_SD  2
@@ -709,6 +770,26 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define ESP_EMAIL_NOTIFICATION      2
 #define ESP_LINE_NOTIFICATION       3
 #define ESP_IFTTT_NOTIFICATION      4
+
+#ifdef LOOKLINE_UI
+#define DEFAULT_PLAN           0
+#define DEFAULT_PLANSET        1
+#define DEFAULT_RESULT         0
+#define DEFAULT_RESULTSET      1
+#define DEFAULT_TIMEPLAN       100
+#define DEFAULT_PLANLIMIT      9999
+#define DEFAULT_PCS            100
+
+#define DEFAULT_TIMESENT       15
+#define DEFAULT_AMOUNTNODE     5
+#define DEFAULT_BOARDID        1
+#define DEFAULT_NETID          1
+#define DEFAULT_CHANEL         0
+#define DEFAULT_ROLE           0
+#define DEFAULT_COMMODE        0
+#define DEFAULT_MODULETYPE     0
+
+#endif//LOOKLINE_UI
 
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
@@ -819,8 +900,8 @@ const uint16_t Setting[][2] = {
 #define MIN_MQTT_BROKER_LENGTH           0
 
 
-#define MAX_LORA_CH_LENGTH             930
-#define MIN_LORA_CH_LENGTH             862
+#define MAX_LORA_CH_LENGTH             441//930
+#define MIN_LORA_CH_LENGTH             410//862
 
 
 #define MAX_ID_LENGTH             999
@@ -837,6 +918,48 @@ const uint16_t Setting[][2] = {
 
 #define MAX_LORA_TIME_REQUEST_LENGTH            59
 #define MIN_LORA_TIME_REQUEST_LENGTH            1
+
+#define DEFAULT_MAX_PLAN            9999
+#define DEFAULT_MIN_PLAN            0
+
+#define DEFAULT_MAX_RESULT            9999
+#define DEFAULT_MIN_RESULT            0
+
+#define DEFAULT_MAX_PLAN_SET            9999
+#define DEFAULT_MIN_PLAN_SET            0
+
+#define DEFAULT_MAX_RESULT_SET            9999
+#define DEFAULT_MIN_RESULT_SET            0
+
+#define DEFAULT_MAX_PLANMAX            9999
+#define DEFAULT_MIN_PLANMAX            0
+
+#define DEFAULT_MAX_PCS            9999
+#define DEFAULT_MIN_PCS            0
+
+#define DEFAULT_MAX_TIME_PLAN            9999
+#define DEFAULT_MIN_TIME_PLAN            0
+
+#define DEFAULT_MAX_TIMESENT            9999
+#define DEFAULT_MIN_TIMESENT            0
+
+#define DEFAULT_MAX_AMOUNTNODE            255
+#define DEFAULT_MIN_AMOUNTNODE            1
+
+#define DEFAULT_MAX_ID            200
+#define DEFAULT_MIN_ID            1
+
+#define DEFAULT_MAX_NETID            200
+#define DEFAULT_MIN_NETID            1
+
+#define DEFAULT_MAX_CHANEL            31
+#define DEFAULT_MIN_CHANEL            0
+
+#define MAX_URL_VER_LENGTH                 100
+#define MIN_URL_VER_LENGTH                 1
+
+#define MAX_URL_FW_LENGTH                 100
+#define MIN_URL_FW_LENGTH                 1
 
 //EEPROM Version
 #define EEPROM_V0 0

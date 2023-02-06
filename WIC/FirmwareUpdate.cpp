@@ -8,6 +8,12 @@
 IoT_Device IOT_DEVICE_FW;
 // IOT_DEVICE IoTdevice
 #endif//IOTDEVICE_UI
+#ifdef LOOKLINE_UI
+#include "LookLine/LookLine.h"
+LOOKLINE_PROG LookLine_prog;
+#endif // LOOKLINE_UI
+
+
 #include "FirmwareUpdate.h"
 UpdateFW FWUPD;
 #include "esp_oled.h"
@@ -44,9 +50,9 @@ WiFiClient            wifiClient;
 
 #define   PRGM_VERSION         "2.0.3"
 /* this info will be read by the python script */
-
-String URL_fw_Bin = "https://raw.githubusercontent.com/VPlabc/AutoIT/main/firmware.bin";
-String URL_fw_Version = "https://raw.githubusercontent.com/VPlabc/AutoIT/main/version.txt";
+String hosts = "https://raw.githubusercontent.com/";
+String URL_fw_Bin = "VPlabc/AutoIT/main/firmware.bin";
+String URL_fw_Version = "VPlabc/AutoIT/main/version.txt";
 const char* host = "raw.githubusercontent.com";
 const int httpsPort = 443;
 /* end of script data */
@@ -140,7 +146,8 @@ void setClock() {
 }
 bool FWonce = true; //
  void UpdateFW::repeatedCall(){
-  if(FWonce){LOG("Check FW Working...\n");FWonce = false;}
+  
+  if(FWonce){LOG("Check FW Working...\n");FWonce = false;LookLine_prog.DebugOut("Check FW Working...\n", OUPUT);}
      unsigned long currentMillis = millis();
     if ((currentMillis - FW_previousMillis) >= interval) 
      {
@@ -181,10 +188,15 @@ bool FWonce = true; //
   */
 
   
-void FirmwareUpdate()
-{  
+void UpdateFW::FirmwareUpdate()
+{ 
+  #ifdef LOOKLINE_UI
+    LookLine_prog.DebugOut("Update firmware....\n", OUPUT);
+  #endif// LOOKLINE_UI
   #ifdef IOTDEVICE_UI
-    if(UFWDebug)Serial.println("Update firmware....");
+    if(UFWDebug){LOGLN("Update firmware....");
+      
+    }
     FWUPD.ShowMess("Update firmware....");
     #ifdef IOTDEVICE_UI
     {if(IOT_DEVICE_FW.getRunMode() == MESHSLAVE)IOT_DEVICE_FW.sendCurrentStatus(2);}
@@ -197,6 +209,10 @@ void FirmwareUpdate()
   client.setTrustAnchors(&cert);
   if (!client.connect(host, httpsPort)) {
     LOGLN("Connection failed");
+  #ifdef LOOKLINE_UI
+    LookLine_prog.DebugOut("Connection failed\n", OUPUT);
+  #endif// LOOKLINE_UI
+    
     return;
   }
   client.print(String("GET ") + URL_fw_Version + " HTTP/1.1\r\n" +
@@ -220,6 +236,9 @@ void FirmwareUpdate()
   else
   {
     LOGLN("New firmware detected");
+  #ifdef LOOKLINE_UI
+    LookLine_prog.DebugOut("New firmware detected\n", OUPUT);
+  #endif// LOOKLINE_UI
   #ifdef IOTDEVICE_UI
   ESPhttpUpdate.setLedPin(IOT_DEVICE_FW.LEDButton, LOW);
   #endif//Moto_UI
@@ -248,13 +267,17 @@ void FirmwareUpdate()
   #ifdef IOTDEVICE_UI
   httpUpdate.setLedPin(IOT_DEVICE_FW.LEDButton, LOW);
   #endif//Moto_UI
-  t_httpUpdate_return ret = httpUpdate.update(client, URL_fw_Bin);
+  t_httpUpdate_return ret = httpUpdate.update(client, hosts+URL_fw_Bin);
 
   switch (ret) {
   case HTTP_UPDATE_FAILED:
     #ifdef IOTDEVICE_UI
       if(UFWDebug)Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
     #endif//#ifdef IOTDEVICE_UI
+    
+    #ifdef LOOKLINE_UI
+      LookLine_prog.DebugOut("Update Faild!!\n", OUPUT);
+    #endif// LOOKLINE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("Update Faild!!");
       #endif//ESP_OLED_FEATURE
@@ -264,6 +287,9 @@ void FirmwareUpdate()
     #ifdef IOTDEVICE_UI
       if(UFWDebug)Serial.println("HTTP_UPDATE_NO_UPDATES");
     #endif//#ifdef IOTDEVICE_UI
+    #ifdef LOOKLINE_UI
+      LookLine_prog.DebugOut("No Update!!\n", OUPUT);
+    #endif// LOOKLINE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("No Update!!");
       #endif//ESP_OLED_FEATURE
@@ -273,6 +299,9 @@ void FirmwareUpdate()
     #ifdef IOTDEVICE_UI
     if(UFWDebug)Serial.println("HTTP_UPDATE_OK");
     #endif//#ifdef IOTDEVICE_UI
+    #ifdef LOOKLINE_UI
+      LookLine_prog.DebugOut("Update OK!!\n", OUPUT);
+    #endif// LOOKLINE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("Update OK!!");
       #endif//ESP_OLED_FEATURE
@@ -291,9 +320,9 @@ void FirmwareUpdate()
 #ifndef ARDUINO_ARCH_ESP8266
  byte UpdateFW::FirmwareVersionCheck(void) {
   String payload;
-  int httpCode;
+  int HttpCode;
   String fwurl = "";
-  fwurl += URL_fw_Version;
+  fwurl += hosts+URL_fw_Version;
   fwurl += "?";
   fwurl += String(rand());
   #ifdef IOTDEVICE_UI
@@ -315,26 +344,32 @@ void FirmwareUpdate()
       #endif//#ifdef IOTDEVICE_UI
       // start connection and send HTTP header
       delay(100);
-      httpCode = https.GET();
+      HttpCode = https.GET();
       delay(100);
-      if (httpCode == HTTP_CODE_OK) // if version received
+      if (HttpCode == HTTP_CODE_OK) // if version received
       {
         payload = https.getString(); // save received version
       } else {
         #ifdef IOTDEVICE_UI
         if(UFWDebug)Serial.print("error in downloading version file:");
-        if(UFWDebug)Serial.println(httpCode);
+        if(UFWDebug)Serial.println(HttpCode);
         #endif//#ifdef IOTDEVICE_UI
+    #ifdef LOOKLINE_UI
+      LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCode) + "\n", OUPUT);
+    #endif// LOOKLINE_UI
       }
       https.end();
     }
     delete client;
   }
       
-  if (httpCode == HTTP_CODE_OK) // if version received
+  if (HttpCode == HTTP_CODE_OK) // if version received
   {
     payload.trim();
     if (payload.equals(FirmwareVer)) {
+      #ifdef LOOKLINE_UI
+      LOGLN("Firmware detected ver:" + String(payload));
+      #endif//#ifdef LOOKLINE_UI    
       #ifdef IOTDEVICE_UI
       if(UFWDebug)Serial.printf("\nDevice already on latest firmware version:%s\n", FirmwareVer);
      #endif//#ifdef IOTDEVICE_UI
@@ -346,12 +381,19 @@ void FirmwareUpdate()
     else 
     {
       
+      #ifdef LOOKLINE_UI
+      LOGLN("New firmware detected ver:" + String(payload));
+      #endif//#ifdef LOOKLINE_UI      
       #ifdef IOTDEVICE_UI
       if(UFWDebug)Serial.println("New firmware detected ver:" + String(payload));
       #endif//#ifdef IOTDEVICE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("New firmware detected");
       #endif//ESP_OLED_FEATURE
+      
+    #ifdef LOOKLINE_UI
+      LookLine_prog.DebugOut("New firmware detected\n", OUPUT);
+    #endif// LOOKLINE_UI
       return 1;
     }
   } 
