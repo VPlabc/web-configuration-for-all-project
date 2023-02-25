@@ -56,7 +56,7 @@ void SetPin(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t SHCP , uint8_t 
     taskStatus_LED = Status_LED;
     taskTimeSent = TimeSent;
     pinMode(Status_LED, OUTPUT);
-    LOG("LoRa Chanel:" + String(taskChanel) + "|");
+    if(taskComMode == LoRa)ESPCOM::print("LoRa Chanel:" + String(taskChanel)  + " | ", PRINTER_PIPE);
     CONFIG::read_byte(EP_EEPROM_ROLE, &taskRole);
     CONFIG::read_byte(EP_EEPROM_COM_MODE, &taskComMode);
     CONFIG::read_byte(EP_WIFI_MODE, &taskWiFiMode);
@@ -129,7 +129,7 @@ void TaskDisplay(byte mode)
   {
     digitalWrite(Lookline_PROG.Startus_LED, HIGH);
   }
-#endif                 //TEST_MODE \
+#endif                 //TEST_MODE 
                        ///*
   switch (mode) //0 main display||1 test||2 setting||3 ConFi||4 Read ID||
   {
@@ -663,8 +663,8 @@ void TaskDisplay(byte mode)
 void MeshCommu()
 {
   #ifdef Mesh_Network
-  if(taskComMode == MESH){
-  MeshLoop();
+  if(ComMode == MESH){
+    
   }
   #endif//def Mesh_Network
 }
@@ -735,12 +735,17 @@ void gatewayProtocol()
 
 int counter = 0;//boot hardware
 int counterHold = 0;//boot hardware
-int counter2Pin = 0;// 2 pin resetting
+int counter2Pin = 0;// 2 pin resetting counterBoot
+int counterBoot = 0;// counterBoot
+int counterSetMode = 0;// 2 pin resetting
 int minValue = 500;
 int maxValue = 2000;
 int p = 0;
 int o = 0;
 bool LogOnce = true;
+
+int function = 0;
+
 void TaskInPut()
 {
   /*
@@ -761,7 +766,8 @@ void TaskInPut()
 #ifndef Develop
 #ifndef Gateway
 
-if(taskRole == NODE){
+
+if(taskRole == NODE || taskRole == REPEARTER){
   ///*
   //////////////////////////////////////////////////////////////////////
   if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;}
@@ -779,45 +785,43 @@ if(taskRole == NODE){
   }
   if (analogRead(X0) <= minValue || analogRead(X4) <= minValue)
   {
+      LOGLN("Switch");
       while(analogRead(X0) <= minValue || analogRead(X4) <= minValue){delay(10);
       // if(LogOnce){LogOnce = false;LOGLN("X0:" + String(analogRead(X0)) + "|X4:" + String(analogRead(X4)));}
-          counter2Pin++;
-        if(counter2Pin > 700){//5S
-          DispMode = Main;//Confi 
-          TaskDisplay(DispMode);
-          // TaskDisplay();
-          // TaskSerial();
-          // TaskServerpro();
-          // Gateway = true;taskModuleType = ModGateway;
-          // WriteRebootValue();
-          // delay(1000);
-          // ESP.restart();
-          break;
+          counter2Pin++;counterBoot++;
+          // if(Lookline_PROG.GetDebug())LOGLN("boot:" + String(counterBoot));
+        if(counterBoot > 10000){//5S
+          CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
+          CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
+          delay(1000);
+          ESP.restart();
         }
-        if(counter2Pin > 500 && counter2Pin < 700){//5S
+        if(counter2Pin > 500 && Lookline_PROG.GetRun()  == false){
+
           DispMode = ConFi;//Confi 
+          LOGLN("Config");
           TaskDisplay(DispMode);
-          }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-          DispMode = CLEAR;//Clear 
-          TaskDisplay(DispMode);
+          if(ComMode != MESH){
+          CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);}
+          else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);}
+          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+          ESP.restart();
+        }
+
+        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun()  == true){//3S
+            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);counter2Pin = 0;
+            DispMode = CLEAR;//Clear 
+            TaskDisplay(DispMode);
         }
       }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);counter2Pin = 0;
-            DispMode = Main;//Confi 
-        }
-        if(counter2Pin > 500 && counter2Pin < 700){//5S
-          DispMode = ConFi;//Confi 
-          //LOGLN("online");UDF = true;WCF = true;APC = true;
-          // Lookline_PROG.Mode = 2;WriteRebootValue();LOG("AP Config");delay(3000);ESP.restart();
-          }
-          if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);
-          }
-        if(counter2Pin < 500){// under 5S
-        if(Lookline_PROG.Run == true){
-          Lookline_PROG.Run = false;counter2Pin = 0;
+        if(counter2Pin < 300){// under 5S
+        if(Lookline_PROG.GetRun() == 1){
+          Lookline_PROG.SetRun(0);counter2Pin = 0;
+          // Lookline_PROG.SetConfig(0);
           // WriteValue();
 #ifdef DEBUG_
           LOGLN("Stop");
@@ -825,7 +829,8 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
         }
         else{
-          Lookline_PROG.Run = true;counter2Pin = 0;
+          Lookline_PROG.SetRun(1);counter2Pin = 0;
+            // Lookline_PROG.SetConfig(2);
           // totalInterruptCounter = 0;
           // WriteValue();
 #ifdef DEBUG_
@@ -843,6 +848,7 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
     }  //if(o > delayForCounter/3){
   }
+  
   //////////////////////////////////////////////////////////////////////
   if (analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue)
   {
@@ -860,8 +866,7 @@ if(taskRole == NODE){
       counter++;if(counter > 100){counter = 0;counterHold++;LOGLN(counterHold);
       }delay(10);
       if(counterHold > 60){counterHold = 0;
-      LOGLN("gateway detect");
-        CONFIG::write_byte(EP_EEPROM_MODULE_TYPE,1); delay(3000);ESP.restart();
+      // LOGLN("gateway detect");CONFIG::write_byte(EP_EEPROM_MODULE_TYPE,1); delay(3000);ESP.restart();
       }
   }
   ///////////////////////////////////////////////////////////////////////
