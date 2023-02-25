@@ -23,6 +23,7 @@
 #include <Arduino.h>
 #include "espcom.h"
 
+extern void SendMsg(String msg);
 
 class COMMAND
 {

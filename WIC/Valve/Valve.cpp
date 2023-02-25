@@ -1085,7 +1085,7 @@ void handleRaw() {
 
 void handleStatus() {
 
-  //LOG ("/status" + '\n');
+  //LOG ("/status" + '\n');`
   // sd card, mqtt, receiver ota, ntp
   bool mqtt_is_good = true;
   loadSetting();

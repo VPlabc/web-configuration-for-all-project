@@ -23,11 +23,11 @@ void SetPinLoRa(uint8_t M0, uint8_t M1, uint8_t TX = 17, uint8_t RX = 16)
 	RX_ = RX;
 	LOGLN("LORA Pin M0:" + String(M0_) + "| M1:" + String(M1_) + "| TX:" + String(TX_) + "| RX:" + String(RX_));
 }
-void WriteLoRaConfig(byte CH);
-void WriteLoRaConfig(byte CH,byte AirRate );
-void SetChanel(byte CH){
-	WriteLoRaConfig(CH);
-}
+extern void WriteLoRaConfig(byte CH, byte ID);
+// void WriteLoRaConfig(byte CH,byte AirRate );
+// void SetChanel(byte CH){
+// 	WriteLoRaConfig(CH);
+// }
 // LoRa_E32 e32ttl100(16, 17, &Serial2, UART_BPS_RATE_9600, SERIAL_8N1); // e32 TX e32 RX
 LoRa_E32 e32ttl100(&Serial2, -1, M0_, M1_, UART_BPS_RATE_9600);
 
@@ -53,7 +53,41 @@ void ReadLoRaConfig()
     digitalWrite(M0_, LOW);
     digitalWrite(M1_, LOW);
 }
-void WriteLoRaConfig(byte CH,byte AirRate )
+// void WriteLoRaConfig(byte CH,byte AirRate )
+// {
+//     digitalWrite(M0_, HIGH);
+//     digitalWrite(M1_, HIGH);
+// 	// Startup all pins and UART
+// 	e32ttl100.begin();
+
+// 	ResponseStructContainer c;
+// 	c = e32ttl100.getConfiguration();
+//     Configuration configuration = *(Configuration*) c.data;
+//       ///*
+// 	configuration.ADDL = 0x0;
+// 	configuration.ADDH = 0x0;
+// 	configuration.CHAN = CH;
+
+// 	configuration.SPED.uartParity = MODE_00_8N1;
+// 	configuration.SPED.uartBaudRate = UART_BPS_9600;
+// 	configuration.SPED.airDataRate = AirRate;
+// 	configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
+// 	configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
+// 	configuration.OPTION.wirelessWakeupTime = WAKE_UP_250;
+// 	configuration.OPTION.fec = FEC_0_OFF;
+// 	configuration.OPTION.transmissionPower = POWER_20;
+
+
+// 	// Set configuration changed and set to not hold the configuration
+// 	ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_LOSE);
+// 	//LOGLN(rs.getResponseDescription());
+// 	//LOGLN(rs.code);
+// 	printParameters(configuration);
+//   //*/
+//     digitalWrite(M0_, LOW);
+//     digitalWrite(M1_, LOW);
+// }
+void WriteLoRaConfig(byte CH, byte ID)
 {
     digitalWrite(M0_, HIGH);
     digitalWrite(M1_, HIGH);
@@ -65,66 +99,28 @@ void WriteLoRaConfig(byte CH,byte AirRate )
     Configuration configuration = *(Configuration*) c.data;
       ///*
 	configuration.ADDL = 0x0;
-	configuration.ADDH = 0x0;
+	configuration.ADDH = ID;
 	configuration.CHAN = CH;
 
-	configuration.SPED.uartParity = MODE_00_8N1;
-	configuration.SPED.uartBaudRate = UART_BPS_9600;
-	configuration.SPED.airDataRate = AirRate;
-	configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
-	configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
-	configuration.OPTION.wirelessWakeupTime = WAKE_UP_250;
-	configuration.OPTION.fec = FEC_0_OFF;
-	configuration.OPTION.transmissionPower = POWER_20;
-
-
-	// Set configuration changed and set to not hold the configuration
-	ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_LOSE);
-	//LOGLN(rs.getResponseDescription());
-	//LOGLN(rs.code);
-	printParameters(configuration);
-  //*/
-    digitalWrite(M0_, LOW);
-    digitalWrite(M1_, LOW);
-}
-void WriteLoRaConfig(byte CH)
-{
-    digitalWrite(M0_, HIGH);
-    digitalWrite(M1_, HIGH);
-	// Startup all pins and UART
-	e32ttl100.begin();
-
-	ResponseStructContainer c;
-	c = e32ttl100.getConfiguration();
-    Configuration configuration = *(Configuration*) c.data;
-      ///*
-	configuration.ADDL = 0x0;
-	configuration.ADDH = 0x0;
-	configuration.CHAN = CH;
-
-	configuration.ADDL = 0x0;
-	configuration.ADDH = 0x1;
-	configuration.CHAN = 0x19;
-
-	configuration.OPTION.fec = FEC_0_OFF;
+	configuration.OPTION.fec = FEC_1_ON;
 	configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
 	configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
 	configuration.OPTION.transmissionPower = POWER_20;
 	configuration.OPTION.wirelessWakeupTime = WAKE_UP_1250;
 
-	configuration.SPED.airDataRate = AIR_DATA_RATE_001_12;
+	configuration.SPED.airDataRate = AIR_DATA_RATE_010_24;
 	configuration.SPED.uartBaudRate = UART_BPS_9600;
 	configuration.SPED.uartParity = MODE_00_8N1;
-
 	
 
-
 	// Set configuration changed and set to not hold the configuration
-	ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_LOSE);
+	ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
 	//LOGLN(rs.getResponseDescription());
 	//LOGLN(rs.code);
 	printParameters(configuration);
   //*/
+
+ 	c.close();
     digitalWrite(M0_, LOW);
     digitalWrite(M1_, LOW);
 }

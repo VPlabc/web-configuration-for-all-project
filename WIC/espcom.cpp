@@ -338,7 +338,8 @@ void ESPCOM::print (const char * data, tpipe output, ESPResponseStream  *espresp
 #endif
         if (!CONFIG::is_locked(FLAG_BLOCK_M117)) {
             if(!(!strcmp(data,"\n")||!strcmp(data,"\r")||!strcmp(data,"\r\n"))) {
-                ESPCOM::print ("M117 ", DEFAULT_PRINTER_PIPE);
+                // ESPCOM::print ("M117 ", DEFAULT_PRINTER_PIPE);
+                ESPCOM::print ("> ", DEFAULT_PRINTER_PIPE);
             }
             ESPCOM::print (data, DEFAULT_PRINTER_PIPE);
         }

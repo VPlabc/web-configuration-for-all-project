@@ -6,6 +6,7 @@
 #include <ArduinoJson.h>
 //#include <ArduinoOTA.h>
 
+
 #define LED7segBoardV14
 
 #ifdef DEBUG_FLAG
@@ -64,9 +65,12 @@
 #define NODE        0
 #define GATEWAY     1
 #define REPEARTER   2
+/////////////////////////////////////// Comunication Command
+#define UPDATEcmd 0
+#define OKcmd 1
+#define ONWIFIcmd 2
 
-
-
+#define         NUM_LOOKLINES 20
 typedef struct Command{
     byte updateStt = 0;
     byte setup = 1;
@@ -75,6 +79,36 @@ typedef struct Command{
     byte request = 4;
     byte updateFw = 5;
 }Command;
+typedef struct struct_command_message {
+    byte Command;       //1
+    byte networkID;       //1
+    byte nodeID;          //1
+    byte category;        //1
+    byte time;            //1
+} struct_command_message;
+
+typedef struct struct_Parameter_message {
+    byte networkID;       //1
+    byte nodeID;          //1
+    int PLAN;             //4
+    int RESULT;           //4
+    byte state;           //1
+    byte Mode;            //1
+    byte RSSI;            //1
+    byte Com;            //1
+    byte WiFi;            //1
+    byte Cmd;            //1
+    byte type;            //1
+    int Nodecounter;
+} struct_Parameter_message;
+
+
+  extern void handleLooklineRaw();
+  extern void Data_Proccess(char byte_buffer[]);
+
+
+// uint8_t  incomingData[sizeof(msg1)];
+// size_t   received_msg_length;
 
 class LOOKLINE_PROG
 {
@@ -84,6 +118,7 @@ void DebugOut(String msg,byte output);
 void PinMapInit();
 void LookLineInitB(int pos,byte Mode);
 void LookLineInitI(int pos,int Mode);
+void SetLookineValue();
 void setup();
 void loop();
 void SerDisplay();
@@ -97,17 +132,23 @@ void SetParameter(int taskPlan, int taskPLanSet, int taskResult, int taskResultS
 void SetPlan(int SetPlans);
 void SetResult(int SetResults);
 void SetRun(byte SetRuns);
+void Set_Init_UI(String auths);
+byte EncodeRespondByte(boolean a, boolean b, boolean c, boolean d, boolean e, boolean f, boolean g, boolean h);
+unsigned int EncodeRespond(byte bytel,byte byteh);
+// void Data_Proccess(char byte_buffer[]);
 void SetDone();
+void SetStart(bool START);
+void SetConfig(bool CONFIG);
+byte GetRun();
+byte GetDebug();
+bool GetFW();
 
   int delayForCounter = 1000;
   int SetupForBegin = 0;
   int Mode = 0;
-  int PlanLimit =  9999;
 
 
-  int PLanSet =    1;//boi so Plan
-  int ResultSet =  1;//boi so Result
-  int pcsInShift = 1;//số sản phẩm chạy theo Plan
+
   int DotIn = 0;
   byte Run = 1;
   bool lock = true;//IR Lock mode

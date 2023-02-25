@@ -31,6 +31,7 @@
 
 
 
+    // extern void sendMessage(String message);
 
 class WIC
 {
@@ -49,8 +50,7 @@ public:
     void begin(uint16_t startdelayms = 1000, uint16_t recoverydelayms = 1000);
     void process();
     #ifdef LOOKLINE_UI
-    void checkFW();
-    void OnceCheckFW();
+    void SetDebug(bool state);
     #endif//LooklineUI
 
 
