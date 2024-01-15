@@ -63,7 +63,6 @@ OLEDDisplayUi ui     ( &display );
 
 
 
-
 /* You only need to format SPIFFS the first time you run a
    test or else use the SPIFFS plugin to create a partition
    https://github.com/me-no-dev/arduino-esp32fs-plugin */
@@ -224,6 +223,7 @@ void msOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setTextAlignment(TEXT_ALIGN_RIGHT);
   display->setFont(ArialMT_Plain_10);
   //display->drawString(128, 0, String(millis()));
+  // display->flipScreenVertically();
   display->drawString(128, 0, "VPlab");
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->setFont(ArialMT_Plain_10);
@@ -482,7 +482,7 @@ void CircuitTest::Setup(){
   // Initialising the UI will init the display too.
   ui.init();
 
-  display.flipScreenVertically();
+  // display.flipScreenVertically();
     ui.disableAutoTransition();
   for(byte i = 0 ; i < 21; i++){
     digitalWrite(DataPin, LOW);

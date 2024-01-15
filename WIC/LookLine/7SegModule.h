@@ -435,16 +435,16 @@ void SetLoad()
   }
   
   if(Lookline_PROG.SetupPro == 8){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.ResultSet/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.ResultSet/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.ResultSet/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.ResultSet/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.ResultSet/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.ResultSet/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.ResultSet/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.ResultSet/1)%10;
   }    
   if(Lookline_PROG.SetupPro == 7){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.PLanSet/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.PLanSet/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.PLanSet/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.PLanSet/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.PLanSet/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.PLanSet/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.PLanSet/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.PLanSet/1)%10;
   }
   if(Lookline_PROG.SetupPro == 6){
     // Lookline_PROG.ValueSet0 = (Lookline_PROG.Time/1000)%10;
@@ -459,16 +459,16 @@ void SetLoad()
     // Lookline_PROG.ValueSet3 = (Lookline_PROG.PLAN/1)%10;
   }
   if(Lookline_PROG.SetupPro == 3){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.PlanLimit/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.PlanLimit/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.PlanLimit/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.PlanLimit/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.PlanLimit/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.PlanLimit/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.PlanLimit/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.PlanLimit/1)%10;
   }  
   if(Lookline_PROG.SetupPro == 2){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.pcsInShift/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.pcsInShift/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.pcsInShift/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.pcsInShift/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.pcsInShift/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.pcsInShift/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.pcsInShift/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.pcsInShift/1)%10;
   }
   if(Lookline_PROG.SetupPro == 1){
     // Lookline_PROG.ValueSet0 = (Lookline_PROG.RESULT/1000)%10;
