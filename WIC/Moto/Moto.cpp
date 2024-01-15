@@ -12,12 +12,22 @@
 #include <time.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include <INA3221.h>
+
+#define SERIAL_SPEED     115200  // serial baud rate
+#define PRINT_DEC_POINTS 3       // decimal points to print
+
+// Set I2C address to 0x41 (A0 pin -> VCC)
+INA3221 ina3221(INA3221_ADDR40_GND);
+
+
 OneWire ds18x20[] = { SensorPin1, SensorPin2 };
 const int oneWireCount = sizeof(ds18x20) / sizeof(OneWire);
 DallasTemperature sensor[oneWireCount];
 
 long previousMillis_2 = 0;
 long previousMillis_DS1 = 0;
+long previousMillis_DS1a = 0;
 long previousMillis_DS2 = 0;
 float Bat_volt;
 float TemperatureEnegy;
@@ -32,11 +42,14 @@ int voltage_offset = 20;// set the correction offset value
 byte Menu = 0;
 float Bat = 0;
 bool checkFW = false;
+byte WFstartup = 0;
 // Instantiate ClickButton objects in an array
   ClickButton button1(Button, LOW, CLICKBTN_PULLUP);
 
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
+
+bool OFFWIFI = false;bool SOS = false;byte count = 0;byte GearPos = 0;
 
 UpdateFW MOTOUPDATEFW;
 
@@ -50,7 +63,9 @@ void printLocalTime()
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
 
+
 void Moto::setup(){
+  
 ////////////////////////////////// DS18B20////////////////////////////////////
   // Start up the library on all defined bus-wires
   DeviceAddress deviceAddress;
@@ -60,6 +75,19 @@ void Moto::setup(){
     if (sensor[i].getAddress(deviceAddress, 0)) sensor[i].setResolution(deviceAddress, 12);
   }
 ////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// INA3221 //////////////////////////////////
+    ina3221.begin();
+    ina3221.reset();
+
+    // Set shunt resistors to 10 mOhm for all channels
+    ina3221.setShuntRes(10, 10, 10);
+
+    // Set series filter resistors to 10 Ohm for all channels.
+    // Series filter resistors introduce error to the current measurement.
+    // The error can be estimated and depends on the resitor values and the bus
+    // voltage.
+    ina3221.setFilterRes(10, 10, 10);
+//////////////////////////////////////////////////////////////////////////////
 DS3231_init(DS3231_CONTROL_INTCN);
 pinMode(GearN, INPUT_PULLUP);
 pinMode(Gear1, INPUT_PULLUP);
@@ -78,7 +106,8 @@ digitalWrite(LEDButton, HIGH);
 #ifndef DEBUG_FLAG_  
      if(WiFi.status() == WL_CONNECTED)
      {
-       updateTime();
+       Moto::updateTime();
+      //  updateTime();
      }
 #else
 if(UPdateAffter15days == false){
@@ -102,8 +131,35 @@ GetTime();
 }
 #endif//DEBUG_FLAG
   OLED_DISPLAY::clear_lcd();
+  
+GetTime();
+  if((hours >= 17 & hours <= 23 )||(hours >= 0 & hours < 6)){digitalWrite(Light, LOW);LOGLN("On Light");}else{digitalWrite(Light, HIGH);}
+
+// function = -2 ;button1.depressed = true;//test wifi
 }
-bool OFFWIFI = false;bool SOS = false;byte count = 0;byte GearPos = 0;
+void Moto::Temp_update(){
+    unsigned long currentMillis1 = millis();
+    if ((currentMillis1 - previousMillis_DS1) >= 10000 && wifi_b == false) {
+      previousMillis_DS1 = currentMillis1; 
+      button1.Update();
+      Bat = VoltUpdate();
+      for (int i = 0; i < oneWireCount; i++) {
+        sensor[i].requestTemperatures();
+      }
+      // LOGLN("requestTemperatures");
+
+      WiFi.disconnect();
+      WiFi.mode (WIFI_OFF);
+      if(GearPos == 0){GearPos = 10;OLED_DISPLAY::clear_lcd();}
+    }
+    
+    if ((currentMillis1 - previousMillis_DS1a) >= 11000 && wifi_b == false) {
+      previousMillis_DS1a = currentMillis1; 
+      // LOGLN("update");
+      TemperatureEnegy = sensor[0].getTempCByIndex(0);
+      Temperature = sensor[1].getTempCByIndex(0);
+    }
+}
 void Moto::loop(){
   button1.Update();
   if (button1.clicks != 0) function = button1.clicks;
@@ -117,6 +173,9 @@ void Moto::loop(){
   if(button1.clicks == 3 && Menu == 0){function = 0;Menu = 1;OLED_DISPLAY::clear_lcd();
   LOGLN("Single click3 Menu 1");}
   if(button1.clicks == 1 && Menu > 0){function = 0;Menu++;if(Menu > 3){Menu = 1;}OLED_DISPLAY::clear_lcd();}
+  if(button1.clicks == 2 && Menu == 1){checkFW = true;function = 0;WFstartup = ! WFstartup;
+    Result = CONFIG::write_byte (EP_EEPROM_WIFISTARTUP, WFstartup);
+  }
   if(button1.clicks == 2 && Menu == 3){checkFW = true;function = 0;MOTOUPDATEFW.ShowMess("Checking...");
   LOGLN("Check FW");}
 
@@ -143,6 +202,7 @@ void Moto::loop(){
           OLED_DISPLAY::BigDisplay("WiFi ON", 15, 17);
           OLED_DISPLAY::setCursor(40, 48);
           ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
+          Moto::updateTime();
       }
     }
     else if(wifi_config.GetWifiMode() == false){
@@ -167,24 +227,9 @@ void Moto::loop(){
     // Reset function
     function = 0;
   }
+    Moto::Temp_update();
     unsigned long currentMillis = millis();
-    
-    if ((currentMillis - previousMillis_DS1) >= 10000 && wifi_b == false) {
-      Bat = VoltUpdate();
-      for (int i = 0; i < oneWireCount; i++) {
-        sensor[i].requestTemperatures();
-      }
-      //LOGLN("update");
-      WiFi.disconnect();
-      WiFi.mode (WIFI_OFF);
-      if(GearPos == 0){GearPos = 10;OLED_DISPLAY::clear_lcd();}
-    }
-    
-    if ((currentMillis - previousMillis_DS1) >= 11000 && wifi_b == false) {
-      previousMillis_DS1 = currentMillis; 
-      TemperatureEnegy = sensor[0].getTempCByIndex(0);
-      Temperature = sensor[1].getTempCByIndex(0);
-    }
+
     if ((currentMillis - previousMillis_2) >= 100 && wifi_b == false) {
       previousMillis_2 = currentMillis;count++; 
       if(SOS && count > 3){count = 0;digitalWrite(LEDButton, !digitalRead(LEDButton));}
@@ -196,7 +241,10 @@ void Moto::loop(){
     #endif//MOTO_DEBUG
     if(Menu == 0){
       String Gear_en = GearUpdate();
-      
+      if(digitalRead(Light) == 0){OLED_DISPLAY::DisplayText("ON",40, 100, 35-11, 10, false);}
+      if(digitalRead(Light) == 1){OLED_DISPLAY::DisplayText("OFF",40, 100, 35-11, 10, false);}
+      if(SOS == 1){OLED_DISPLAY::DisplayText("SOS",40, 100, 35-22, 10, false);}
+      if(SOS == 0){OLED_DISPLAY::DisplayText("___",40, 100, 35-22, 10, false);}
       GetTime();
       String Month_,Day_,Hour_,Min_;
           if(Months < 10){Month_ = "0" + String(Months);}else{Month_ = String(Months);}
@@ -209,21 +257,28 @@ void Moto::loop(){
           //OLED_DISPLAY::setCursor(0, 35);
           //ESPCOM::print("Out Side         | Engine", OLED_PIPE);
           OLED_DISPLAY::DisplayText("Out Side         Engine",23*5, 0, 35, 10, false);
-          OLED_DISPLAY::GearDisplay(Gear_en, 65 + GearPos, 0);
+          OLED_DISPLAY::GearDisplay(Gear_en, 60 + GearPos, 0);
           OLED_DISPLAY::TempDisplay(Temperature, 64, 48);
           OLED_DISPLAY::TempDisplay(TemperatureEnegy, 0, 48);
-          //OLED_DISPLAY::BatDisplay(Bat, 74, 27-11);
+          // OLED_DISPLAY::BatDisplay(Bat, 74, 27-11);
           OLED_DISPLAY::TimeDisplay(Hour_, Min_, 0, 15-11);
       }
     if(Menu == 1){
-        OLED_DISPLAY::BigDisplay("Setting", 15, 17);
+        OLED_DISPLAY::BigDisplay("Wifi Startup", 15, 17);
         OLED_DISPLAY::setCursor(40, 48);
-        ESPCOM::print("Display", OLED_PIPE);
+        if (!CONFIG::read_byte (EP_EEPROM_WIFISTARTUP, &WFstartup ) ) {
+              LOGLN("Read WFstartup Fail"); 
+          } 
+        if(WFstartup == 1) {ESPCOM::print("On", OLED_PIPE);}
+        if(WFstartup == 0) {ESPCOM::print("Off", OLED_PIPE);}
     }
     if(Menu == 2){
-        OLED_DISPLAY::BigDisplay("Setting", 15, 17);
-        OLED_DISPLAY::setCursor(40, 48);
-        ESPCOM::print("More", OLED_PIPE);
+        OLED_DISPLAY::BigDisplay("Battery", 15, 17);
+        // OLED_DISPLAY::setCursor(40, 48);
+        OLED_DISPLAY::BatDisplay(Bat, 40,48);
+
+        // int Volt = 0;
+        // ESPCOM::print(String(Volt), OLED_PIPE);
     }
     if(Menu == 3){
         OLED_DISPLAY::BigDisplay("Firmware", 15, 17);
@@ -245,16 +300,39 @@ String Moto::GearUpdate()
   return GearIs;
 }
 float Moto::VoltUpdate() { 
+  float current[3];
+  float current_compensated[3];
+  float voltage[3];
+
+    current[0]             = ina3221.getCurrent(INA3221_CH1);
+    current_compensated[0] = ina3221.getCurrentCompensated(INA3221_CH1);
+    voltage[0]             = ina3221.getVoltage(INA3221_CH1);
+
+    current[1]             = ina3221.getCurrent(INA3221_CH2);
+    current_compensated[1] = ina3221.getCurrentCompensated(INA3221_CH2);
+    voltage[1]             = ina3221.getVoltage(INA3221_CH2);
+
+    current[2]             = ina3221.getCurrent(INA3221_CH3);
+    current_compensated[2] = ina3221.getCurrentCompensated(INA3221_CH3);
+    voltage[2]             = ina3221.getVoltage(INA3221_CH3);
+
+    Serial.print("Channel 1: \n Current: ");
+    Serial.print(current[0], PRINT_DEC_POINTS);
+    Serial.print("A\n Compensated current: ");
+    Serial.print(current_compensated[0], PRINT_DEC_POINTS);
+    Serial.print("\n Voltage: ");
+    Serial.print(voltage[0], PRINT_DEC_POINTS);
+    Serial.println("V");
   //adcStart(27);adcStart(14);adcStart(12);adcStart(13);
   // LOG("| ADC27:" + String(analogRead(27)));
   // LOG("| ADC14:" + String(analogRead(14)));
   // LOG("| ADC12:" + String(analogRead(12)));
   // LOGLN("| ADC13:" + String(analogRead(13)));
-  int volt = analogRead(VoltSensorPin);// read the input
-  float voltage = map(volt,0,4095, 0, 2500) + voltage_offset;// map 0-1023 to 0-2500 and add correction offset
+  // int volt = analogRead(VoltSensorPin);// read the input
+  // float voltage = map(volt,0,4095, 0, 2500) + voltage_offset;// map 0-1023 to 0-2500 and add correction offset
   
-  voltage /=100;// divide by 100 to get the decimal values
-  return voltage;
+  // voltage /=100;// divide by 100 to get the decimal values
+  return voltage[0];
 }
 void Moto::SetTime(uint8_t ss,uint8_t mm, uint8_t hh, uint8_t dd,uint8_t mo,int16_t year)
 {

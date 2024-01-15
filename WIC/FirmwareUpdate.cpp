@@ -327,7 +327,7 @@ void UpdateFW::FirmwareUpdate()
 #ifndef ARDUINO_ARCH_ESP8266
  byte UpdateFW::FirmwareVersionCheck(void) {
   String payload;
-  int HttpCode;
+  int HttpCodes;
   String fwurl = "";
   #ifdef LOOKLINE_UI
     CONFIG::read_string(EP_EEPROM_URL_VER,URL_fw_Version, MAX_URL_VER_LENGTH );
@@ -354,18 +354,18 @@ void UpdateFW::FirmwareUpdate()
       #endif//#ifdef IOTDEVICE_UI
       // start connection and send HTTP header
       delay(100);
-      HttpCode = https.GET();
+      HttpCodes = https.GET();
       delay(100);
-      if (HttpCode == HTTP_CODE_OK) // if version received
+      if (HttpCodes == HTTP_CODE_OK) // if version received
       {
         payload = https.getString(); // save received version
       } else {
         #ifdef IOTDEVICE_UI
         if(UFWDebug)Serial.print("error in downloading version file:");
-        if(UFWDebug)Serial.println(HttpCode);
+        if(UFWDebug)Serial.println(HttpCodes);
         #endif//#ifdef IOTDEVICE_UI
     #ifdef LOOKLINE_UI
-      LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCode) + "\n", OUPUT);
+      LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCodes) + "\n", OUPUT);
     #endif// LOOKLINE_UI
       }
       https.end();
@@ -373,7 +373,7 @@ void UpdateFW::FirmwareUpdate()
     delete client;
   }
       
-  if (HttpCode == HTTP_CODE_OK) // if version received
+  if (HttpCodes == HTTP_CODE_OK) // if version received
   {
     payload.trim();
     if (payload.equals(FirmwareVer)) {

@@ -518,7 +518,7 @@ void OLEDDisplay::drawFastImage(int16_t xMove, int16_t yMove, int16_t width, int
   drawInternal(xMove, yMove, width, height, image, 0, 0);
 }
 
-void OLEDDisplay::drawXbm(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const uint8_t *xbm) {
+void OLEDDisplay::drawXbm(int16_t xMove, int16_t yMove, int16_t width, int16_t height, const byte *xbm) {
   int16_t widthInXbm = (width + 7) / 8;
   uint8_t data = 0;
 

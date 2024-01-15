@@ -21,7 +21,7 @@
 //Device Type
 //#define ESP3D_UI 
 //#define Valve_UI
-//#define CircuitTesting_UI
+// #define CircuitTesting_UI
 //#define Gyro_UI
 //#define RFHub_UI
 //#define MESHCOM_UI
@@ -29,7 +29,9 @@
 // #define AUTOITGW_UI
 // #define Moto_UI
 // #define Switch_UI
-#define LOOKLINE_UI
+// #define LOOKLINE_UI
+#define PLC_MASTER_UI
+//  #define Basic_UI
 
 #ifdef ARDUINO_ARCH_ESP8266
 // #ifndef IOTDEVICE_UI
@@ -76,7 +78,7 @@
 //#define SERIAL_COMMAND_FEATURE
 
 //TCP_IP_DATA_FEATURE: allow to connect serial from TCP/IP
-#define TCP_IP_DATA_FEATURE
+// #define TCP_IP_DATA_FEATURE
 
 //NOTIFICATION_FEATURE : allow to push notifications
 //#define NOTIFICATION_FEATURE
@@ -354,6 +356,11 @@ using fs::File;
 #define WIFI_EVENT_STAMODE_CONNECTED SYSTEM_EVENT_STA_CONNECTED
 #define WIFI_EVENT_STAMODE_DISCONNECTED SYSTEM_EVENT_STA_DISCONNECTED
 #define WIFI_EVENT_AP_STAMODE_DISCONNECTED SYSTEM_EVENT_AP_STADISCONNECTED
+#ifdef ESP32
+#define WIFI_EVENT_APMODE_DISCONNECTED SYSTEM_EVENT_AP_STADISCONNECTED
+#else
+#define WIFI_EVENT_APMODE_DISCONNECTED WIFI_EVENT_SOFTAPMODE_STADISCONNECTED
+#endif
 #define WIFI_EVENT_STAMODE_GOT_IP SYSTEM_EVENT_STA_GOT_IP
 #define WIFI_EVENT_SOFTAPMODE_STACONNECTED SYSTEM_EVENT_AP_STACONNECTED
 #else
@@ -537,7 +544,12 @@ typedef enum {
 #define EP_MQTT_BROKER   983//30  bytes = String
 #define EP_MQTT_USER     1013//30  bytes = string
 #define EP_MQTT_PASS     1043//30  bytes = string
-#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>
+
+#ifdef Basic_UI
+#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
+#define EP_EEPROM_DEBUG 1083 // 1 bytes flag
+#define LAST_EEPROM_ADDRESS 1083
+#endif//Basic_UI
 
 #ifdef AUTOITGW_UI
 #define EP_EEPROM_DEBUG 1083 // 1 bytes flag
@@ -545,7 +557,7 @@ typedef enum {
 #endif//AUTOITGW_UI
 
 #ifdef ESP3D_UI
-#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>
+#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
 #define LAST_EEPROM_ADDRESS 1079
 #endif//ESP3D_UI
 
@@ -614,6 +626,8 @@ typedef enum {
 #define TIMESTAMP_FEATURE
 #endif//MESHCOM_UI
 #ifdef IOTDEVICE_UI
+#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
+
 //   //define hardware
 //   networkID = 1;
 //   nodeID = 2;
@@ -646,6 +660,8 @@ typedef enum {
 #ifdef LOOKLINE_UI
 #define TestDisplayIntro
 // #define TEST_MODE
+#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>
+
 #define DEBUG_
 #define EP_EEPROM_TEST_MODE     1079// 4 bytes
 #define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
@@ -677,9 +693,45 @@ typedef enum {
 #define Mesh_Network
 #define USE_LORA
 #else
+// #define TestDisplayIntro
+// // #define TEST_MODE
+// #define DEBUG_
+// #define EP_EEPROM_TEST_MODE     1079// 4 bytes
+// #define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
+// #define EP_EEPROM_DEBUG         1087// 4 bytes
+// #define EP_EEPROM_ID            1091// 4 bytes
+// #define EP_EEPROM_NETID         1095// 4 bytes
+// #define EP_EEPROM_CHANELS       1099// 4 bytes
+// #define EP_EEPROM_ROLE          1103// 4 bytes Node|gateway|repearter
+// #define EP_EEPROM_RUN           1107// 4 bytes Run/Stop/Sleep
+// #define EP_EEPROM_AMOUNTNODE    1111// 4 bytes
+// #define EP_EEPROM_COM_MODE      1115// 4 bytes
+// #define EP_EEPROM_MODULE_TYPE   1119// 4 bytes
+// #define EP_EEPROM_PLAN          1123// 4 bytes
+// #define EP_EEPROM_RESULT        1127// 4 bytes
+// #define EP_EEPROM_PLANMAX       1131// 4 bytes
+// #define EP_EEPROM_PCS           1135// 4 bytes
+// #define EP_EEPROM_TIME_PLAN     1139// 4 bytes
+// #define EP_EEPROM_TIMESENT      1143// 4 bytes
+// #define EP_EEPROM_URL_VER       1147// 100 bytes
+// #define EP_EEPROM_URL_FW        1247// 100 bytes
+// #define EP_EEPROM_PLAN_SET      1347// 4 bytes
+// #define EP_EEPROM_RESULT_SET    1351// 4 bytes
+// #define EP_EEPROM_ON_OFF        1355// 1 bytes
+// #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
+
+// #define LAST_EEPROM_ADDRESS 1360
+// #define TIMESTAMP_FEATURE
+// // #define MQTT_Mode
+// #define Mesh_Network
+// #define USE_LORA
+#endif//LOOKLINE_UI
+#ifdef PLC_MASTER_UI
+#define USE_LORA
 #define TestDisplayIntro
 // #define TEST_MODE
 #define DEBUG_
+#define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>
 #define EP_EEPROM_TEST_MODE     1079// 4 bytes
 #define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
 #define EP_EEPROM_DEBUG         1087// 4 bytes
@@ -703,13 +755,12 @@ typedef enum {
 #define EP_EEPROM_RESULT_SET    1351// 4 bytes
 #define EP_EEPROM_ON_OFF        1355// 1 bytes
 #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
-
-#define LAST_EEPROM_ADDRESS 1360
-#define TIMESTAMP_FEATURE
+#define EP_LORA_CHANEL          1360//4  bytes = byte
+#define EP_LORA_AIRRATE         1364//1  bytes = byte
+#define EP_LORA_PROTOCOL        1365//1  bytes = byte
+#define LAST_EEPROM_ADDRESS 1366
 // #define MQTT_Mode
-#define Mesh_Network
-#define USE_LORA
-#endif//LOOKLINE_UI
+#endif//PLC_MASTER_UI
 //default values
 #define DEFAULT_WIFI_MODE           STA_MODE
 #ifdef MESHCOM_UI
@@ -739,9 +790,13 @@ const char DEFAULT_AP_SSID []  PROGMEM =        "Lookline";
 #ifdef AutoIT_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "AutoIT";
 #endif//AutoIT_UI
+#ifdef PLC_MASTER_UI
+const char DEFAULT_AP_SSID []  PROGMEM =        "PLC_Master_safe";
+#endif//PLC_MASTER_UI
 
-// const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab";
-
+#ifdef Basic_UI
+const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab";
+#endif// Basic_UI
 
 const char DEFAULT_AP_PASSWORD [] PROGMEM = "12345678";
 #ifdef LOOKLINE_UI

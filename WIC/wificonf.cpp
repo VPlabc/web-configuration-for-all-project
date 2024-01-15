@@ -79,27 +79,30 @@ extern "C" {
 #else
 #include "syncwebserver.h"
 #endif
-#include "FirmwareUpdate.h"
-UpdateFW WifiUDFW;
 #ifdef LOOKLINE_UI
 #include "LookLine/LookLine.h"
+//  Command cmdLookLine;
+ LOOKLINE_PROG cmdLookline_PROG;
 #endif//LOOKLINE_UI
-
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER PLC_wifi;
+#endif//PLC_MASTER_UI
 bool WiFiOnce1 = true; //
 #include "WIC.h"
 WIC wic;
-#if defined(TIMESTAMP_FEATURE) && defined(ARDUINO_ARCH_ESP8266)
+#if defined(TIMESTAMP_FEATURE)
 void dateTime (uint16_t* date, uint16_t* dtime)
 {
     struct tm  tmstruct;
     time_t now;
     time (&now);
     localtime_r (&now, &tmstruct);
-    *date = FAT_DATE ( (tmstruct.tm_year) + 1900, ( tmstruct.tm_mon) + 1, tmstruct.tm_mday);
-    *dtime = FAT_TIME (tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
+    // *date = FAT_DATE ( (tmstruct.tm_year) + 1900, ( tmstruct.tm_mon) + 1, tmstruct.tm_mday);
+    // *dtime = FAT_TIME (tmstruct.tm_hour, tmstruct.tm_min, tmstruct.tm_sec);
 }
 #endif
-
+bool LED_OFF = true;
 WIFI_CONFIG::WIFI_CONFIG()
 {
     iweb_port = DEFAULT_WEB_PORT;
@@ -168,16 +171,25 @@ void  WIFI_CONFIG::Safe_Setup()
     IPAddress local_ip (DEFAULT_IP_VALUE[0], DEFAULT_IP_VALUE[1], DEFAULT_IP_VALUE[2], DEFAULT_IP_VALUE[3]);
     IPAddress gateway (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
     IPAddress subnet (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
+
     String ssid = FPSTR (DEFAULT_AP_SSID);
     String pwd = FPSTR (DEFAULT_AP_PASSWORD);
+    if (!CONFIG::read_string (EP_AP_SSID, ssid, MAX_SSID_LENGTH) ) {
+            // return false;
+    }
+    if (!CONFIG::read_string (EP_AP_PASSWORD, pwd, MAX_PASSWORD_LENGTH) ) {
+        // return false;
+    }
+    
     #ifdef LOOKLINE_UI
         String sbuf = "";
         byte b_ID = 0;
         CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
         CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
-        WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION ;
+        WiFi.softAP(AP_NAME.c_str(), "");
     #else
+    ssid += "_Safe";
     WiFi.softAP (ssid.c_str(), pwd.c_str() );
     #endif//LOOKLINE_UI
     CONFIG::wait (500);
@@ -202,12 +214,9 @@ void onWiFiEvent(WiFiEvent_t event)
 
     switch (event) {
     case WIFI_EVENT_STAMODE_CONNECTED:
-    #ifdef LOOKLINE_UI
-        // LOGLN("Connected");
-    #endif//LOOKLINE_UI
 #ifndef MKS_TFT_FEATURE
-        ESPCOM::println (F ("Connected"), PRINTER_PIPE);
 #ifndef Moto_UI 
+        ESPCOM::println (F ("Connected"), PRINTER_PIPE);
 #endif//
 #endif
 #ifdef ESP_OLED_FEATURE
@@ -219,14 +228,18 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif
         break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
-        ESPCOM::println (F ("Disconnected"), PRINTER_PIPE);
-    #ifdef LOOKLINE_UI
-        // LOGLN("Client Disconnect");
-        Lookline_PROG.SetStart(0);
-        // Lookline_PROG.SetConfig(2);
-    #endif//LOOKLINE_UI
     #ifndef Moto_UI 
+        ESPCOM::println (F ("(STA)Disconnected\n"), PRINTER_PIPE);
+        digitalWrite(LED_STATUS, !LED_OFF);
+        #ifdef PLC_MASTER_UI
+        PLC_wifi.connectWeb(0);
+        #endif//PLC_MASTER_UI
     #endif//Moto_UI
+        #ifdef LOOKLINE_UI
+        cmdLookline_PROG.SetStart(0);
+        LOG("Disconnected");
+        // cmdLookline_PROG.SetConfig(2);
+    #endif//LOOKLINE_UI
         #ifdef Switch_UI
         wic.Manual = false;wic.Auto = false;
         LOG("\nAuto On\n");
@@ -240,14 +253,18 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif//
 #endif
         break;
-    case WIFI_EVENT_AP_STAMODE_DISCONNECTED:
-        ESPCOM::println (F ("Disconnected"), PRINTER_PIPE);
-    #ifdef LOOKLINE_UI
-        Lookline_PROG.SetStart(0);
-        // Lookline_PROG.SetConfig(2);
-    #endif//LOOKLINE_UI
+    case WIFI_EVENT_APMODE_DISCONNECTED:
     #ifndef Moto_UI 
+        ESPCOM::println (F ("(AP)Disconnected"), PRINTER_PIPE);
+        #ifdef PLC_MASTER_UI
+        PLC_wifi.connectWeb(0);
+        #endif//PLC_MASTER_UI
     #endif//Moto_UI
+        #ifdef LOOKLINE_UI
+        cmdLookline_PROG.SetStart(0);
+        LOG("Disconnected");
+        // cmdLookline_PROG.SetConfig(2);
+    #endif//LOOKLINE_UI
         #ifdef Switch_UI
         wic.Manual = false;wic.Auto = false;
         LOG("\nAuto On\n");
@@ -266,11 +283,11 @@ void onWiFiEvent(WiFiEvent_t event)
 #ifndef MKS_TFT_FEATURE
     if (WiFi.getMode() == WIFI_AP) {
         OLED_DISPLAY::setCursor(0, 0);
-        ESPCOM::println (WiFi.softAPIP().toString().c_str(), OLED_PIPE);
+        ESPCOM::println (WiFi.softAPIP().toString().c_str(), PRINTER_PIPE);
     }
     else{
         OLED_DISPLAY::setCursor(0, 0);
-        ESPCOM::println (WiFi.localIP().toString().c_str(), OLED_PIPE);
+        ESPCOM::println (WiFi.localIP().toString().c_str(), PRINTER_PIPE);
     }
 #endif//ESP_OLED_FEATURE
 #endif
@@ -285,10 +302,13 @@ void onWiFiEvent(WiFiEvent_t event)
         break;
     case WIFI_EVENT_SOFTAPMODE_STACONNECTED:
         ESPCOM::println (F ("New client"), PRINTER_PIPE);
-        // LOGLN("New client");
-    #ifdef LOOKLINE_UI
-        // Lookline_PROG.SetConfig(0);
-    #endif//LOOKLINE_UI
+        LOGLN("New client");
+        #ifdef PLC_MASTER_UI
+        PLC_wifi.connectWeb(0);
+        #endif//PLC_MASTER_UI
+        #ifdef LOOKLINE_UI
+        cmdLookline_PROG.SetStart(1);
+        #endif//LOOKLINE_UI
         #ifdef Switch_UI
         wic.Manual = true;
         LOG("\nManual On\n");
@@ -311,10 +331,12 @@ void onWiFiEvent(WiFiEvent_t event)
 }
 
 //Read configuration settings and apply them
-bool WIFI_CONFIG::Setup (bool force_ap)
+bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
 {
-    // LOG ("wifi Config Setup\r\n")
-    ESPCOM::println(F("wifi Config Setup"), PRINTER_PIPE);
+    pinMode(LED_Pin, OUTPUT);
+    digitalWrite(LED_Pin, invert);
+    LED_OFF = invert;
+    LOG ("wifi Config Setup\r\n")
     char pwd[MAX_PASSWORD_LENGTH + 1];
     char sbuf[MAX_SSID_LENGTH + 1];
     char hostname [MAX_HOSTNAME_LENGTH + 1];
@@ -427,21 +449,16 @@ bool WIFI_CONFIG::Setup (bool force_ap)
             return false;
         }
         //LOG ("Set AP\r\n")
-        ESPCOM::println(F("Set AP mode"), PRINTER_PIPE);
         //setup Soft AP
-        WiFi.mode (WIFI_AP_STA);
+        WiFi.mode (WIFI_AP);
 #ifdef ARDUINO_ARCH_ESP32
         esp_wifi_set_protocol (WIFI_IF_AP, bflag);
 #endif
         #ifdef Moto_UI 
         MOTO.WiFi_on = true;
         #endif//Moto_UI 
-        delay (50);byte b_ID = 0;String Pwd;
-        CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
-        CONFIG::read_string (EP_AP_PASSWORD, Pwd, MAX_PASSWORD_LENGTH) ;
-        CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
-        WiFi.softAP(AP_NAME.c_str(), Pwd.c_str());
+        delay (50);
+        WiFi.softAP (sbuf, pwd);
 #ifdef ESP_OLED_FEATURE
 #ifndef Moto_UI 
         OLED_DISPLAY::display_signal(100);
@@ -516,7 +533,14 @@ bool WIFI_CONFIG::Setup (bool force_ap)
         }
         if (!CONFIG::read_string (EP_STA_PASSWORD, pwd, MAX_PASSWORD_LENGTH) ) {
             return false;
-        }
+        } 
+
+        LOG ("SSID ")
+        LOG (sbuf)
+        LOG ("\r\n")
+        LOG ("PASS ")
+        LOG (pwd)
+        LOG ("\r\n")
 
 #ifdef ESP_OLED_FEATURE
 #ifndef MKS_TFT_FEATURE
@@ -600,7 +624,6 @@ bool WIFI_CONFIG::Setup (bool force_ap)
             switch (WiFi.status() ) {
             case 1:
 #ifdef ESP_OLED_FEATURE
-
 #ifndef Moto_UI 
         OLED_DISPLAY::display_signal(-1);
 #endif//                
@@ -637,9 +660,7 @@ bool WIFI_CONFIG::Setup (bool force_ap)
             for (byte i = 0; i < 10 - dot; i++) {
                 msg += F (" ");
             }
-            if (dot == 10) {
-                dot = 0;
-            }        
+            if (dot == 10) {dot = 0;}        
 #ifndef MKS_TFT_FEATURE
 #ifdef DISABLE_CONNECTING_MSG
             ESPCOM::println (msg, PRINTER_PIPE);
@@ -652,9 +673,7 @@ bool WIFI_CONFIG::Setup (bool force_ap)
 #endif//MKS_TFT_FEATURE
 #ifdef Moto_UI
 #ifdef ESP_OLED_FEATURE
-
         //OLED_DISPLAY::splash();
-        
         OLED_DISPLAY::display_mini_progress(i*2);
         OLED_DISPLAY::update_lcd();
 #endif//ESP_OLED_FEATURE
@@ -752,11 +771,13 @@ bool WIFI_CONFIG::Setup (bool force_ap)
     }
 #endif
     if (force_ap) {
-
+        digitalWrite(LED_Pin, !invert);
     } else if ((WiFi.getMode() == WIFI_STA) && (WiFi.status() == WL_CONNECTED)) {
-        ESPCOM::println("Connected", PRINTER_PIPE);
+        ESPCOM::print("Connected " + currentIP.toString() + "\n\n", SERIAL_PIPE);
+        digitalWrite(LED_Pin, invert);
     } else if ((WiFi.getMode() == WIFI_AP_STA) && (WiFi.status() == WL_CONNECTED)) {
-        ESPCOM::println("Connected(AP_STA)", PRINTER_PIPE);
+        ESPCOM::print("Connected(AP) " + currentIP.toString() + "\n\n", SERIAL_PIPE);
+        digitalWrite(LED_Pin, invert);
     }
     ESPCOM::flush (DEFAULT_PRINTER_PIPE);
     return true;
@@ -790,7 +811,7 @@ bool WIFI_CONFIG::Enable_servers()
         if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
             return false;
         }
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + WifiUDFW.FirmwareVer ;
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V" + FW_VERSION;
         WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
         #endif//LOOKLINE_UI
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);

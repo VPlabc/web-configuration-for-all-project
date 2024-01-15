@@ -24,7 +24,7 @@
     Main author: luc lebosse
 
 */
-#define LOOKLINE_UI
+// #define LOOKLINE_UI
 
 
 #include <Arduino.h>
@@ -76,6 +76,7 @@ UpdateFW MainUDFW;
 #include <DNSServer.h>
 extern DNSServer dnsServer;
 #endif
+
 
 #ifndef FS_NO_GLOBALS
 #define FS_NO_GLOBALS
@@ -146,6 +147,10 @@ Auto_Device AutoitGW;
 #include "LookLine/LookLine.h"
 LOOKLINE_PROG lookline_prog;
 #endif // LOOKLINE_UI
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER PLC_MASTER_Prog;
+#endif // PLC_MASTER_UI
 // Contructor
 CONFIG conf;
 
@@ -165,6 +170,13 @@ void IRAM_ATTR onTimer() {
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 #endif// TIMER_INTER_FEATURES
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+// TaskHandle_t Task3;
+
+#include "Tsk1.h"
+#include "Tsk2.h"
 
 WIC::WIC()
 {
@@ -329,9 +341,8 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #endif// lookline_ui
             // setup wifi according settings
 
-#ifndef LOOKLINE_UI
-
-            if (!wifi_config.Setup())
+// #ifndef LOOKLINE_UI
+            if (!wifi_config.Setup(false, LED_STATUS, 1))
             {
 #ifdef ESP3D_UI
                 OLED_DISPLAY::setCursor(0, 11);
@@ -339,7 +350,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
        // try again in AP mode
                 ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
                     // LOGLN("Safe mode 1");
-                if (!wifi_config.Setup(true))
+                if (!wifi_config.Setup(true, LED_STATUS, 1))
                 {
 #ifdef ESP3D_UI
                     wifi_config.Safe_Setup();
@@ -348,28 +359,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
                 }
             }
-#else
-byte roles = 0;CONFIG::read_byte(EP_EEPROM_ROLE, &roles);
-if(roles == NODE || roles == REPEARTER){
-            if (!wifi_config.Setup())
-            {
-#ifdef ESP3D_UI
-                OLED_DISPLAY::setCursor(0, 11);
-#endif // Moto
-       // try again in AP mode
-                ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
-                    // LOGLN("Safe mode 1");
-                if (!wifi_config.Setup(true))
-                {
-#ifdef ESP3D_UI
-                    wifi_config.Safe_Setup();
-#endif //
-                    // LOGLN("Safe mode 2");
-                    ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
-                }
-            }
-        }
-#endif// LOOKLINE_UI
+// #endif// lookline_ui
         #ifdef LOOKLINE_UI
         // }
         #endif// lookline_ui
@@ -463,6 +453,35 @@ if(roles == NODE || roles == REPEARTER){
 #ifdef LOOKLINE_UI
     lookline_prog.setup();   
 #endif // LOOKLINE_UI
+
+#ifdef PLC_MASTER_UI
+PLC_MASTER_Prog.setup();
+#endif//PLC_MASTER_UI
+
+//------------------------------------------------------------------------
+  //Task1 :
+  xTaskCreatePinnedToCore(
+    Task1code,   /* Task function. */
+    "Task1",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task1,      /* Task handle to keep track of created task */
+    0);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  //Task2 :
+  xTaskCreatePinnedToCore(
+    Task2code,   /* Task function. */
+    "Task2",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task2,      /* Task handle to keep track of created task */
+    1);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  
 }
 
 bool onece = true;
@@ -596,7 +615,11 @@ void WIC::process(){
                             if (onece2){onece2 = false;LOG("\nWifi Portal Working...\n");}
 #endif // AUTOITGW_UI
     
-                        if (onece2){onece2 = false;ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);}
+                            if (onece2){onece2 = false;ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);
+                            }
+                            static unsigned long previousMillis = 0;
+                            if (millis() - previousMillis >= 300) {if(WiFi.status() != WL_CONNECTED){digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));}previousMillis = millis();}
+                            
                         }//if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
 #endif
                         // TODO use config
@@ -619,6 +642,8 @@ void WIC::process(){
 #ifdef Gyro_UI
         } // GyroWifiOn
 #endif    // Gyro_UI
+
+delay(10);
 
 #ifdef ESP_OLED_FEATURE
         static uint32_t last_oled_update = 0;

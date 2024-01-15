@@ -65,6 +65,7 @@
 #define NODE        0
 #define GATEWAY     1
 #define REPEARTER   2
+#define MASTER      3
 /////////////////////////////////////// Comunication Command
 #define UPDATEcmd 0
 #define OKcmd 1
