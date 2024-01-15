@@ -42,7 +42,8 @@ ClickButton button(BootButton, LOW, CLICKBTN_PULLUP);
 //   #include <SimpleModbusSlave.h>
 //   SimpleModbusSlave NodeSlave;
 
-
+#define             FRMW_VERSION         "1.2236"
+#define             PRGM_VERSION         "1.0"
 ///////////////////////// Modbus Role //////////////////////////
 enum {slave,master};
 //////////////// registers of your slave ///////////////////
