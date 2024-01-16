@@ -122,6 +122,35 @@ packetPointer packet2 = &packets[PACKET2];
 //ModbusIP object
 ModbusIP mb;
 #endif//WifiConnect
+#ifdef Ethernet_W5500
+#include <SPI.h>
+#include <Ethernet.h>
+#include "MgsModbus.h"
+#define     ETH_RST        27
+#define     ETH_CS         14
+#define     ETH_SCLK       18
+#define     ETH_MISO       19
+#define     ETH_MOSI       23
+
+MgsModbus Mb;
+int inByte = 0; // incoming serial byte
+
+// Ethernet settings (depending on MAC and Local network)
+byte mac[] = {0x90, 0xA2, 0xDA, 0x0E, 0x94, 0xB5 };
+IPAddress ip(192, 168, 1, 8);
+IPAddress gateway(192, 168,1, 1);
+IPAddress subnet(255, 255, 255, 0);
+void ethernetReset(const uint8_t resetPin)
+{
+    pinMode(resetPin, OUTPUT);
+    digitalWrite(resetPin, HIGH);
+    delay(250);
+    digitalWrite(resetPin, LOW);
+    delay(50);
+    digitalWrite(resetPin, HIGH);
+    delay(350);
+}
+#endif//Ethernet_W5500
 #ifdef Enthernet
 #include <Modbus.h>
 #include <ModbusIP_ESP32.h>
@@ -243,6 +272,54 @@ initupdate();
   LOGLN("enthernet connected");
   LOGLN(ETH.localIP());
 #endif//Eth
+#ifdef Ethernet_W5500
+ // serial setup
+  Serial.begin(9600);
+  Serial.println("Serial interface started");
+       SPI.begin(ETH_SCLK, ETH_MISO, ETH_MOSI);
+
+    ethernetReset(ETH_RST);
+    Ethernet.init(ETH_CS);
+  // initialize the ethernet device
+  Ethernet.begin(mac, ip, gateway, subnet);   // start etehrnet interface
+  Serial.println("Ethernet interface started"); 
+
+  // print your local IP address:
+  Serial.print("My IP address: ");
+  for (byte thisByte = 0; thisByte < 4; thisByte++) {
+    // print the value of each byte of the IP address:
+    Serial.print(Ethernet.localIP()[thisByte], DEC);
+    Serial.print("."); 
+  }
+  Serial.println();
+
+  // Fill MbData
+//  Mb.SetBit(0,false);
+  Mb.MbData[0] = 0;
+  Mb.MbData[1] = 0;
+  Mb.MbData[2] = 0;
+  Mb.MbData[3] = 0;
+  Mb.MbData[4] = 0;
+  Mb.MbData[5] = 0;
+  Mb.MbData[6] = 0;
+  Mb.MbData[7] = 0;
+  Mb.MbData[8] = 0;
+  Mb.MbData[9] = 0;
+  Mb.MbData[10] = 0;
+  Mb.MbData[11] = 0;
+  
+  // print MbData
+  for (int i=0;i<12;i++) {
+    Serial.print("address: "); Serial.print(i); Serial.print("Data: "); Serial.println(Mb.MbData[i]);
+  }
+  // print menu
+  Serial.println("0 - print the first 12 words of the MbData space");
+  Serial.println("1 - fill MbData with 0x0000 hex");
+  Serial.println("2 - fill MbData with 0xFFFF hex");
+  Serial.println("3 - fill MbData with 0x5555 hex");
+  Serial.println("4 - fill MbData with 0xAAAA hex");
+
+#endif//ETHER_W5500
 // if(role == 0){
     // read 5 registers starting at address 0
 //Modbus Setup
@@ -284,7 +361,27 @@ void Modbus_Prog::modbus_loop(bool role) {
     }
     delay(5);
   }
-  
+  #ifdef Ethernet_W5500
+  if (Serial.available() > 0) {
+    // get incoming byte:
+    inByte = Serial.read();
+    if (inByte == '0') {                                          // print MbData
+      for (int i=0;i<12;i++) {
+        Serial.print("address: "); Serial.print(i); Serial.print("Data: "); Serial.println(Mb.MbData[i]);
+      }
+    }  
+    if (inByte == '1') {for (int i=1000;i<1100;i++) {Mb.MbData[i] = 111;}}  
+    if (inByte == '2') {for (int i=1200;i<1300;i++) {Mb.MbData[i] = 222;}}  
+    if (inByte == '3') {for (int i=1300;i<1400;i++) {Mb.MbData[i] = 333;}}  
+    if (inByte == '4') {for (int i=1400;i<1500;i++) {Mb.MbData[i] = 444;}}  
+  }
+
+//  Mb.MbmRun();
+ cnt++;
+   Mb.MbData[0] = cnt;
+  Mb.MbData[1] = cnt;
+  Mb.MbsRun();
+  #endif//Ethernet_W5500
       if (millis() - previousMillis_update >= interval_update)
       {
         previousMillis_update = millis();   
