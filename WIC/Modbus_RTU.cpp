@@ -358,11 +358,11 @@ void Modbus_Prog::modbus_loop(bool role) {
   //  digitalWrite(ledPins, coils[0]);
 
   static unsigned long previousMillis = 0;
-  const long interval = 1000;
+  const long interval = 10000;
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-    // for (int i = 0; i < dataSize; i++){inputRegisters[i] = random(0,100);}
+    // for (int i = 0; i < dataSize; i++){holdingRegisters[i] = random(0,9999);}
     // if(role == Slave){LOGLN("slave");}
     // if(role == Master){LOGLN("master");}
     //   LOG("holdingRegisters: ");
