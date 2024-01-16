@@ -2036,6 +2036,32 @@
         <div class="col12 p-3">
         <div class="row text-center" id="listLookline"></div>
         </div>
+        <span  class="card" style="width: 95vw;">
+            <table>
+            <tbody>
+                <tr id="BatteryInfo" style="display: none;">
+                    <td class="Status-nav"  translate>Battery:</td>
+                    <td class="Status-nav"  ><a style="color:Aqua;" id="Battery">0%</a></td>
+                    <td class="Status-nav" ></td>
+                    <td class="Status-nav"  ><a style="color:Orange;" id="Volt">0V</a></td>
+                </tr>
+                <tr id="LooklineInfo" >
+                    <td class="Status-nav"  >Plan:</td>
+                    <td class="Status-nav"  ><a style="color:Green;" id="showPlan">----</a></td>
+                    <td class="Status-nav"  >Result:</td>
+                    <td class="Status-nav"  ><a style="color:Green;" id="showResult">----</a></td>
+                    <td class="Status-nav"  >O.T:</td>
+                    <td class="Status-nav"  ><a style="color:Red;" id="showOT">----</a></td>
+                </tr>
+                <tr id="Envilabel" style="display: none;">
+                    <td class="Status-nav"  translate><a >Environment:</a></td>
+                    <td class="Status-nav" ><a id="DHT_humidity">20%</a></td>
+                    <td class="Status-nav" ><a id="DHT_temperature">20&deg;C</a></td>
+                    <td class="Status-nav" ></td>
+                </tr>
+            </tbody>
+            </table>
+        </span>
         <ul class="nav navbar-nav navbar-right" id="lock_ui_btn">
             <li class="dropdown"><a href="#" onclick="ontoggleLock()"><i class="dropbtn"><label><input type="checkbox"
                     id="lock_UI"> <span id="lock_UI_btn_txt">Unlock interface</span></label></i></a></li>
@@ -4673,31 +4699,7 @@ function loaddatasetting(id){
   console.log("r6:"+regsvalue[r6]); 
 }
 
-// function saveSettings(id) {
-//     console.log("app id= "+id);
-//     var UpdateDataApp = JSON.parse(AppMemories);
-//     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
-//     // Retrieve values from modal input fields
-//     var planValue = document.getElementById("planInput").value;
-//     var resultValue = document.getElementById("resultInput").value;
-//     var planSetValue = document.getElementById("planSetInput").value;
-//     var resultSetValue = document.getElementById("resultSetInput").value;
-//     var TimeIncValue = document.getElementById("TimeIncInput").value;
-//     var PCSValue = document.getElementById("PCSInput").value;
-//     var RegsAdrPlan = r1;
-//     var RegsAdrResult = r2;
-//     var RegsAdrPlanSet = r3;
-//     var RegsAdrResultSet = r4;
-//     var RegsAdrTime = r5;
-//     var RegsAdrPCS = r6;
-//     console.log("id: " + id + "| planValue: " + planValue + "("+RegsAdrPlan+") |resultValue :" + resultValue +"("+RegsAdrResult+") | planSetValue: " + planSetValue + "("+RegsAdrPlanSet+") |resultSetValue :" + resultSetValue +"("+RegsAdrResultSet+") | TimeIncValue: " + TimeIncValue + "("+RegsAdrTime+") | PCSValue: " + PCSValue + "("+RegsAdrPCS+")");
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPlan+" value="+planValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrResult+" value="+resultValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPlanSet+" value="+planSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrResultSet+" value="+resultSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrTime+" value="+TimeIncValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPCS+" value="+PCSValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-//   }
+
 
 function saveSettings(id) {
     console.log("app id= " + id);
