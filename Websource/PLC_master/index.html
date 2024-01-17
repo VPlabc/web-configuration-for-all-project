@@ -3587,7 +3587,6 @@
           </form>
         </div>
           <button type="button" class="btn btn-secondary" onclick="CloseModalCardSet('cancel')">Close</button>
-          <button type="button" class="btn btn-primary" onclick="CloseModalCardSet('Ok')" >Save</button>
     </div>
   </div>
 
@@ -4323,7 +4322,8 @@ var modal = new Object;
       title.innerHTML = titledlg;body.innerHTML = textdlg;cardID = textdlg;if (typeof closefunc === 'undefined') closefunc = CardSetClose;ShowModalCardSet(closefunc);      loaddatasetting(textdlg);
 }
     function ShowModalCardSet(closefunc) {modalCardSet.active.style.display = "block";modalCardSet.closefn = closefunc; }
-    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);}
+    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);clearSaveTimeout();}
+
     function CardSetClose(value) {console.log(value);if (value == "Ok") {if(modalCardSet.active.getElementsByClassName("modal-title") == "Edit Application"){ console.log("Edit App");}else{ saveSettings(cardID);}}
     }
  
@@ -4644,11 +4644,14 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
 
         }
         if(cmd == dash){html += "<div class='button row'>\
-        <div class='col align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' data-bs-toggle='modal'  onclick=\"CardSetup_dlg('Edit Parameter',"+BappID+")\">\
+        <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' data-bs-toggle='modal'  onclick=\"CardSetup_dlg('Edit Parameter',"+BappID+")\">\
             Settings\
           </button></div>\
-          <div class='col align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='RunButton"+BappID+"' onclick='changeState("+BappID+")'>\
+          <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='RunButton"+BappID+"' onclick='changeState("+BappID+")'>\
             Run\
+          </button></div>\
+          <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='resetButton"+BappID+"' onclick='changeReset("+BappID+")'>\
+            Reset\
           </button></div>";}
           html += "</div>\
     </div></div>";
@@ -4698,8 +4701,45 @@ function loaddatasetting(id){
   console.log("r5:"+regsvalue[r5]); 
   console.log("r6:"+regsvalue[r6]); 
 }
+var saveTimeout;
 
+// Hàm tự động lưu giá trị sau 1 giây
+function autoSaveSettings(id) {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(function() {
+        saveSettings(id);
+    }, 1000);
+}
 
+// Gán sự kiện oninput cho từng trường input trong modal
+document.getElementById("planInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+document.getElementById("resultInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+document.getElementById("planSetInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+document.getElementById("resultSetInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+document.getElementById("TimeIncInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+document.getElementById("PCSInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+
+// Hàm xóa timeout khi modal được đóng
+function clearSaveTimeout() {
+    clearTimeout(saveTimeout);
+}
 
 function saveSettings(id) {
     console.log("app id= " + id);
@@ -4768,6 +4808,17 @@ function saveSettings(id) {
         console.log("PCS ("+r6+") value changed: " + originalPCSValue + " to " + PCSValue);
         SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r6 + " value=" + PCSValue), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
+}
+
+
+function changeReset(id) {
+    console.log("app id= " + id);
+    var UpdateDataApp = JSON.parse(AppMemories);
+    var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+    // Thực hiện reset giá trị plan và gửi yêu cầu cập nhật
+    console.log("Resetting Plan (" + r1 + ") and Result (" + r2 + ") values to 0");
+    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r1 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
+    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r2 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
 }
 
 
