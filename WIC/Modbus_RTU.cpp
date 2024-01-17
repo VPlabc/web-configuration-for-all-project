@@ -284,6 +284,28 @@ void Modbus_Prog::modbus_loop(bool role) {
     }
     delay(5);
   }
+// void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
+// void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
+// void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;
+// Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addr, regs_WRITE[addr]);
+// update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+
+
+
+// void Modbus_Prog::connectModbus(bool update){ MB_Update_Data = update;}
+
+// void Modbus_Prog::modbus_loop(bool role) {
+//   // #ifdef MASTER_MODBUS
+//   if(role == Master && MB_Update_Data == true){
+//     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
+//     delay(5);
+//     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
+//     // if(Reg_Update_Once){Reg_Update_Once=false;for (int i = 0; i < dataSize; i++){regs_WRITE[i] = -1;}}
+//     if(Reg_Update_Once1){Reg_Update_Once1=false;for (int i = 0; i < dataSize; i++){if(regs_WRITE[i] != -1){
+//       Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +i, regs_WRITE[i]);delay(5);}}
+//     }
+//     delay(5);
+//   }
   
       if (millis() - previousMillis_update >= interval_update)
       {

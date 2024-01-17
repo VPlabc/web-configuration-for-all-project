@@ -3562,7 +3562,7 @@
                 </div>
                 <div class="col -3">
                     <label for="resultInput" class="form-label">Result</label>
-                    <input type="text" class="form-control" id="resultInput">
+                    <input type="text" class="form-control" id="resultInput" >
                 </div>
             </div>
             <div class="row">
@@ -4701,8 +4701,19 @@ function loaddatasetting(id){
   console.log("r5:"+regsvalue[r5]); 
   console.log("r6:"+regsvalue[r6]); 
 }
+// lỗi getWifiSignalStrength
+function getWifiSignalStrength(wifiData) {
+    // Kiểm tra xem wifiData có tồn tại và có chứa thông số tín hiệu không
+    if (wifiData && wifiData.strength !== undefined) {
+        // Trả về giá trị thông số tín hiệu WiFi
+        return wifiData.strength;
+    } else {
+        // Trả về một giá trị mặc định hoặc xử lý khác nếu không có dữ liệu tín hiệu
+        return "N/A";
+    }
+}
+// bỏ nút save, nhập vào thì lưu
 var saveTimeout;
-
 // Hàm tự động lưu giá trị sau 1 giây
 function autoSaveSettings(id) {
     clearTimeout(saveTimeout);
@@ -4710,32 +4721,25 @@ function autoSaveSettings(id) {
         saveSettings(id);
     }, 1000);
 }
-
 // Gán sự kiện oninput cho từng trường input trong modal
 document.getElementById("planInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 document.getElementById("resultInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 document.getElementById("planSetInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 document.getElementById("resultSetInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 document.getElementById("TimeIncInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 document.getElementById("PCSInput").oninput = function() {
     autoSaveSettings(cardID);
 };
-
 // Hàm xóa timeout khi modal được đóng
 function clearSaveTimeout() {
     clearTimeout(saveTimeout);
@@ -4745,7 +4749,6 @@ function saveSettings(id) {
     console.log("app id= " + id);
     var UpdateDataApp = JSON.parse(AppMemories);
     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
-
     // Retrieve values from modal input fields
     var planValue = document.getElementById("planInput").value;
     var resultValue = document.getElementById("resultInput").value;
@@ -4809,13 +4812,12 @@ function saveSettings(id) {
         SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r6 + " value=" + PCSValue), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
 }
-
-
+// reset plan và result về 0
 function changeReset(id) {
     console.log("app id= " + id);
     var UpdateDataApp = JSON.parse(AppMemories);
     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
-    // Thực hiện reset giá trị plan và gửi yêu cầu cập nhật
+    // Thực hiện reset giá trị plan va Result và gửi yêu cầu cập nhật
     console.log("Resetting Plan (" + r1 + ") and Result (" + r2 + ") values to 0");
     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r1 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r2 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
