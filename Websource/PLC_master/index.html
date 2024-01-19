@@ -3562,7 +3562,7 @@
                 </div>
                 <div class="col -3">
                     <label for="resultInput" class="form-label">Result</label>
-                    <input type="text" class="form-control" id="resultInput">
+                    <input type="text" class="form-control" id="resultInput" >
                 </div>
             </div>
             <div class="row">
@@ -3587,7 +3587,6 @@
           </form>
         </div>
           <button type="button" class="btn btn-secondary" onclick="CloseModalCardSet('cancel')">Close</button>
-          <button type="button" class="btn btn-primary" onclick="CloseModalCardSet('Ok')" >Save</button>
     </div>
   </div>
 
@@ -4323,7 +4322,8 @@ var modal = new Object;
       title.innerHTML = titledlg;body.innerHTML = textdlg;cardID = textdlg;if (typeof closefunc === 'undefined') closefunc = CardSetClose;ShowModalCardSet(closefunc);      loaddatasetting(textdlg);
 }
     function ShowModalCardSet(closefunc) {modalCardSet.active.style.display = "block";modalCardSet.closefn = closefunc; }
-    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);}
+    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);clearSaveTimeout();}
+
     function CardSetClose(value) {console.log(value);if (value == "Ok") {if(modalCardSet.active.getElementsByClassName("modal-title") == "Edit Application"){ console.log("Edit App");}else{ saveSettings(cardID);}}
     }
  
@@ -4644,11 +4644,14 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
 
         }
         if(cmd == dash){html += "<div class='button row'>\
-        <div class='col align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' data-bs-toggle='modal'  onclick=\"CardSetup_dlg('Edit Parameter',"+BappID+")\">\
+        <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' data-bs-toggle='modal'  onclick=\"CardSetup_dlg('Edit Parameter',"+BappID+")\">\
             Settings\
           </button></div>\
-          <div class='col align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='RunButton"+BappID+"' onclick='changeState("+BappID+")'>\
+          <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='RunButton"+BappID+"' onclick='changeState("+BappID+")'>\
             Run\
+          </button></div>\
+          <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' id='resetButton"+BappID+"' onclick='changeReset("+BappID+")'>\
+            Reset\
           </button></div>";}
           html += "</div>\
     </div></div>";
@@ -4672,10 +4675,8 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
       if(number[type] >= 11){document.getElementById('Regs11_'+BappID).innerHTML = Regs_list;}
       if(number[type] >= 12){document.getElementById('Regs12_'+BappID).innerHTML = Regs_list;}
       if(button[type] == 1){document.getElementById('Button0_'+BappID).innerHTML = Regs_list;}
-      if(button[type] == 2){document.getElementById('Button1_'+BappID).innerHTML = Regs_list;}
-      
+      if(button[type] == 2){document.getElementById('Button1_'+BappID).innerHTML = Regs_list;}     
     }
-
 }
 //navbar
   function toggleDropdown(element) {
@@ -4698,11 +4699,54 @@ function loaddatasetting(id){
   console.log("r5:"+regsvalue[r5]); 
   console.log("r6:"+regsvalue[r6]); 
 }
+// lỗi getWifiSignalStrength
+function getWifiSignalStrength(wifiData) {
+    // Kiểm tra xem wifiData có tồn tại và có chứa thông số tín hiệu không
+    if (wifiData && wifiData.strength !== undefined) {
+        // Trả về giá trị thông số tín hiệu WiFi
+        return wifiData.strength;
+    } else {
+        // Trả về một giá trị mặc định hoặc xử lý khác nếu không có dữ liệu tín hiệu
+        return "N/A";
+    }
+}
+// bỏ nút save, nhập vào thì lưu
+var saveTimeout;
+// Hàm tự động lưu giá trị sau 1 giây
+function autoSaveSettings(id) {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(function() {
+        saveSettings(id);
+    }, 1000);
+}
+// Gán sự kiện oninput cho từng trường input trong modal
+document.getElementById("planInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+document.getElementById("resultInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+document.getElementById("planSetInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+document.getElementById("resultSetInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+document.getElementById("TimeIncInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+document.getElementById("PCSInput").oninput = function() {
+    autoSaveSettings(cardID);
+};
+// Hàm xóa timeout khi modal được đóng
+function clearSaveTimeout() {
+    clearTimeout(saveTimeout);
+}
 
 function saveSettings(id) {
-    console.log("app id= "+id);
+    console.log("app id= " + id);
     var UpdateDataApp = JSON.parse(AppMemories);
-    [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+    var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
     // Retrieve values from modal input fields
     var planValue = document.getElementById("planInput").value;
     var resultValue = document.getElementById("resultInput").value;
@@ -4710,30 +4754,74 @@ function saveSettings(id) {
     var resultSetValue = document.getElementById("resultSetInput").value;
     var TimeIncValue = document.getElementById("TimeIncInput").value;
     var PCSValue = document.getElementById("PCSInput").value;
-    var RegsAdrPlan = r1;
-    var RegsAdrResult = r2;
-    var RegsAdrPlanSet = r3;
-    var RegsAdrResultSet = r4;
-    var RegsAdrTime = r5;
-    var RegsAdrPCS = r6;
-    console.log("id: " + id + "| planValue: " + planValue + "("+RegsAdrPlan+") |resultValue :" + resultValue +"("+RegsAdrResult+") | planSetValue: " + planSetValue + "("+RegsAdrPlanSet+") |resultSetValue :" + resultSetValue +"("+RegsAdrResultSet+") | TimeIncValue: " + TimeIncValue + "("+RegsAdrTime+") | PCSValue: " + PCSValue + "("+RegsAdrPCS+")");
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPlan+" value="+planValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrResult+" value="+resultValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPlanSet+" value="+planSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrResultSet+" value="+resultSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrTime+" value="+TimeIncValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+RegsAdrPCS+" value="+PCSValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    // Update card values
-    // document.getElementById("idValue").innerText = idValue;
-    // document.getElementById("machineValue").innerText = machineValue;
-    // document.getElementById("planValue").innerText = formatInteger(planValue);
-    // document.getElementById("resultValue").innerText = formatInteger(resultValue);
 
-    // Close the modal
-    // var modal = new bootstrap.Modal(document.getElementById("settingsModal"));
-    // modal.hide();
+    // Retrieve original values
+    var originalPlanValue = regsvalue[r1];
+    var originalResultValue = regsvalue[r2];
+    var originalPlanSetValue = regsvalue[r3];
+    var originalResultSetValue = regsvalue[r4];
+    var originalTimeIncValue = regsvalue[r5];
+    var originalPCSValue = regsvalue[r6];
 
-  }
+    // Convert values to the same type (in this case, to numbers)
+    var planValueNum = parseFloat(planValue);
+    var resultValueNum = parseFloat(resultValue);
+    var planSetValueNum = parseFloat(planSetValue);
+    var resultSetValueNum = parseFloat(resultSetValue);
+    var TimeIncValueNum = parseFloat(TimeIncValue);
+    var PCSValueNum = parseFloat(PCSValue);
+
+    // Convert original values to the same type
+    var originalPlanValueNum = parseFloat(originalPlanValue);
+    var originalResultValueNum = parseFloat(originalResultValue);
+    var originalPlanSetValueNum = parseFloat(originalPlanSetValue);
+    var originalResultSetValueNum = parseFloat(originalResultSetValue);
+    var originalTimeIncValueNum = parseFloat(originalTimeIncValue);
+    var originalPCSValueNum = parseFloat(originalPCSValue);
+
+    // Check for changes and log/send only if values are different
+    if (planValueNum !== originalPlanValueNum) {
+        console.log("Plan ("+r1+") value changed: " + originalPlanValue + " to " + planValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r1 + " value=" + planValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+
+    if (resultValueNum !== originalResultValueNum) {
+        console.log("Result ("+r2+") value changed: " + originalResultValue + " to " + resultValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r2 + " value=" + resultValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+
+    if (planSetValueNum !== originalPlanSetValueNum) {
+        console.log("Plan Set ("+r3+") value changed: " + originalPlanSetValue + " to " + planSetValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r3 + " value=" + planSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+
+    if (resultSetValueNum !== originalResultSetValueNum) {
+        console.log("Result Set ("+r4+") value changed: " + originalResultSetValue + " to " + resultSetValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r4 + " value=" + resultSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+
+    if (TimeIncValueNum !== originalTimeIncValueNum) {
+        console.log("Time Inc ("+r5+") value changed: " + originalTimeIncValue + " to " + TimeIncValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r5 + " value=" + TimeIncValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+
+    if (PCSValueNum !== originalPCSValueNum) {
+        console.log("PCS ("+r6+") value changed: " + originalPCSValue + " to " + PCSValue);
+        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r6 + " value=" + PCSValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    }
+}
+// reset plan và result về 0
+function changeReset(id) {
+    console.log("app id= " + id);
+    var UpdateDataApp = JSON.parse(AppMemories);
+    var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+    // Thực hiện reset giá trị plan va Result và gửi yêu cầu cập nhật
+    console.log("Resetting Plan (" + r1 + ") and Result (" + r2 + ") values to 0");
+    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r1 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
+    SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r2 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
+}
+
+
   function changeState(id) {
       console.log("app id= "+id);
     var UpdateDataApp = JSON.parse(AppMemories);
@@ -4747,9 +4835,8 @@ function saveSettings(id) {
       // console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
       
     } else {
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id="+r1+" value="+regsvalue[r1]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6+1]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6+1]);
+      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+      console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6]);
     }
     stateID[id] = !stateID[id];
   }
@@ -4970,7 +5057,7 @@ function saveSettings(id) {
       (e = "Unknown", document.getElementById("configtablink").style.display = 'none'), SETTINGS_STA_MODE = "grbl-embedded" == target_firmware || "marlin-embedded" == target_firmware ? (EP_HOSTNAME = "ESP_HOSTNAME", EP_STA_SSID = "STA_SSID", EP_STA_PASSWORD = "STA_PWD", EP_STA_IP_MODE = "STA_IP_MODE", EP_STA_IP_VALUE = "STA_IP", EP_STA_GW_VALUE = "STA_GW", EP_STA_MK_VALUE = "STA_MK", EP_WIFI_MODE = "grbl-embedded" == target_firmware ? "RADIO_MODE" : "WIFI_MODE", EP_AP_SSID = "AP_SSID", EP_AP_PASSWORD = "AP_PWD", EP_AP_IP_VALUE = "AP_IP", SETTINGS_AP_MODE = 2, 1) : (EP_HOSTNAME = 130, EP_STA_PASSWORD = 34, EP_STA_IP_MODE = 99, EP_STA_IP_VALUE = 100, EP_STA_MK_VALUE = 104, EP_STA_GW_VALUE = 108, EP_WIFI_MODE = 0, EP_AP_SSID = 218, EP_AP_PASSWORD = 251, EP_AP_IP_VALUE = 316, SETTINGS_AP_MODE = EP_STA_SSID = 1, 2), void 0 !== document.getElementById("fwName") && (document.getElementById("fwName").innerHTML = e), direct_sd && void 0 !== document.getElementById("showSDused") ? document.getElementById("showSDused").innerHTML = "<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'><g transform='translate(50,1200) scale(1, -1)'><path  fill='#777777' d='M200 1100h700q124 0 212 -88t88 -212v-500q0 -124 -88 -212t-212 -88h-700q-124 0 -212 88t-88 212v500q0 124 88 212t212 88zM100 900v-700h900v700h-900zM500 700h-200v-100h200v-300h-300v100h200v100h-200v300h300v-100zM900 700v-300l-100 -100h-200v500h200z M700 700v-300h100v300h-100z' /></g></svg>" : document.getElementById("showSDused").innerHTML = "", e
     }
     function Set_page_title(e) { void 0 !== e && (esp_hostname = e), document.title = esp_hostname }
-    function initUI() { console.log("Init UI"), Node_IoT_authentication && connectdlg(!1), AddCmd(display_boot_progress), "undefined" != typeof target_firmware && "undefined" != typeof web_ui_version && "undefined" != typeof direct_sd || alert("Missing init data!"), update_UI_firmware_target(), Set_page_title(), void 0 !== document.getElementById("UI_VERSION") && (document.getElementById("UI_VERSION").innerHTML = web_ui_version), void 0 !== document.getElementById("FW_VERSION") && (document.getElementById("FW_VERSION").innerHTML = fw_version), document.getElementById("maintablink").click(), initUI_2() }
+    function initUI() { console.log("Init UI"), Node_IoT_authentication && connectdlg(!1), AddCmd(display_boot_progress), "undefined" != typeof target_firmware && "undefined" != typeof web_ui_version && "undefined" != typeof direct_sd || alert("Missing init data!"), update_UI_firmware_target(), Set_page_title(), void 0 !== document.getElementById("UI_VERSION") && (document.getElementById("UI_VERSION").innerHTML = web_ui_version), void 0 !== document.getElementById("FW_VERSION") && (document.getElementById("FW_VERSION").innerHTML = fw_version), document.getElementById("maintablink").click(),SwtichChart(0,0), initUI_2() }
     function initUI_2() { AddCmd(display_boot_progress), console.log("Get settings"), refreshLooklineSettings(!0),refreshSettings(!0), initUI_3() }
     function initUI_3() { AddCmd(display_boot_progress), console.log("Get macros"), loadmacrolist(), console.log("Get preferences"), getpreferenceslist(), initUI_4()}
     function initUI_4() { AddCmd(display_boot_progress), init_command_panel(), init_files_panel(!1),showNewFWStt(0), "???" == target_firmware ? (console.log("Launch Setup"), AddCmd(display_boot_progress), closeModal("Connection successful"), setupdlg()) : (do_not_build_settings = !(setup_is_done = !0), do_not_build_looklines = !(setup_ll_is_done = !0),AddCmd(display_boot_progress), build_HTML_setting_list(current_setting_filter), AddCmd(closeModal), AddCmd(show_main_UI)),loadLookline() }
@@ -5009,7 +5096,7 @@ function saveSettings(id) {
           const a = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = BuildApp.Application[k].app.split(',');
           // var r = {BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12}
           appData[k] =BappID+","+Bposs+","+Bapp+","+BnodeID+","+BnetID;
-          for (let i = 1; i <= 12; i++) {if (Bapp >= i){appData[k] += "," + a[i];}}
+          for (let i = 1; i <= number[Bapp]; i++) {if (Bapp >= i){appData[k] += "," + a[i+6];}}
           AddAppBlock(BuildApp.Application[k].app, Bapp, 1);
           AddAppBlock(BuildApp.Application[k].app, Bapp, 3);
           AppID = k+1;

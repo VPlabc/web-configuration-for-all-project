@@ -728,6 +728,8 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define USE_LORA
+#define SDCARD_FEATURE
+
 #define TestDisplayIntro
 // #define TEST_MODE
 #define DEBUG_
@@ -758,8 +760,19 @@ typedef enum {
 #define EP_LORA_CHANEL          1360//4  bytes = byte
 #define EP_LORA_AIRRATE         1364//1  bytes = byte
 #define EP_LORA_PROTOCOL        1365//1  bytes = byte
-#define LAST_EEPROM_ADDRESS 1366
+#define EP_MODBUS_IP_VALUE      1366//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_MASK_VALUE    1370//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_GATEWAY_VALUE 1374//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_PORT          1378//4  bytes = int
+#define EP_EEPROM_WIFI_MODE     1382// 1 bytes
+
+#define LAST_EEPROM_ADDRESS 1383
+#define Ethernet_W5500
+
+// #define WifiConnect
 // #define MQTT_Mode
+#define SDCARD_FEATURE
+
 #endif//PLC_MASTER_UI
 //default values
 #define DEFAULT_WIFI_MODE           STA_MODE
@@ -866,6 +879,9 @@ const int DEFAULT_DHT_INTERVAL = 30;
 
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
+#ifdef PLC_MASTER_UI
+#define SDCard_CS 4
+#endif//PLC_MASTER_UI
 #ifdef Gyro_UI
 #define SDCard_CS D0
 #endif//Gyro_ui

@@ -33,6 +33,8 @@ const byte DNS_PORT = 53;
 #endif
 #include "LoRa.h"
 
+#include "WifiRF.h"
+WifiRF wifirf;
 ////////////////////////////////////////////////////////////////
 #include <Wire.h>
 /////////////////////////////////////////////////////////////////
@@ -104,6 +106,10 @@ int16_t HOLDING_REGS_AnalogOutData[HOLDING_REGS_SIZE];//40001-49999
   uint8_t M1 = 0;
   byte ComMode = LoRa;
 
+bool WriteUpdate = 0;//bao cho ct biet la web co write xuong
+uint16_t WriteUpAddr = 0;//dia chi khi web write
+
+
 void PLC_MASTER::SetLoRaValue(){
   CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
   #ifdef USE_LORA
@@ -156,7 +162,12 @@ bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
 
    PLCModbusCom.modbus_loop(ModbusRole);
-
+   
+  if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
+    PLCModbusCom.setModbusupdateState(0);
+    LOGLN( PLCModbusCom.getModbusupdateData());
+    PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
+  }
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
 static const unsigned long EVENT_INTERVAL_MS = 1000;
@@ -239,7 +250,7 @@ json += "}";
 }
 json += "]}";
 // LOG(json);LOG(json);
-    if(connectWebSocket == 1){socket_server->broadcastTXT(json);if(onceInfo){onceInfo = false;sendInfo();}}
+    if(connectWebSocket == 1){socket_server->broadcastTXT(json);sendInfo();}
 // PLCModbusCom.modbus_loop(ModbusRole);
       // for (int i = 0; i < 30; i++){LOG(PLCModbusCom.inputRegisters[i]);LOGLN(" ");}
 
@@ -257,14 +268,19 @@ void sendInfo() {
   info_data["type"] = "info";
   info_data["version"] = PRGM_VERSION;
   info_data["wifi"] = String(WiFi.RSSI());
-  info_data["ip_address"] = WiFi.localIP().toString();
+  if ((WiFi.getMode() == WIFI_STA) || (WiFi.getMode() == WIFI_AP_STA)) {
+    LOG("\r\n sta mode\r\n")
+    if(WiFi.localIP().toString() == "0.0.0.0"){info_data["ip_address"] = WiFi.softAPIP().toString();}
+      else{info_data["ip_address"] = WiFi.localIP().toString();}
+  } else if (WiFi.getMode() == WIFI_AP) {info_data["ip_address"] = WiFi.softAPIP().toString();}
+  // info_data["ip_address"] = WiFi.localIP().toString();
   info_data["mac_address"] = WiFi.macAddress();
   info_data["version"] = FRMW_VERSION;
   int baudRate = 0;
   if (!CONFIG::read_buffer (EP_BAUD_RATE,  (byte *) &baudRate, INTEGER_LENGTH)) {LOG ("Error read baudrate\r\n") }
   info_data["baud"] = baudRate;
   char   b[150];
-  size_t len = serializeJson(info_data, b); 
+  serializeJson(info_data, b); 
   socket_server->broadcastTXT(b);;
 }
 
@@ -273,7 +289,7 @@ void PLC_MASTER::connectWeb(byte connected){
   PLCModbusCom.connectModbus(connected);
 }
 
-void PLC_MASTER::GetIdList(byte idlist[]){
+void PLC_MASTER::GetIdList(int idlist[]){
   for(byte i=0;i<sizeof(idlist);i++){
     IDList[i] = idlist[i];
   }

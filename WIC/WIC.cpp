@@ -340,7 +340,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 // if(RunMode != MESH){
 #endif// lookline_ui
             // setup wifi according settings
-
+// wifi_config.Setup(true, LED_STATUS, 1);
 // #ifndef LOOKLINE_UI
             if (!wifi_config.Setup(false, LED_STATUS, 1))
             {
@@ -618,7 +618,8 @@ void WIC::process(){
                             if (onece2){onece2 = false;ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);
                             }
                             static unsigned long previousMillis = 0;
-                            if (millis() - previousMillis >= 300) {if(WiFi.status() != WL_CONNECTED){digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));}previousMillis = millis();}
+                            static unsigned long count = 0;
+                            if (millis() - previousMillis >= 300) {if(WiFi.status() != WL_CONNECTED){count++;if(count < 20){digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));}}previousMillis = millis();}
                             
                         }//if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
 #endif
@@ -742,10 +743,9 @@ delay(10);
 //////////////////////////////////////////////////////////////// loop 100mS
             /// @brief //// Loop 1 Seconds
             static uint32_t last_Loop100mS_update = 0;
-            uint32_t now_100ms = millis();
-            if (now_fw - last_Loop100mS_update > (1 * 10))
-            {   last_Loop100mS_update = now_100ms;
-                // if(looklineDebug)LOGLN("Loop 100ms");
+            if (millis() - last_Loop100mS_update > (1 * 100))
+            {   last_Loop100mS_update = millis();
+                // LOGLN("Loop 100ms");
                 #ifdef LOOKLINE_UI
                 lookline_prog.TimerPlanInc();
                 #endif// LOOKLINE_UI

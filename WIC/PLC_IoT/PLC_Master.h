@@ -37,7 +37,7 @@ public:
 #define LED_OFF(pin)   digitalWrite(pin, LOW)
 
 void modbusSet(uint16_t addr, uint16_t value);
-void GetIdList(byte idlist[]);
+void GetIdList(int idlist[]);
 void connectWeb(byte connected);
 void SetLoRaValue();
 void setup();

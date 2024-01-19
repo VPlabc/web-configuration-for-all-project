@@ -62,32 +62,14 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
 // Callback when data is sent
 void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
   Serial.print("Last Packet Send Status: ");
-  if (sendStatus == 0){
-    Serial.println("Delivery success");
-  }
-  else{
-    Serial.println("Delivery fail");
-  }
+Serial.println(sendStatus == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
 #else
 
 // Callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-#ifdef IOTDEVICE_UI  
-  if(IOT_DEVICE.Debug){
-#endif//IOTDEVICE_UI
-#ifdef LOOKLINE_UI  
-  if(Lookline_PROG.GetDebug()){
-#endif//LOOKLINE_UI
   Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  }
-//   if (status ==0){
-//     success = "Delivery Success :)";
-//   }
-//   else{
-//     success = "Delivery Fail :(";
-  //  }
+  Serial.println((status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail"));
 }
 #endif//#ifdef ARDUINO_ARCH_ESP8266
 
