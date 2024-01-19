@@ -728,6 +728,8 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define USE_LORA
+#define SDCARD_FEATURE
+
 #define TestDisplayIntro
 // #define TEST_MODE
 #define DEBUG_

@@ -3385,7 +3385,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         if (parameter == "write") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
-            cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());LOGLN("Set |ID:"+String(IDparameter)+"| Value:"+Valueparameter);
+            cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
     }
     break;

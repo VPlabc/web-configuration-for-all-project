@@ -104,6 +104,10 @@ int16_t HOLDING_REGS_AnalogOutData[HOLDING_REGS_SIZE];//40001-49999
   uint8_t M1 = 0;
   byte ComMode = LoRa;
 
+bool WriteUpdate = 0;//bao cho ct biet la web co write xuong
+uint16_t WriteUpAddr = 0;//dia chi khi web write
+
+
 void PLC_MASTER::SetLoRaValue(){
   CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
   #ifdef USE_LORA
@@ -154,9 +158,13 @@ void PLC_MASTER::setup(){
 }
 bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
-
-   PLCModbusCom.modbus_loop(ModbusRole);
-
+looklineWIC.Auto = true;
+  PLCModbusCom.modbus_loop(ModbusRole);
+  if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
+    PLCModbusCom.setModbusupdateState(0);
+    LOGLN( PLCModbusCom.getModbusupdateData());
+    PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
+  }
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
 static const unsigned long EVENT_INTERVAL_MS = 1000;

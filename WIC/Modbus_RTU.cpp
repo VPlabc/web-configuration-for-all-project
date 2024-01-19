@@ -190,8 +190,6 @@ bool role = Master;
 
 void debugs();
 
-
-
 void Modbus_Prog::modbus_setup(bool role) { 
  pinMode(BTN_SET, INPUT_PULLUP);
   // Serial.begin(115200);
@@ -249,63 +247,52 @@ initupdate();
 
 }
 
-
-
 bool MB_Update_Once = true;
 bool MB_Update_Once1 = true;
 bool Reg_Update_Once = true;
 bool Reg_Update_Once1 = true;
 
- uint16_t regs_WRITE[30];
- uint16_t regs_READ[30];
+uint16_t regs_WRITE[30];
+uint16_t regs_READ[30];
 
 // Function to return an array of 30 elements
 uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}
 uint16_t* Modbus_Prog::getOutputRegs() {return holdingRegisters;}
-
+bool MB_Update_Data = false;
+uint16_t MB_Update_Address = 0;
+uint16_t MB_Update_Value = 0;
    
 void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
 void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
-void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+// void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
 
 
+void Modbus_Prog::connectModbus(bool update){ MB_connect = update;}
+void Modbus_Prog::setModbusupdateState(bool state){ MB_Update_Data = state;}
 
-void Modbus_Prog::connectModbus(bool update){ MB_Update_Data = update;}
+bool Modbus_Prog::getModbusupdateState(){ return MB_Update_Data;}
+uint16_t Modbus_Prog::getModbusupdateData(){return MB_Update_Value;}
+uint16_t Modbus_Prog::getModbusupdateAddr(){ return MB_Update_Address;}
+
+void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
+  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) + " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite));
+  Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
+}
+
 
 void Modbus_Prog::modbus_loop(bool role) {
   // #ifdef MASTER_MODBUS
-  if(role == Master && MB_Update_Data == true){
+  if(role == Master && MB_connect == true){
     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
     delay(5);
     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
-    // if(Reg_Update_Once){Reg_Update_Once=false;for (int i = 0; i < dataSize; i++){regs_WRITE[i] = -1;}}
-    if(Reg_Update_Once1){Reg_Update_Once1=false;for (int i = 0; i < dataSize; i++){if(regs_WRITE[i] != -1){
-      Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +i, regs_WRITE[i]);delay(5);}}
-    }
     delay(5);
+
+    // if(Reg_Update_Once){Reg_Update_Once=false;for (int i = 0; i < dataSize; i++){regs_WRITE[i] = -1;}}
+    // copy đọc lên plc
+
   }
-// void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
-// void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
-// void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;
-// Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addr, regs_WRITE[addr]);
-// update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
-
-
-
-// void Modbus_Prog::connectModbus(bool update){ MB_Update_Data = update;}
-
-// void Modbus_Prog::modbus_loop(bool role) {
-//   // #ifdef MASTER_MODBUS
-//   if(role == Master && MB_Update_Data == true){
-//     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
-//     delay(5);
-//     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
-//     // if(Reg_Update_Once){Reg_Update_Once=false;for (int i = 0; i < dataSize; i++){regs_WRITE[i] = -1;}}
-//     if(Reg_Update_Once1){Reg_Update_Once1=false;for (int i = 0; i < dataSize; i++){if(regs_WRITE[i] != -1){
-//       Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +i, regs_WRITE[i]);delay(5);}}
-//     }
-//     delay(5);
-//   }
   
       if (millis() - previousMillis_update >= interval_update)
       {
@@ -356,13 +343,13 @@ void Modbus_Prog::modbus_loop(bool role) {
   // }
   // discreteInputs[0] = digitalRead(BTN_SET);
   inputRegisters[0] = digitalRead(BTN_SET);
-  if(role == Master && MB_Update_Data == true){
+  if(role == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
     for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
   // inputRegisters = ;
     Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegWrite , inputRegisters, dataSize);//Write REG
       // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOGLN(" ");}
-  }
+   }
   if(role == Slave ){
 
       mb.task();

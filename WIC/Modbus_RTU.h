@@ -71,7 +71,7 @@ enum
 class Modbus_Prog
 {
 public:
-bool MB_Update_Data = false;
+bool MB_connect = false;
 DFRobot_RTU Modbus_Master;
 ModbusRTU mb;
 //////////////// registers of your slave ///////////////////
@@ -115,10 +115,12 @@ enum
 // used to toggle the receive/transmit pin on the driver
 #define TxEnablePin -1 
 
+
+
 uint8_t coils[30];
 uint8_t discreteInputs[30];
 uint16_t holdingRegisters[60];
-uint16_t inputRegisters[60];
+uint16_t inputRegisters[60];// data tu web gui ve public
 
 // The data from the PLC will be stored
 // in the regs array
@@ -134,6 +136,11 @@ bool getStart();
 void modbus_setup(bool role) ;
 void modbus_loop(bool role) ;
 void debugs();
+void Write_PLC(uint16_t addrPLC, uint16_t valuePLC);
+void setModbusupdateState(bool state);
+bool getModbusupdateState();
+uint16_t getModbusupdateData();
+uint16_t getModbusupdateAddr();
 // void modbus_write_update(int16_t HOLDING_REGS_Data[]);
 // void modbus_read_update(int16_t HOLDING_REGS_Data[]) ;            
 void modbus_write_setParameter(int pos,int Value, int cmd);
