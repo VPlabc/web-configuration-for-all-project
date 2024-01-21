@@ -124,10 +124,6 @@ packetPointer packet2 = &packets[PACKET2];
 
 ModbusIP Mb;
 #define     ETH_RST        -1
-#define     ETH_CS         5
-#define     ETH_SCLK       18
-#define     ETH_MISO       19
-#define     ETH_MOSI       23
 
 // MgsModbus Mb;
 int inByte = 0; // incoming serial byte
@@ -208,8 +204,7 @@ enum{Slave, Master};
 
 #define SLAVE_ID 1
 
-#define RXD2 16
-#define TXD2 17
+
 
 /// @brief /// Register address
 bool role = Master;
@@ -220,10 +215,15 @@ void debugs();
 
 
 void Modbus_Prog::modbus_setup(bool role) { 
- pinMode(BTN_SET, INPUT_PULLUP);
+
+  #ifndef MCP_USE
+  pinMode(BTN_SET,    INPUT_PULLUP);
+  #endif//MCP_USE
+  pinMode(BootButton, INPUT_PULLUP);
   // Serial.begin(115200);
   
 #ifdef SerialPort
+  LOGLN("_________________________________________ MODBUS RTU ________________________________________");
 Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2,false);
 initupdate();
   if(role == Master){
@@ -241,6 +241,7 @@ initupdate();
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
+  LOGLN("________________________________________________________________________________________");
 #endif//SerialPort
 #ifdef WifiConnect
   // mb.config("Hoang Vuong", "91919191");
@@ -276,11 +277,11 @@ initupdate();
 #ifdef Ethernet_W5500
  // serial setup
   // Serial.begin(9600);
-  LOGLN("Serial interface started");
-  SPI.begin(ETH_SCLK, ETH_MISO, ETH_MOSI,-1);
+  LOGLN("_________________________________________ ETHERNET ________________________________________");
+  SPI.begin(SCLK, MISO, MOSI,-1);
 
     ethernetReset(ETH_RST);
-    Ethernet.init(ETH_CS);
+    Ethernet.init(SCS);
     byte ip_buf[4];
     //LOG ("Static mode\r\n")
     //get the IP
@@ -316,6 +317,7 @@ initupdate();
   LOG("My IP address: ");
   LOGLN(Ethernet.localIP());
   LOGLN();
+  LOGLN("_________________________________________________________________________________________");
 
 
 #endif//ETHER_W5500
@@ -426,8 +428,8 @@ void Modbus_Prog::modbus_loop(bool role) {
   //   int inByte = Serial.read();
   //   Modbus_Serial.write(inByte);
   // }
-  // discreteInputs[0] = digitalRead(BTN_SET);
-  inputRegisters[0] = digitalRead(BTN_SET);
+  // discreteInputs[0] = digitalRead(BootButton);
+  inputRegisters[0] = digitalRead(BootButton);
   if(role == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
     for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}

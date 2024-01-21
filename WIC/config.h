@@ -41,7 +41,7 @@
 
 // #define Master
 //version and sources location
-#define FW_VERSION "2.1.1.11"
+#define FW_VERSION "15.0.0.1"
 #define REPOSITORY ""
 //#define ARDUINO_ARCH_ESP8266
 //Customize ESP3D ////////////////////////////////////////////////////////////////////////
@@ -727,6 +727,8 @@ typedef enum {
 // #define USE_LORA
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
+#define NodeIoT
+#define MCP_USE
 #define USE_LORA
 #define SDCARD_FEATURE
 
@@ -759,14 +761,15 @@ typedef enum {
 #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
 #define EP_LORA_CHANEL          1360//4  bytes = byte
 #define EP_LORA_AIRRATE         1364//1  bytes = byte
-#define EP_LORA_PROTOCOL        1365//1  bytes = byte
-#define EP_MODBUS_IP_VALUE      1366//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_MASK_VALUE    1370//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_GATEWAY_VALUE 1374//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_PORT          1378//4  bytes = int
-#define EP_EEPROM_WIFI_MODE     1382// 1 bytes
+#define EP_LORA_POWER           1365//1  bytes = byte
+#define EP_LORA_PROTOCOL        1366//1  bytes = byte
+#define EP_MODBUS_IP_VALUE      1367//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_MASK_VALUE    1371//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_GATEWAY_VALUE 1375//4  bytes xxx.xxx.xxx.xxx
+#define EP_MODBUS_PORT          1379//4  bytes = int
+#define EP_EEPROM_WIFI_MODE     1383// 1 bytes
 
-#define LAST_EEPROM_ADDRESS 1383
+#define LAST_EEPROM_ADDRESS 1384
 #define Ethernet_W5500
 
 // #define WifiConnect
@@ -875,12 +878,33 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define ESP_LINE_NOTIFICATION       3
 #define ESP_IFTTT_NOTIFICATION      4
 
+#ifdef NodeIoT
+//SD card CS 5
+//OUTPUT 32 33 25 27 14 13
+//INPUT  34 35
+//MCP4922 CS 4 26
+// [ESP201]P32 V0 [PULLUP=YES RAW=YES ANALOG=NO ANALOG_RANGE=255 CLEARCHANNELS=NO]
 
-
+#define BootButton  0
+#define LED_STATUS  25
+#define BTN_SET     26
+#define SW_1        27
+#define SW_2        14 
+#define IO1_HEADER  2.
+#define IO2_HEADER  15
+#define I2C_SDA     21
+#define I2C_SCL     22
+#define SDCard_CS   5
+#define SCS         5
+#define SCLK        18
+#define MISO        19
+#define MOSI        23
+#define RXD2        16
+#define TXD2        17
+#endif//NodeIoT
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
 #ifdef PLC_MASTER_UI
-#define SDCard_CS 4
 #endif//PLC_MASTER_UI
 #ifdef Gyro_UI
 #define SDCard_CS D0
@@ -1124,7 +1148,13 @@ public:
     static char * mac2str (uint8_t mac [WL_MAC_ADDR_LENGTH]);
     static byte split_ip (const char * ptr, byte * part);
     static void esp_restart (bool async = false);
-    
+    static void Init_MCP(byte test);
+    static void MCP_Set(byte Channel, uint16_t Value);
+    static void SetLoRaValue();
+    static String getLoRaChanel();
+    static String getLoRaAirate();
+    static String getLoRaPower();
+    static void SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX );
 #ifdef Gyro_UI
     static bool GetState();
 #endif//Gyro_UI    

@@ -61,6 +61,35 @@ byte CONFIG::GyroStates = DEFAULT_GYRO_STATE;
 #include <SD.h>
 #endif//SDCARD_FEATURE
 
+#ifdef USE_LORA
+#include "LoRa.h"
+void CONFIG::SetLoRaValue(){byte BoardIDs;byte Lora_CH;
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  #ifdef USE_LORA
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
+  #endif//  #ifdef USE_LORA
+}
+//   LOG("LoRa chanel:" + Str_Lora_CH);
+//   LOG("| LoRa Air rate:" + Air_Rate);
+//   LOG("| LoRa baudrate:" + Baud_Rate);
+//   LOGLN("| LoRa Power:" + Lora_PWR);
+String CONFIG::getLoRaChanel(){return Str_Lora_CH;}
+String CONFIG::getLoRaAirate(){return Air_Rate;}
+String CONFIG::getLoRaPower(){return Lora_PWR;}
+void CONFIG::SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX ){SetPinLoRa( _M0,  _M1,  _TX,  _RX );}
+#endif//USE_LORA
+
+#ifdef MCP_USE
+#include "MCP_DAC.h"
+// MCP4921 MCP(19, 18);  //  SW SPI
+MCP4921 MCP0;  //  HW SPI
+MCP4921 MCP1;  //  HW SPI
+volatile int x;
+uint32_t start, stop;
+#endif//MCP_USE
+
+
 #ifdef LOOKLINE_UI
 const int DEFAULT_PLAN =          0;
 const int DEFAULT_PLANSET =       1;
@@ -198,6 +227,87 @@ bool CONFIG::GetState()
 }
 #endif//Gyro_UI
 
+        
+#ifdef MCP_USE
+void analogWrite_test()
+{
+  Serial.println();
+  Serial.println(__FUNCTION__);
+    for (uint16_t value = 0; value < MCP0.maxValue(); value += 10)
+    {
+      MCP0.fastWriteA(value);
+      MCP0.fastWriteB(value);
+      MCP1.fastWriteA(value);
+      MCP1.fastWriteB(value);
+      Serial.println(value);
+      delay(100);
+    }
+}
+
+
+void performance_test()
+{
+  Serial.println();
+  Serial.println(__FUNCTION__);
+
+  start = micros();
+  for (uint16_t value = 0; value < MCP0.maxValue(); value++)
+  {
+    x = MCP0.write(value, 0);
+  }
+  stop = micros();
+  Serial.print(MCP0.maxValue());
+  Serial.print(" x MCP0.write():\t");
+  Serial.print(stop - start);
+  Serial.print("\t");
+  Serial.println((stop - start) / (MCP0.maxValue() + 1.0) );
+  delay(10);
+
+  start = micros();
+  for (uint16_t value = 0; value < MCP0.maxValue(); value++)
+  {
+    MCP0.fastWriteA(value);
+  }
+  stop = micros();
+  Serial.print(MCP0.maxValue());
+  Serial.print(" x MCP0.fastWriteA():\t");
+  Serial.print(stop - start);
+  Serial.print("\t");
+  Serial.println((stop - start) / (MCP0.maxValue() + 1.0) );
+  delay(10); 
+}
+void CONFIG::Init_MCP(byte test){
+  #ifdef MCP_USE
+  SPI.begin(SCLK, MISO, MOSI);
+  MCP0.begin(4);
+  MCP1.begin(26);
+  Serial.print("MCP_DAC_LIB_VERSION: ");
+  Serial.println(MCP_DAC_LIB_VERSION);
+  Serial.println();
+  Serial.print("CHANNELS:\t");
+  Serial.println(MCP0.channels());
+  Serial.print("MAXVALUE:\t");
+  Serial.println(MCP0.maxValue());
+  delay(100);
+
+  if(test == 1 || test == 3)performance_test();
+  if(test == 2 || test == 3)analogWrite_test();
+      MCP0.fastWriteA(0);
+      MCP0.fastWriteB(0);
+      MCP1.fastWriteA(0);
+      MCP1.fastWriteB(0);
+  #endif// MCP_USE
+}
+void CONFIG::MCP_Set(byte Channel, uint16_t Value) {
+LOG ("Pin:"+ String(Channel) + " | Value:"+ String(Value) + "\r\n");
+if(Channel == 0){MCP0.fastWriteA(Value);}
+if(Channel == 1){MCP0.fastWriteB(Value);}
+if(Channel == 2){MCP1.fastWriteA(Value);}
+if(Channel == 3){MCP1.fastWriteB(Value);}
+}
+#endif//MCP_USE
+
+
 void CONFIG::InitFirmwareTarget()
 {
     CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ;
@@ -226,6 +336,7 @@ bool  CONFIG::is_locked(byte flag)
 void CONFIG::InitDirectSD()
 {
     #ifdef SDCARD_FEATURE
+        SPI.begin(SCLK, MISO, MOSI);
         if (!SD.begin(SDCard_CS)) {
             Serial.println("SD not found!");
             CONFIG::write_byte (EP_PRIMARY_SD, DEFAULT_PRIMARY_SD);

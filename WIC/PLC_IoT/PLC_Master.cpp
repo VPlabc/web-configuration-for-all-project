@@ -31,7 +31,14 @@ Modbus_Prog PLCModbusCom;
 DNSServer LooklinednsServer;
 const byte DNS_PORT = 53;
 #endif
-#include "LoRa.h"
+
+
+////////////////////////////////////////////////////////////////
+#ifdef SDCARD_FEATURE
+#include <SPI.h>
+#include <SD.h>
+#endif//SDCARD_FEATURE
+////////////////////////////////////////////////////////////////
 
 #include "WifiRF.h"
 WifiRF wifirf;
@@ -40,6 +47,7 @@ WifiRF wifirf;
 /////////////////////////////////////////////////////////////////
 #include <ClickButton.h>
 ClickButton button(BootButton, LOW, CLICKBTN_PULLUP);
+
 
 //   #include <SimpleModbusSlave.h>
 //   SimpleModbusSlave NodeSlave;
@@ -111,15 +119,11 @@ uint16_t WriteUpAddr = 0;//dia chi khi web write
 
 
 void PLC_MASTER::SetLoRaValue(){
-  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
-  #ifdef USE_LORA
-  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
-  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
-  #endif//  #ifdef USE_LORA
+CONFIG::SetLoRaValue();
 }
         byte bbuf = 0;
 void sendInfo();
-        
+
 void PLC_MASTER::setup(){
 //   Serial.begin(115200);
 //   Serial2.begin(9600);  
@@ -127,36 +131,80 @@ void PLC_MASTER::setup(){
   Wire.begin();
 
   pinMode(LED_STATUS, OUTPUT);
+  #ifndef MCP_USE
   pinMode(BTN_SET,    INPUT_PULLUP);
+  #endif//MCP_USE
   pinMode(BootButton, INPUT_PULLUP);
   pinMode(SW_1,       OUTPUT);
   pinMode(SW_2,       OUTPUT);
   pinMode(IO1_HEADER, OUTPUT);
   pinMode(IO2_HEADER, OUTPUT);
-  LOG("Setup PLC done");
+  LOGLN("Setup PLC done");
+
+
     #ifdef USE_LORA
+  LOGLN("_________________________________________ LORA RF ________________________________________");
+
     // M0 = SW_1; M1 = SW_2;
     M0 = IO2_HEADER; M1 = IO1_HEADER;
-  if(ComMode == LoRa){SetPinLoRa( M0,  M1,  16,  17);}
+  if(ComMode == LoRa){CONFIG::SetPinForLoRa(M0, M1, 16, 17);}
   // String para[4];
   // Lora_Config_update(para);
   // Str_Lora_CH = para[0];
   // Air_Rate = para[1];
   // Baud_Rate = para[2];
   // Lora_PWR = para[3];
-
+  LOGLN("___________________________________________________________________________________________");
+  
   #endif//  #ifdef USE_LORA
   #ifdef ModbusCom
+  LOGLN("_________________________________________ MODBUS ________________________________________");
   if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {ModbusRole = bbuf;}
     PLCModbusCom.modbus_setup(ModbusRole);
     SetLoRaValue();
     if(ModbusRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
     if(ModbusRole == slave){LOG("Modbus Slave ");}
     LOGLN("Start!!");
-    
+  LOGLN("___________________________________________________________________________________________");
+#endif//ModbusCom 
+#ifdef SDCARD_FEATURE
+// byte csName[] ={4 ,5 ,12 ,14  ,33 ,32};
+// for(byte j = 0; j < sizeof(csName); j++){
+//     if (!SD.begin(csName[j])){LOGLN("SD Card not found |pin:" + String(csName[j]));}else{LOGLN("SD Card found |pin:" + String(csName[j]));}
+//     delay(1000);
+// }
+  LOGLN("_________________________________________ SD CARD ________________________________________");
+  SPI.begin(SCLK, MISO, MOSI);
+  if (!SD.begin(SDCard_CS)){
+    LOGLN("Card Mount Failed");
+  }else{
+    LOGLN("Card Mount OK");
+    uint8_t cardType = SD.cardType();
+
+    if(cardType == CARD_NONE){
+      Serial.println("No SD card attached");
+      return;
+    }
+
+    Serial.print("SD Card Type: ");
+    if(cardType == CARD_MMC){
+      Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+    } else {
+      Serial.println("UNKNOWN");
+    }
+
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("SD Card Size: %lluMB\n", cardSize);
+  }
+  LOGLN("___________________________________________________________________________________________");
+
+#endif//#ifdef SDCARD_FEATURE
   //////////////////////////////////////
 
-#endif//ModbusCom 
 }
 bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
@@ -269,7 +317,6 @@ void sendInfo() {
   info_data["version"] = PRGM_VERSION;
   info_data["wifi"] = String(WiFi.RSSI());
   if ((WiFi.getMode() == WIFI_STA) || (WiFi.getMode() == WIFI_AP_STA)) {
-    LOG("\r\n sta mode\r\n")
     if(WiFi.localIP().toString() == "0.0.0.0"){info_data["ip_address"] = WiFi.softAPIP().toString();}
       else{info_data["ip_address"] = WiFi.localIP().toString();}
   } else if (WiFi.getMode() == WIFI_AP) {info_data["ip_address"] = WiFi.softAPIP().toString();}

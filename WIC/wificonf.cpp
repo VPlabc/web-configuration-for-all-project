@@ -189,7 +189,9 @@ void  WIFI_CONFIG::Safe_Setup()
         String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION ;
         WiFi.softAP(AP_NAME.c_str(), "");
     #else
-    ssid += "_Safe";
+    byte ID;
+    CONFIG::read_byte (EP_EEPROM_ID, &ID);
+    ssid += "_"+String(ID)+"|Ver:" + FW_VERSION ;
     WiFi.softAP (ssid.c_str(), pwd.c_str() );
     #endif//LOOKLINE_UI
     CONFIG::wait (500);
@@ -340,6 +342,8 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
     char pwd[MAX_PASSWORD_LENGTH + 1];
     char sbuf[MAX_SSID_LENGTH + 1];
     char hostname [MAX_HOSTNAME_LENGTH + 1];
+    String pwds = "";
+    byte b_ID;
     //int wstatus;
     IPAddress currentIP;
     byte bflag = 0;
@@ -458,7 +462,12 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
         MOTO.WiFi_on = true;
         #endif//Moto_UI 
         delay (50);
-        WiFi.softAP (sbuf, pwd);
+        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {return false;}
+        if(b_ID == 255)b_ID = (uint16_t) (ESP.getEfuseMac() >> 32)%100; 
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION;
+        WiFi.softAP (AP_NAME.c_str(), pwd);
+        dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
+        dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
 #ifdef ESP_OLED_FEATURE
 #ifndef Moto_UI 
         OLED_DISPLAY::display_signal(100);
@@ -798,22 +807,18 @@ bool WIFI_CONFIG::Enable_servers()
     if (WiFi.getMode() != WIFI_STA ) {
         // if DNSServer is started with "*" for domain name, it will reply with
         // provided IP to all DNS request
-        #ifdef LOOKLINE_UI
         String sbuf = "";
         String pwds = "";
-        if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {
-            return false;
-        }
-        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
-            return false;
-        }
+        if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {return false;}
+        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {return false;}
         byte b_ID = 0;
-        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
-            return false;
-        }
+        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {return false;}
+        #ifdef LOOKLINE_UI
         String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V" + FW_VERSION;
         WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
         #endif//LOOKLINE_UI
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION;
+        WiFi.softAP (AP_NAME.c_str(), pwds.c_str());
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
     }
