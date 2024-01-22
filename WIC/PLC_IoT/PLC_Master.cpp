@@ -139,7 +139,6 @@ void PLC_MASTER::setup(){
   pinMode(SW_2,       OUTPUT);
   pinMode(IO1_HEADER, OUTPUT);
   pinMode(IO2_HEADER, OUTPUT);
-  LOGLN("Setup PLC done");
 
 
     #ifdef USE_LORA
@@ -148,24 +147,22 @@ void PLC_MASTER::setup(){
     // M0 = SW_1; M1 = SW_2;
     M0 = IO2_HEADER; M1 = IO1_HEADER;
   if(ComMode == LoRa){CONFIG::SetPinForLoRa(M0, M1, 16, 17);}
+    SetLoRaValue();
   // String para[4];
   // Lora_Config_update(para);
   // Str_Lora_CH = para[0];
   // Air_Rate = para[1];
   // Baud_Rate = para[2];
   // Lora_PWR = para[3];
-  LOGLN("___________________________________________________________________________________________");
   
   #endif//  #ifdef USE_LORA
   #ifdef ModbusCom
   LOGLN("_________________________________________ MODBUS ________________________________________");
   if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {ModbusRole = bbuf;}
     PLCModbusCom.modbus_setup(ModbusRole);
-    SetLoRaValue();
     if(ModbusRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
     if(ModbusRole == slave){LOG("Modbus Slave ");}
     LOGLN("Start!!");
-  LOGLN("___________________________________________________________________________________________");
 #endif//ModbusCom 
 #ifdef SDCARD_FEATURE
 // byte csName[] ={4 ,5 ,12 ,14  ,33 ,32};
@@ -200,10 +197,12 @@ void PLC_MASTER::setup(){
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
     Serial.printf("SD Card Size: %lluMB\n", cardSize);
   }
-  LOGLN("___________________________________________________________________________________________");
 
 #endif//#ifdef SDCARD_FEATURE
-  //////////////////////////////////////
+  ///////////////////////////////
+
+  LOGLN("____________________________________________________________________________________________");
+  LOGLN("Setup PLC done");///////
 
 }
 bool onceInfo = true;
