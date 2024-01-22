@@ -51,8 +51,8 @@ WiFiClient            wifiClient;
 #define   PRGM_VERSION         "14.9.9.1"
 /* this info will be read by the python script */
 String hosts = "https://raw.githubusercontent.com/";
-String URL_fw_Bin = "VPlabc/AutoIT/main/firmware.bin";
-String URL_fw_Version = "VPlabc/AutoIT/main/version.txt";
+String URL_fw_Bin = "VPlabc/web-configuration-for-all-project/main/.pioenvs/esp32cam/firmware.bin";
+String URL_fw_Version = "VPlabc/web-configuration-for-all-project/main/.pioenvs/esp32cam/version.txt";
 const char* host = "raw.githubusercontent.com";
 const int httpsPort = 443;
 /* end of script data */
@@ -274,6 +274,9 @@ void UpdateFW::FirmwareUpdate()
   #ifdef LOOKLINE_UI
     CONFIG::read_string(EP_EEPROM_URL_FW,URL_fw_Bin, MAX_URL_FW_LENGTH );
   #endif//LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+    CONFIG::read_string(EP_EEPROM_URL_FW,URL_fw_Bin, MAX_URL_FW_LENGTH );
+  #endif// LOOKLINE_UI
   t_httpUpdate_return ret = httpUpdate.update(client, hosts+URL_fw_Bin);
 
   switch (ret) {
@@ -330,6 +333,9 @@ void UpdateFW::FirmwareUpdate()
   int HttpCodes;
   String fwurl = "";
   #ifdef LOOKLINE_UI
+    CONFIG::read_string(EP_EEPROM_URL_VER,URL_fw_Version, MAX_URL_VER_LENGTH );
+  #endif// LOOKLINE_UI
+  #ifdef PLC_MASTER_UI
     CONFIG::read_string(EP_EEPROM_URL_VER,URL_fw_Version, MAX_URL_VER_LENGTH );
   #endif// LOOKLINE_UI
   fwurl += hosts+URL_fw_Version;

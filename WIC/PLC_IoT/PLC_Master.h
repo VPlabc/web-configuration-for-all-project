@@ -20,24 +20,13 @@ enum{LoRa,MESH,MQTT,RS485com};
 class PLC_MASTER
 {
 public:
-#define BootButton 0
-#define LED_STATUS  25
-#define BTN_SET     26
 
-#define SW_1        27
-#define SW_2        14 
-
-#define IO1_HEADER  2.
-#define IO2_HEADER  15
-
-#define I2C_SDA     21
-#define I2C_SCL     22
 
 #define LED_ON(pin)    digitalWrite(pin, HIGH)
 #define LED_OFF(pin)   digitalWrite(pin, LOW)
 
 void modbusSet(uint16_t addr, uint16_t value);
-void GetIdList(byte idlist[]);
+void GetIdList(int idlist[]);
 void connectWeb(byte connected);
 void SetLoRaValue();
 void setup();

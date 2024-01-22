@@ -5,6 +5,7 @@
 #ifdef USE_LORA
 // #include "LookLine.h"
 #ifdef USE_LORA
+#define E32_TTL_1W
     #include "LoRa_E32.h"
 #endif//USE_LORA
   uint8_t M0_ = 0;
@@ -15,6 +16,8 @@
   String Air_Rate = "";
   String Baud_Rate = "";
   String Lora_PWR = "";
+
+
 void SetPinLoRa(uint8_t M0, uint8_t M1, uint8_t TX = 17, uint8_t RX = 16)
 {
 	M0_ = M0;
@@ -95,6 +98,7 @@ void ReadLoRaConfig()
 void WriteLoRaConfig(byte CH, byte ID)
 {
 	#ifdef USE_LORA
+	byte bbuf;
     digitalWrite(M0_, HIGH);
     digitalWrite(M1_, HIGH);
 	// Startup all pins and UART
@@ -111,16 +115,17 @@ void WriteLoRaConfig(byte CH, byte ID)
 	configuration.OPTION.fec = FEC_1_ON;
 	configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
 	configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
-	configuration.OPTION.transmissionPower = POWER_20;
+	CONFIG::read_byte (EP_LORA_POWER, &bbuf );
+	configuration.OPTION.transmissionPower = bbuf;
 	configuration.OPTION.wirelessWakeupTime = WAKE_UP_1250;
-
-	configuration.SPED.airDataRate = AIR_DATA_RATE_010_24;
+	CONFIG::read_byte (EP_LORA_AIRRATE, &bbuf );
+	configuration.SPED.airDataRate = bbuf;
 	configuration.SPED.uartBaudRate = UART_BPS_9600;
 	configuration.SPED.uartParity = MODE_00_8N1;
 	
 
 	// Set configuration changed and set to not hold the configuration
-	ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+	e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
 	//LOGLN(rs.getResponseDescription());
 	//LOGLN(rs.code);
 	printParameters(configuration);
