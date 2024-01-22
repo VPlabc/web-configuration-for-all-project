@@ -728,7 +728,7 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define NodeIoT
-#define MCP_USE
+// #define MCP_USE
 #define USE_LORA
 #define SDCARD_FEATURE
 
