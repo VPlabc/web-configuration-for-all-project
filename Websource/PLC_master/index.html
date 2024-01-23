@@ -437,8 +437,10 @@
       display: flex;
       flex-direction: row;
       position: absolute;
-      top: 100%;
       right: -40px;
+      align-items: baseline;
+      top: 35px;
+      right: -80px;
     }
 
     .navbar-nav li {
@@ -1936,25 +1938,27 @@
           <li class="dropdown" onclick="toggleDropdown(this)">
           <a href="#" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#gear_fill_icon"></use></svg></a>
           <ul class="dropdow_100">
-            <li><a id="advanced" href="#advanced" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#gear_fill_icon"></use></svg></a>
+            <li><a id="advanced" href="#advanced" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#add_app_icon"></use></svg></a>
             <li><a id="board"    href="#main_board"  class="nav-link py-4 ">       <svg class="bi" width="24" height="24"><use xlink:href="#mainboard_icon"></use></svg></a></li>
             <li><a id="wifi"     href="#wifi_card"  class="nav-link py-4 ">     <svg class="bi" width="24" height="24"><use xlink:href="#wifi_icon"></use></svg></a></li>
             <li><a id="rf"       href="#RF_module"  class="nav-link py-4 ">    <svg class="bi" width="24" height="24"><use xlink:href="#broadcast_icon"></use></svg></a></li>
             <li><a id="ethernet" href="#ethernet" class="nav-link py-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#ethernet_icon"></use></svg></a></li>
-            <!-- <li><a id="modbus" href="#modbus" class="nav-link py-lg-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#modbus_icon"></use></svg></a></li> -->
+            <li><a id="modbus" href="#modbus" class="nav-link py-lg-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#modbus_icon"></use></svg></a></li>
+            <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()">           <svg class="bi" width="24" height="24"> <use xlink:href="#z_icon"></use></svg></li>
           </ul>
           </li>
           <li><a id="features" href="#features" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"><use xlink:href="#info_icon"></use></svg></a></li>
+          <li><span id="showSDused" style="position: relative; top: 20px;">&nbsp;</span></li>
         </span><span class="clearfix"></span></a>
-        <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()"><span class="pull-right" translate>Preferences</span> <span class="pull-left"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+        <!-- <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()"><span class="pull-right" translate>Preferences</span> <span class="pull-left"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
               <g transform="translate(50,1200) scale(1, -1)">
                 <path
                   d="M407 800l131 353q7 19 17.5 19t17.5 -19l129 -353h421q21 0 24 -8.5t-14 -20.5l-342 -249l130 -401q7 -20 -0.5 -25.5t-24.5 6.5l-343 246l-342 -247q-17 -12 -24.5 -6.5t-0.5 25.5l130 400l-347 251q-17 12 -14 20.5t23 8.5h429z">
                 </path>
               </g></svg>
-          </li>
+          </li> -->
 
-          <span id="fwName">&nbsp;</span> <span id="showSDused">&nbsp;</span></span>
+          <span id="fwName">&nbsp;</span> </span>
         </li>
         </ul>
       </div>
@@ -5054,7 +5058,7 @@ function changeReset(id) {
     function update_UI_firmware_target() {
       var e; return initpreferences(),
       "lookline" == target_firmware ? (e = "Lookline") :
-      (e = "Unknown", document.getElementById("configtablink").style.display = 'none'), SETTINGS_STA_MODE = "grbl-embedded" == target_firmware || "marlin-embedded" == target_firmware ? (EP_HOSTNAME = "ESP_HOSTNAME", EP_STA_SSID = "STA_SSID", EP_STA_PASSWORD = "STA_PWD", EP_STA_IP_MODE = "STA_IP_MODE", EP_STA_IP_VALUE = "STA_IP", EP_STA_GW_VALUE = "STA_GW", EP_STA_MK_VALUE = "STA_MK", EP_WIFI_MODE = "grbl-embedded" == target_firmware ? "RADIO_MODE" : "WIFI_MODE", EP_AP_SSID = "AP_SSID", EP_AP_PASSWORD = "AP_PWD", EP_AP_IP_VALUE = "AP_IP", SETTINGS_AP_MODE = 2, 1) : (EP_HOSTNAME = 130, EP_STA_PASSWORD = 34, EP_STA_IP_MODE = 99, EP_STA_IP_VALUE = 100, EP_STA_MK_VALUE = 104, EP_STA_GW_VALUE = 108, EP_WIFI_MODE = 0, EP_AP_SSID = 218, EP_AP_PASSWORD = 251, EP_AP_IP_VALUE = 316, SETTINGS_AP_MODE = EP_STA_SSID = 1, 2), void 0 !== document.getElementById("fwName") && (document.getElementById("fwName").innerHTML = e), direct_sd && void 0 !== document.getElementById("showSDused") ? document.getElementById("showSDused").innerHTML = "<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'><g transform='translate(50,1200) scale(1, -1)'><path  fill='#777777' d='M200 1100h700q124 0 212 -88t88 -212v-500q0 -124 -88 -212t-212 -88h-700q-124 0 -212 88t-88 212v500q0 124 88 212t212 88zM100 900v-700h900v700h-900zM500 700h-200v-100h200v-300h-300v100h200v100h-200v300h300v-100zM900 700v-300l-100 -100h-200v500h200z M700 700v-300h100v300h-100z' /></g></svg>" : document.getElementById("showSDused").innerHTML = "", e
+      (e = "Unknown", document.getElementById("configtablink").style.display = 'none'), SETTINGS_STA_MODE = "grbl-embedded" == target_firmware || "marlin-embedded" == target_firmware ? (EP_HOSTNAME = "ESP_HOSTNAME", EP_STA_SSID = "STA_SSID", EP_STA_PASSWORD = "STA_PWD", EP_STA_IP_MODE = "STA_IP_MODE", EP_STA_IP_VALUE = "STA_IP", EP_STA_GW_VALUE = "STA_GW", EP_STA_MK_VALUE = "STA_MK", EP_WIFI_MODE = "grbl-embedded" == target_firmware ? "RADIO_MODE" : "WIFI_MODE", EP_AP_SSID = "AP_SSID", EP_AP_PASSWORD = "AP_PWD", EP_AP_IP_VALUE = "AP_IP", SETTINGS_AP_MODE = 2, 1) : (EP_HOSTNAME = 130, EP_STA_PASSWORD = 34, EP_STA_IP_MODE = 99, EP_STA_IP_VALUE = 100, EP_STA_MK_VALUE = 104, EP_STA_GW_VALUE = 108, EP_WIFI_MODE = 0, EP_AP_SSID = 218, EP_AP_PASSWORD = 251, EP_AP_IP_VALUE = 316, SETTINGS_AP_MODE = EP_STA_SSID = 1, 2), void 0 !== document.getElementById("fwName") && (document.getElementById("fwName").innerHTML = e), direct_sd && void 0 !== document.getElementById("showSDused") ? document.getElementById("showSDused").innerHTML = "<svg width='1.6em' height='1.6em' viewBox='0 0 1300 1200'><g transform='translate(50,1200) scale(1, -1)'><path  fill='#777777' d='M200 1100h700q124 0 212 -88t88 -212v-500q0 -124 -88 -212t-212 -88h-700q-124 0 -212 88t-88 212v500q0 124 88 212t212 88zM100 900v-700h900v700h-900zM500 700h-200v-100h200v-300h-300v100h200v100h-200v300h300v-100zM900 700v-300l-100 -100h-200v500h200z M700 700v-300h100v300h-100z' /></g></svg>" : document.getElementById("showSDused").innerHTML = "", e
     }
     function Set_page_title(e) { void 0 !== e && (esp_hostname = e), document.title = esp_hostname }
     function initUI() { console.log("Init UI"), Node_IoT_authentication && connectdlg(!1), AddCmd(display_boot_progress), "undefined" != typeof target_firmware && "undefined" != typeof web_ui_version && "undefined" != typeof direct_sd || alert("Missing init data!"), update_UI_firmware_target(), Set_page_title(), void 0 !== document.getElementById("UI_VERSION") && (document.getElementById("UI_VERSION").innerHTML = web_ui_version), void 0 !== document.getElementById("FW_VERSION") && (document.getElementById("FW_VERSION").innerHTML = fw_version), document.getElementById("maintablink").click(),SwtichChart(0,0), initUI_2() }
