@@ -112,7 +112,7 @@
 // #define DHT_FEATURE
 
 //AUTHENTICATION_FEATURE: protect pages by login password
-// #define AUTHENTICATION_FEATURE
+#define AUTHENTICATION_FEATURE
 
 //WS_DATA_FEATURE: allow to connect serial from Websocket
 #define WS_DATA_FEATURE
