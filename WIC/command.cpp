@@ -3121,6 +3121,13 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::println ("delete success", output, espresponse);
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         }
+        if (parameter == "calculateAverage") {
+            if (parametercard == "") {}
+            else{
+            ESPCOM::println (F ("calculateAverage"), output, espresponse);
+            ESPCOM::println ("calculateAverage=======", output, espresponse);
+            ESPCOM::println (OK_CMD_MSG, output, espresponse);}
+        }
         #ifdef LOOKLINE_UI
         if (parameter == "off") {
             Lookline_PROG.SetRun(2);

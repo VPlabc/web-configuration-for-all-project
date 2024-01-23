@@ -36,6 +36,7 @@ void getTimeStamp();
 void logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Result);
 String loadSDCard(int card, int start, int stop);
 void DelSDCard(int card);
+float calculateAverage(String DataOutArray[]);
 void setup();
 void loop();
 };
