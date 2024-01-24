@@ -420,7 +420,29 @@ void readFile(fs::FS &fs, const char * path){
   file.close();
 }
 
-// Write the sensor readings on the SD card
+// // Write the sensor readings on the SD card
+// void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Result) {
+//   String dataMessage="";
+//   // Serial.print("Save data: ");
+//     dataMessage = String(time)+','+String(Plan)+','+String(Result) + ',';
+//     // LOGLN(dataMessage);
+//     // char databuff[150];dataMessage.toCharArray(databuff, sizeof(dataMessage));
+//     // LOGLN("size String: " + String(dataMessage.length()));
+//     File file = SD.open(("/data" + String(card) + ".txt").c_str(), FILE_APPEND);
+//   if(!file) {
+//     Serial.println("Failed to open file for appendinggggg");
+//     return;
+//   }
+//   if(file.println(dataMessage)) {
+//     // Serial.println("Message appended");
+//   } else {
+//     Serial.println("Append failed");
+//   }
+//   file.close();
+//     // appendFile(SD, ("/data"+String(card)+".txt").c_str(), databuff);
+// }
+bool errorPrinted = false;
+
 void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Result) {
   String dataMessage="";
   // Serial.print("Save data: ");
@@ -430,7 +452,10 @@ void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Resul
     // LOGLN("size String: " + String(dataMessage.length()));
     File file = SD.open(("/data" + String(card) + ".txt").c_str(), FILE_APPEND);
   if(!file) {
-    Serial.println("Failed to open file for appending");
+    if (!errorPrinted) {
+      Serial.println("Failed to open file for appending");
+      errorPrinted = true;
+    }
     return;
   }
   if(file.println(dataMessage)) {
@@ -439,8 +464,8 @@ void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Resul
     Serial.println("Append failed");
   }
   file.close();
-    // appendFile(SD, ("/data"+String(card)+".txt").c_str(), databuff);
 }
+
 String PLC_MASTER::loadSDCard(int card, int start, int end){
   LOGLN("Card: " + String(card));
   String DataOut="";
@@ -452,10 +477,10 @@ String PLC_MASTER::loadSDCard(int card, int start, int end){
   float_t resultSum = 0;
   uint32_t planCount = 0;
   uint32_t resultCount = 0;
-  uint16_t maxPlan = 0;
   uint16_t minPlan = 0;
-  uint16_t maxResult = 0;
+  uint16_t maxPlan = 0;
   uint16_t minResult = 0;
+  uint16_t maxResult = 0;
   byte count = 0;
   File dataFile = SD.open("/data" + String(card) + ".txt");
   if (!dataFile) {
@@ -480,7 +505,11 @@ String PLC_MASTER::loadSDCard(int card, int start, int end){
           planCount++;
           resultSum += DataOutArray[2].toInt();
           resultCount++;
-          // if()
+          if(DataOutArray[1].toInt() > maxPlan) maxPlan = DataOutArray[1].toInt();
+          if(DataOutArray[1].toInt() < minPlan) minPlan = DataOutArray[1].toInt();
+          if(DataOutArray[2].toInt() > maxResult) maxResult = DataOutArray[2].toInt();
+          if(DataOutArray[2].toInt() < minResult) minResult = DataOutArray[2].toInt();
+        
         }
 
         }
@@ -494,11 +523,14 @@ String PLC_MASTER::loadSDCard(int card, int start, int end){
     LOG(DataOutFilter);
     LOGLN("Time proccess:  " + String((endTime - startTime)) + " Ms  /  " + count1 + " records");
     LOGLN("Number of valid plans: " + String(planCount));
-    LOGLN("Number of valid results: " + String(resultCount));
     LOGLN("Average Plan: " + String(planSum/planCount));
+    LOGLN("Min Plan: " + String(minPlan));
+    LOGLN("Max Plan: " + String(maxPlan));
+    LOGLN("Number of valid results: " + String(resultCount));
     LOGLN("Average Result: " + String(resultSum/resultCount));
+    LOGLN("Min Result: " + String(minResult));
+    LOGLN("Max Result: " + String(maxResult));
   }
-
   return DataOut;
 }
 
@@ -549,35 +581,6 @@ void PLC_MASTER::appendFile(fs::FS &fs, const char * path, const char * message)
   }
   file.close();
 }
-// std::pair<float, float> calculateAverage(String DataOutArray[], int size) {
-//   float sumPlan = 0;
-//   float sumResult = 0;
-//   float averagePlan = 0;
-//   float averageResult = 0;
-//   int countav = 0;
-
-//   for (int i = 0; i < size; i++) {
-//     if (DataOutArray[i] != "") {
-//       sumPlan += DataOutArray[i].substring(0, DataOutArray[i].indexOf("|")).toFloat();
-//       sumResult += DataOutArray[i].substring(DataOutArray[i].indexOf("|") + 2).toFloat();
-//       countav++;
-//     }
-//   }
-
-//   if (countav != 0) {
-//     averagePlan = sumPlan / countav;
-//     averageResult = sumResult / countav;
-//   }
-
-//   return std::make_pair(averagePlan, averageResult);
-// }
-
-// int size = sizeof(DataOutArray) / sizeof(DataOutArray[0]);
-// std::pair<float, float> avg = calculateAverage(DataOutArray, size);
-// float averagePlan = avg.first;
-// float averageResult = avg.second;
-// LOG("Gia tri trung binh cua Plan: " + String(averagePlan));
-// LOG("Gia tri trung binh cua Result: " + String(averageResult));
 #endif//PLC_MASSTER_UI
 
 
