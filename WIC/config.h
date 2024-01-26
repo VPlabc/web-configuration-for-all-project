@@ -770,7 +770,7 @@ typedef enum {
 #define EP_EEPROM_WIFI_MODE     1383// 1 bytes
 
 #define LAST_EEPROM_ADDRESS 1384
-#define Ethernet_W5500
+// #define Ethernet_W5500
 
 // #define WifiConnect
 // #define MQTT_Mode

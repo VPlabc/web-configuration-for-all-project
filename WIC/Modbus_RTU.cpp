@@ -235,9 +235,12 @@ initupdate();
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
+#ifdef Ethernet_W5500
 
     Mb.addHreg(RegWrite, 0, dataSize);
     Mb.addHreg(RegRead, 0, dataSize);
+#endif//Ethernet_W5500
+
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
@@ -432,10 +435,6 @@ void Modbus_Prog::modbus_loop(bool role) {
   inputRegisters[0] = digitalRead(BootButton);
   if(role == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
-    for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
-  // inputRegisters = ;
-    Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegWrite , inputRegisters, dataSize);//Write REG
-      // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOGLN(" ");}
     #if defined(Enthernet) || defined(WifiConnect) 
       //Call once inside loop() - all magic here
       IPmb.task();

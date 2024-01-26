@@ -4064,7 +4064,8 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
     var number =    [ 1, 1, 1, 2, 1, 1, 1, 6,12,12, 7, 7, 7, 7,12]//số lượng thanh ghi của thẻ
     var button =    [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];//thẻ chứa button
     var CardName =  [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];//thẻ chứa tên
-    var stateID =   [];//trạng thái của Run/Stop
+    var stateID =   [];//trạng thái của Run/Stop (2/1)
+    var lock =    [];//trạng thái của Run/Stop (0/1)
     ////////////////////////////////////// Chart button //////////////////////////////////////////////////
     var ChartButton = [8,9,10,11,12,13,14]//loại thẻ đưa vào chart button
     var ButtonName = ["Day AM of ","Day PM of","Week1 of ","Week2 of ","Week3 of ","Week4 of ","Year of "];
@@ -4547,7 +4548,8 @@ function loadAppSetup(e){
           if (stateID[BappID]) {
             document.getElementById("RunButton"+BappID).innerHTML = "Stop";
             document.getElementById("State0_"+BappID).innerHTML = "Run";
-          } else {
+          } 
+          if (stateID[BappID] == 2){
             document.getElementById("RunButton"+BappID).innerHTML = "Run";
             document.getElementById("State0_"+BappID).innerHTML = "Stop";
           }
@@ -4929,12 +4931,13 @@ function changeReset(id) {
     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r2 + " value=0"), getLooklineCmdSuccess, getLooklineCmdfailed);
 }
 
-
-  function changeState(id) {
+function changeState(id) {
       console.log("app id= "+id);
     var UpdateDataApp = JSON.parse(AppMemories);
     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
 
+    if(lock[id] == 0){stateID[id] = 2;}
+    if(lock[id] == 1){stateID[id] = 1;}
     // number[type]
     if (stateID[id]) {
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
@@ -4942,11 +4945,12 @@ function changeReset(id) {
       // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       // console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
       
-    } else {
+    } 
+    if (stateID[id]==2) {
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6]);
     }
-    stateID[id] = !stateID[id];
+    lock[id]= !lock[id];
   }
     function alertdlg(e, t, a) { var n = setactiveModal("alertdlg.html", a); if (null != n) { var r = n.element.getElementsByClassName("modal-title")[0], o = n.element.getElementsByClassName("modal-text")[0]; r.innerHTML = e, o.innerHTML = t, showModal() } }
     var Node_IoT_authentication = !1, page_id = "", convertDHT2Fahrenheit = !1, ws_source, event_source, log_off = !1, async_webcommunication = !1, websocket_port = 0, websocket_ip = "", esp_hostname = "Node_IoT WebUI", EP_HOSTNAME, EP_STA_SSID, EP_STA_PASSWORD, EP_STA_IP_MODE, EP_STA_IP_VALUE, EP_STA_GW_VALUE, EP_STA_MK_VALUE, EP_WIFI_MODE, EP_AP_SSID, EP_AP_PASSWORD, EP_AP_IP_VALUE, EP_BAUD_RATE = 112, EP_AUTH_TYPE = 119, EP_TARGET_FW = 461, EP_IS_DIRECT_SD = 850, EP_PRIMARY_SD = 851, EP_SECONDARY_SD = 852, EP_DIRECT_SD_CHECK = 853, SETTINGS_AP_MODE = 1, SETTINGS_STA_MODE = 2, interval_ping = -1, last_ping = 0, enable_ping = !0, esp_error_message = "", esp_error_code = 0;
