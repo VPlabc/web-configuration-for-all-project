@@ -362,7 +362,7 @@ void sendInfo() {
   info_data["baud"] = baudRate;
   char   b[150];
   serializeJson(info_data, b); 
-  socket_server->broadcastTXT(b);;
+  socket_server->broadcastTXT(b);
 }
 
 void PLC_MASTER::connectWeb(byte connected){

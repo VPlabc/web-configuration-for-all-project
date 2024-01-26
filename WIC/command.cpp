@@ -3171,7 +3171,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         // LOGLN("recive [ESP403]" + parameter);
         if (parameter == "run") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 1);//LOGLN("Run|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
-        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
+        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 2);//LOGLN("Stop|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         if (parameter == "write") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
             cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());

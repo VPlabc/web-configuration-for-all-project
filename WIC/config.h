@@ -819,8 +819,8 @@ const char DEFAULT_AP_PASSWORD [] PROGMEM = "12345678";
 const char DEFAULT_STA_SSID []  PROGMEM =        "HUAWEI-8D22";
 const char DEFAULT_STA_PASSWORD [] PROGMEM =    "77091836";
 #else
-const char DEFAULT_STA_SSID []  PROGMEM =        "VPLab";
-const char DEFAULT_STA_PASSWORD [] PROGMEM =    "12345678";
+const char DEFAULT_STA_SSID []  PROGMEM =        "VULETECH";
+const char DEFAULT_STA_PASSWORD [] PROGMEM =    "vuletech123";
 #endif// LOOKLINE_UI
 const byte DEFAULT_STA_IP_MODE  =               DHCP_MODE;
 const byte DEFAULT_AP_IP_MODE =                 STATIC_IP_MODE;

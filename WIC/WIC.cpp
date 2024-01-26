@@ -278,7 +278,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
             // check if EEPROM has value
             if (!CONFIG::InitBaudrate() || !CONFIG::InitExternalPorts())
             {
-                // breset_config = true; // cannot access to config settings=> reset settings
+                breset_config = true; // cannot access to config settings=> reset settings
                 LOG("Error no EEPROM access\r\n")
             }
             // reset is requested
