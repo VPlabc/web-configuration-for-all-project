@@ -728,7 +728,7 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define NodeIoT
-#define MCP_USE
+// #define MCP_USE
 #define USE_LORA
 #define SDCARD_FEATURE
 
@@ -770,7 +770,7 @@ typedef enum {
 #define EP_EEPROM_WIFI_MODE     1383// 1 bytes
 
 #define LAST_EEPROM_ADDRESS 1384
-#define Ethernet_W5500
+// #define Ethernet_W5500
 
 // #define WifiConnect
 // #define MQTT_Mode
@@ -819,8 +819,8 @@ const char DEFAULT_AP_PASSWORD [] PROGMEM = "12345678";
 const char DEFAULT_STA_SSID []  PROGMEM =        "HUAWEI-8D22";
 const char DEFAULT_STA_PASSWORD [] PROGMEM =    "77091836";
 #else
-const char DEFAULT_STA_SSID []  PROGMEM =        "VPLab";
-const char DEFAULT_STA_PASSWORD [] PROGMEM =    "12345678";
+const char DEFAULT_STA_SSID []  PROGMEM =        "VULETECH";
+const char DEFAULT_STA_PASSWORD [] PROGMEM =    "vuletech123";
 #endif// LOOKLINE_UI
 const byte DEFAULT_STA_IP_MODE  =               DHCP_MODE;
 const byte DEFAULT_AP_IP_MODE =                 STATIC_IP_MODE;

@@ -38,6 +38,7 @@ const byte DNS_PORT = 53;
 #ifdef SDCARD_FEATURE
 #include <SPI.h>
 #include <SD.h>
+#include "FS.h"
 #endif//SDCARD_FEATURE
 ////////////////////////////////////////////////////////////////
 
@@ -125,6 +126,7 @@ CONFIG::SetLoRaValue();
         byte bbuf = 0;
 void sendInfo();
 
+
 void PLC_MASTER::setup(){
 //   Serial.begin(115200);
 //   Serial2.begin(9600);  
@@ -173,6 +175,7 @@ void PLC_MASTER::setup(){
 // }
   LOGLN("_________________________________________ SD CARD ________________________________________");
   SPI.begin(SCLK, MISO, MOSI);
+  SPI.setClockDivider(SPI_CLOCK_DIV32);
   if (!SD.begin(SDCard_CS)){
     LOGLN("Card Mount Failed");
   }else{
@@ -198,7 +201,17 @@ void PLC_MASTER::setup(){
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
     Serial.printf("SD Card Size: %lluMB\n", cardSize);
   }
-
+  // // Create a file on the SD card and write the data labels
+  // File file = SD.open("/data.txt");
+  // if(!file) {
+  //   Serial.println("File doens't exist");
+  //   Serial.println("Creating file...");
+  //   writeFile(SD, "/data.txt", "Reading ID, Date, Hour, Temperature \r\n");
+  // }
+  // else {
+  //   Serial.println("File already exists");  
+  // }
+  // file.close(); 
 #endif//#ifdef SDCARD_FEATURE
   ///////////////////////////////
 
@@ -207,6 +220,15 @@ void PLC_MASTER::setup(){
 
 }
 bool onceInfo = true;
+ byte cardNumber = 4;
+ uint16_t Plan = 0;
+ uint16_t Result = 0;
+ uint32_t sumPlan = 0;
+ uint32_t sumResult = 0;
+ uint16_t averagePlan = 0;
+ uint16_t averageResult = 0;
+
+ time_t time_log;
 void PLC_MASTER::loop(){// LOG("Loop");
 
    PLCModbusCom.modbus_loop(ModbusRole);
@@ -216,14 +238,26 @@ void PLC_MASTER::loop(){// LOG("Loop");
     LOGLN( PLCModbusCom.getModbusupdateData());
     PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
   }
+  static unsigned long lastEventTime1 = millis();
+// static unsigned long lastEventTimess = millis();
+static const unsigned long EVENT_INTERVAL_MS1 = 1000;
+// static const unsigned long EVENT_INTERVAL_MSs = 1000;
+if ((millis() - lastEventTime1) > EVENT_INTERVAL_MS1) {
+  lastEventTime1 = millis();
+
+for(byte i = 0 ; i < cardNumber ; i++){
+  Plan = random(0,9999);//PLCModbusCom.holdingRegisters[0+7*i];
+  Result = random(0,9999);//PLCModbusCom.holdingRegisters[2+7*i];
+ logSDCard( i, time_log,  Plan,  Result);
+}
+}
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
 static const unsigned long EVENT_INTERVAL_MS = 1000;
 // static const unsigned long EVENT_INTERVAL_MSs = 1000;
 if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
   lastEventTime = millis();
-
-
+ time_log++;
 for(int i = 0 ; i < 30 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
 for(int i = 30 ; i < 60 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-30]; }
 //         String Log = "Read Data\n";
@@ -328,7 +362,7 @@ void sendInfo() {
   info_data["baud"] = baudRate;
   char   b[150];
   serializeJson(info_data, b); 
-  socket_server->broadcastTXT(b);;
+  socket_server->broadcastTXT(b);
 }
 
 void PLC_MASTER::connectWeb(byte connected){
@@ -341,7 +375,215 @@ void PLC_MASTER::GetIdList(int idlist[]){
     IDList[i] = idlist[i];
   }
 }
+void deleteFile(fs::FS &fs, const char * path);
+// // Function to get temperature
+// void PLC_MASTER::getReadings(){
+//   sensors.requestTemperatures(); 
+//   temperature = sensors.getTempCByIndex(0); // Temperature in Celsius
+//   //temperature = sensors.getTempFByIndex(0); // Temperature in Fahrenheit
+//   Serial.print("Temperature: ");
+//   Serial.println(temperature);
+// }
+
+// // Function to get date and time from NTPClient
+// void PLC_MASTER::getTimeStamp() {
+//   while(!timeClient.update()) {
+//     timeClient.forceUpdate();
+//   }
+//   // The formattedDate comes with the following format:
+//   // 2018-05-28T16:00:13Z
+//   // We need to extract date and time
+//   formattedDate = timeClient.getFormattedDate();
+//   Serial.println(formattedDate);
+
+//   // Extract date
+//   int splitT = formattedDate.indexOf("T");
+//   dayStamp = formattedDate.substring(0, splitT);
+//   Serial.println(dayStamp);
+//   // Extract time
+//   timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
+//   Serial.println(timeStamp);
+// }
+void readFile(fs::FS &fs, const char * path){
+  Serial.printf("Reading file: %s\n", path);
+
+  File file = fs.open(path);
+  if(!file){
+    LOG ("Failed to open file for reading");
+    return;
+  }
+
+  Serial.print("Read from file: ");
+  while(file.available()){
+    Serial.write(file.read());
+  }
+  file.close();
+}
+
+// // Write the sensor readings on the SD card
+// void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Result) {
+//   String dataMessage="";
+//   // Serial.print("Save data: ");
+//     dataMessage = String(time)+','+String(Plan)+','+String(Result) + ',';
+//     // LOGLN(dataMessage);
+//     // char databuff[150];dataMessage.toCharArray(databuff, sizeof(dataMessage));
+//     // LOGLN("size String: " + String(dataMessage.length()));
+//     File file = SD.open(("/data" + String(card) + ".txt").c_str(), FILE_APPEND);
+//   if(!file) {
+//     Serial.println("Failed to open file for appendinggggg");
+//     return;
+//   }
+//   if(file.println(dataMessage)) {
+//     // Serial.println("Message appended");
+//   } else {
+//     Serial.println("Append failed");
+//   }
+//   file.close();
+//     // appendFile(SD, ("/data"+String(card)+".txt").c_str(), databuff);
+// }
+bool errorPrinted = false;
+
+void PLC_MASTER::logSDCard(byte card, time_t time, uint16_t Plan, uint16_t Result) {
+  String dataMessage="";
+  // Serial.print("Save data: ");
+    dataMessage = String(time)+','+String(Plan)+','+String(Result) + ',';
+    // LOGLN(dataMessage);
+    // char databuff[150];dataMessage.toCharArray(databuff, sizeof(dataMessage));
+    // LOGLN("size String: " + String(dataMessage.length()));
+    File file = SD.open(("/data" + String(card) + ".txt").c_str(), FILE_APPEND);
+  if(!file) {
+    if (!errorPrinted) {
+      Serial.println("Failed to open file for appending");
+      errorPrinted = true;
+    }
+    return;
+  }
+  if(file.println(dataMessage)) {
+    // Serial.println("Message appended");
+  } else {
+    Serial.println("Append failed");
+  }
+  file.close();
+}
+
+String PLC_MASTER::loadSDCard(int card, int start, int end){
+  LOGLN("Card: " + String(card));
+  String DataOut="";
+  String DataFilter = "";
+  String DataOutFilter = "";
+  String DataOutArray[3];
+  uint32_t count1 = 0;
+  float_t planSum = 0;
+  float_t resultSum = 0;
+  uint32_t planCount = 0;
+  uint32_t resultCount = 0;
+  uint16_t minPlan = 0;
+  uint16_t maxPlan = 0;
+  uint16_t minResult = 0;
+  uint16_t maxResult = 0;
+  byte count = 0;
+  File dataFile = SD.open("/data" + String(card) + ".txt");
+  if (!dataFile) {
+    LOGLN("Failed to open file");
+  }
+  else{
+     uint16_t startTime = millis();
+    while(dataFile.available()){
+      count1++;
+      // Serial.write(dataFile.read());
+      char charin = (char)dataFile.read();
+      DataOut += charin;
+      // if(charin == ',')LOGLN(charin)
+      if(charin == ','){
+        DataOutArray[count] = DataFilter;
+        count++;
+        DataFilter = "";
+        if(count > 2){count = 0;
+        if(DataOutArray[0].toInt() >= start && DataOutArray[0].toInt() <= end  ){
+          DataOutFilter += "Time: " + DataOutArray[0] + " | Plan: " + DataOutArray[1] + " | Result: " + DataOutArray[2] + '\n';
+          planSum += DataOutArray[1].toInt();
+          planCount++;
+          resultSum += DataOutArray[2].toInt();
+          resultCount++;
+          if(DataOutArray[1].toInt() > maxPlan) maxPlan = DataOutArray[1].toInt();
+          if(DataOutArray[1].toInt() < minPlan) minPlan = DataOutArray[1].toInt();
+          if(DataOutArray[2].toInt() > maxResult) maxResult = DataOutArray[2].toInt();
+          if(DataOutArray[2].toInt() < minResult) minResult = DataOutArray[2].toInt();
+        
+        }
+
+        }
+      }else{
+        if(charin == '\n'){}else{DataFilter += charin;}
+      }
+    }
+     uint16_t endTime = millis();
+    // LOG(DataOut);
+    dataFile.close();
+    LOG(DataOutFilter);
+    LOGLN("Time proccess:  " + String((endTime - startTime)) + " Ms  /  " + count1 + " records");
+    LOGLN("Number of valid plans: " + String(planCount));
+    LOGLN("Average Plan: " + String(planSum/planCount));
+    LOGLN("Min Plan: " + String(minPlan));
+    LOGLN("Max Plan: " + String(maxPlan));
+    LOGLN("Number of valid results: " + String(resultCount));
+    LOGLN("Average Result: " + String(resultSum/resultCount));
+    LOGLN("Min Result: " + String(minResult));
+    LOGLN("Max Result: " + String(maxResult));
+  }
+  return DataOut;
+}
+
+void deleteFile(fs::FS &fs, const char * path){
+  Serial.printf("Deleting file: %s\n", path);
+  if(fs.remove(path)){
+    LOG ("File deleted");
+  } else {
+    LOG ("Delete failed");
+  }
+}
+
+void PLC_MASTER::DelSDCard(int card){
+deleteFile(SD, ("/data" + String(card) + ".txt").c_str());
+}
+
+
+// Write to the SD card (DON'T MODIFY THIS FUNCTION)
+void PLC_MASTER::writeFile(fs::FS &fs, const char * path, const char * message) {
+  Serial.printf("Writing file: %s\n", path);
+
+  File file = fs.open(path, FILE_WRITE);
+  if(!file) {
+    Serial.println("Failed to open file for writing");
+    return;
+  }
+  if(file.print(message)) {
+    Serial.println("File written");
+  } else {
+    Serial.println("Write failed");
+  }
+  file.close();
+}
+
+// Append data to the SD card (DON'T MODIFY THIS FUNCTION)
+void PLC_MASTER::appendFile(fs::FS &fs, const char * path, const char * message) {
+  // Serial.printf("Appending to file: %s\n", path);
+
+  File file = fs.open(path, FILE_APPEND);
+  if(!file) {
+    Serial.println("Failed to open file for appending");
+    return;
+  }
+  if(file.println(message)) {
+    // Serial.println("Message appended");
+  } else {
+    // Serial.println("Append failed");
+  }
+  file.close();
+}
 #endif//PLC_MASSTER_UI
+
+
 
 
 

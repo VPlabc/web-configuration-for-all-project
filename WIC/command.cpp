@@ -223,6 +223,9 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
     //manage parameters
     byte mode = 254;
     String parameter;
+    String parameterStart;
+    String parameterEnd;
+    String parametercard;
     //LOG ("\nExecute Command\r\n")
     switch (cmd) {
 
@@ -3083,13 +3086,47 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
     }
     break;
     //update new firmware form host
-    //[ESP403]
+    //[ESP403]cmd=readFile card=0
     case 403: {
-        parameter = get_param (cmd_params, "cmd=", true);
+        parameter = get_param (cmd_params, "cmd=", false);
+        parameterStart = get_param (cmd_params, "s=", false);
+        parameterEnd = get_param (cmd_params, "e=", false);
+        parametercard = get_param (cmd_params, "card=", true);
         if (parameter == "update") {
             ESPCOM::println (F ("update fw"), output, espresponse);
             LOGLN();LOGLN("Update Firmware");UDFWCmd.FirmwareUpdate();
             ESPCOM::println (OK_CMD_MSG, output, espresponse);
+        }
+        if (parameter == "readFile") {
+            if (parametercard == "") {
+                for(int i = 0 ;i < 4 ; i++){
+                ESPCOM::println ("readFile " + String(i), output, espresponse);
+                String Data = PLC_cmd.loadSDCard(i, 0 , 0);
+                ESPCOM::println (Data, output, espresponse);
+                ESPCOM::println (OK_CMD_MSG, output, espresponse);
+                }
+            }else{
+                ESPCOM::println (F ("readFile"), output, espresponse);
+                String Data = PLC_cmd.loadSDCard((parametercard).toInt(),parameterStart.toInt(),parameterEnd.toInt() );
+                ESPCOM::println (Data, output, espresponse);
+                ESPCOM::println (OK_CMD_MSG, output, espresponse);
+                }
+        }
+        // DelSDCard(int card)
+        if (parameter == "delFile") {
+            if (parametercard == "") {}
+            else{
+            ESPCOM::println (F ("detele File"), output, espresponse);
+            PLC_cmd.DelSDCard((parametercard).toInt());
+            ESPCOM::println ("delete success", output, espresponse);
+            ESPCOM::println (OK_CMD_MSG, output, espresponse);}
+        }
+        if (parameter == "calculateAverage") {
+            if (parametercard == "") {}
+            else{
+            ESPCOM::println (F ("calculateAverage"), output, espresponse);
+            ESPCOM::println ("calculateAverage=======", output, espresponse);
+            ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         }
         #ifdef LOOKLINE_UI
         if (parameter == "off") {
@@ -3134,7 +3171,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         // LOGLN("recive [ESP403]" + parameter);
         if (parameter == "run") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 1);//LOGLN("Run|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
-        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
+        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 2);//LOGLN("Stop|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         if (parameter == "write") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
             cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());

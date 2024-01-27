@@ -795,11 +795,11 @@ bool CONFIG::adjust_EEPROM_settings()
 bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == 0 ||  pos + size_max + 1 > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_max == 0 ||  pos + size_max + 1 >  LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read string\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     byte b = 13; // non zero for the while loop below
     int i = 0;
 
@@ -822,7 +822,7 @@ bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == -1 ||  pos + size_max + 1 > EEPROM_SIZE ) {
+    if (size_max == -1 ||  pos + size_max + 1 >  LAST_EEPROM_ADDRESS ) {
         LOG ("Error read string\r\n")
         return false;
     }
@@ -830,7 +830,7 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
     int i = 0;
     sbuffer = "";
 
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     //read until max size is reached or \0 is found
     while (i < size_max && b != 0) {
         b = EEPROM.read (pos + i);
@@ -848,12 +848,12 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 {
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer >  LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read buffer\r\n")
         return false;
     }
     int i = 0;
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     //read until max size is reached
     while (i < size_buffer ) {
         byte_buffer[i] = EEPROM.read (pos + i);
@@ -867,11 +867,11 @@ bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 bool CONFIG::read_byte (int pos, byte * value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 >  LAST_EEPROM_ADDRESS) {
         LOG ("Error read byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     value[0] = EEPROM.read (pos);
     EEPROM.end();
     return true;
@@ -887,7 +887,7 @@ bool CONFIG::write_string (int pos, const __FlashStringHelper *str)
 bool CONFIG::write_string (int pos, const char * byte_buffer)
 {
     int size_buffer;
-    int maxsize = EEPROM_SIZE;
+    int maxsize =  LAST_EEPROM_ADDRESS;
     size_buffer = strlen (byte_buffer);
     //check if parameters are acceptable
     switch (pos) {
@@ -919,10 +919,10 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         maxsize = MAX_NOTIFICATION_SETTINGS_LENGTH;
         break;
     default:
-        maxsize = EEPROM_SIZE;
+        maxsize =  LAST_EEPROM_ADDRESS;
         break;
     }
-    if ( pos + size_buffer + 1 > EEPROM_SIZE || size_buffer > maxsize  ) {
+    if ( pos + size_buffer + 1 >  LAST_EEPROM_ADDRESS || size_buffer > maxsize  ) {
         LOG ("Error write string\r\n")
         return false;
     }
@@ -934,7 +934,7 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         }
     }
     //copy the value(s)
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
     }
@@ -950,11 +950,11 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
 bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 {
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer >  LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error write buffer\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     //copy the value(s)
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
@@ -968,11 +968,11 @@ bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 bool CONFIG::write_byte (int pos, const byte value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 >  LAST_EEPROM_ADDRESS) {
         LOG ("Error write byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin ( LAST_EEPROM_ADDRESS);
     EEPROM.write (pos, value);
     EEPROM.commit();
     EEPROM.end();
