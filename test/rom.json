@@ -41,3 +41,6 @@
     "ROLE":"0"
     ,"AUTH": "0"
     }
+
+    {"data":[{"id":1,"name": "temperature","value":25.99,"unit":"calcius"},{"id":2,"name": "humidity","value":54.24,"unit":"%"}],"createAt":"Fri Jan 26 16:15:37 2024
+"}

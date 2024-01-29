@@ -1652,6 +1652,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ,{\"Moisture Sensor\":\"5\"}\
             ,{\"Temperature\":\"6\"}\
             ,{\"Valve\":\"7\"}\
+            ,{\"SHT Sensor\":\"9\"}\
             ]}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
             //////////////////////////////////////// MQTT /////////////////////////////////////////////////////
@@ -1669,6 +1670,21 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"H\":\"MQTT Server\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_BROKER_LENGTH), output, espresponse);
             ESPCOM::println (F ("\"},"), output, espresponse);
+            //MQTT Port
+            ESPCOM::print (F ("{\"F\":\"tcp\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"I\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &ibuf, INTEGER_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (ibuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"MQTT Port\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MAX_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
             //MQTT User
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_USER), output, espresponse);
@@ -1697,6 +1713,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"H\":\"MQTT Password\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_PASS_LENGTH), output, espresponse);
             ESPCOM::println (F ("\"}"), output, espresponse);
+            
             /////////////////////////////////////// Hardware //////////////////////////////////////////////
             //netwwork ID
             ESPCOM::print (F (",{\"F\":\"printer\",\"P\":\""), output, espresponse);
@@ -1783,6 +1800,18 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"H\":\"Device debug\",\"O\":[{\"Debug\":\"1\"},{\"NoDebug\":\"0\"}]}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
 
+            //COM Mode
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_COM_MODE), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_EEPROM_COM_MODE, &bbuf ) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Com mode\",\"O\":[{\"Mesh Wifi\":\"0\"},{\"MQTT\":\"1\"},{\"RS485\":\"2\"}]}"), output, espresponse);
+           
+            ESPCOM::println (F (","), output, espresponse);
             //BUTTON
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_FW_BUTTON), output, espresponse);
@@ -2240,7 +2269,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
 
         #endif//moto_UI
 
-#if defined( PLC_MASTER_UI) | defined(Basic_UI)
+#if defined( PLC_MASTER_UI) | defined(Basic_UI) | defined(IOTDEVICE_UI)
         else if (parameter == "hardware"){
         #ifdef LOOKLINE_UI
             LOGLN("X1:" + String(analogRead(X1)) + "|X2:" + String(analogRead(X2)) + "|X3:" + String(analogRead(X3)));
@@ -2319,7 +2348,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_SSID_LENGTH), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
-#ifndef Basic_UI
+#if defined( PLC_MASTER_UI) 
             //2- Set network ID
             ESPCOM::print (F ("{\"F\":\"rf\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_NETID), output, espresponse);
@@ -2377,10 +2406,89 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
                 ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
             }
             ESPCOM::print (F ("\",\"H\":\"Wifi mode\",\"O\":[{\"AP\":\"1\"},{\"STA\":\"2\"}]}"), output, espresponse);
-
-
-            #ifdef Moto_UI
             ESPCOM::println (F (","), output, espresponse);
+            //////////////////////////////////////// Category ////////////////////////////////////////////////
+            //Category
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_CATEGORY), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_EEPROM_CATEGORY, &bbuf ) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Category\",\"O\":[\
+             {\"Gateway\":\"0\"}\
+            ,{\"Switch\":\"1\"}\
+            ,{\"DHT Sensor\":\"2\"}\
+            ,{\"Motion Sensor\":\"3\"}\
+            ,{\"Relay Device\":\"4\"}\
+            ,{\"Moisture Sensor\":\"5\"}\
+            ,{\"Temperature\":\"6\"}\
+            ,{\"Valve\":\"7\"}\
+            ,{\"SHT Sensor\":\"9\"}\
+            ]}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+            //////////////////////////////////////// MQTT /////////////////////////////////////////////////////
+            //MQTT Broker
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_BROKER), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_BROKER, sbuf, MAX_MQTT_BROKER_LENGTH) ) {
+                ESPCOM::print ("broker.emqx.io", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_BROKER_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT Server\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_BROKER_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"},"), output, espresponse);
+            //MQTT Port
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"I\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &ibuf, INTEGER_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (ibuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"MQTT Port\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MAX_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+            //MQTT User
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_USER), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_USER, sbuf, MAX_MQTT_USER_LENGTH) ) {
+                ESPCOM::print ("", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_USER_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT User\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_USER_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"},"), output, espresponse);
+            //MQTT Password
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_PASS), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_PASS, sbuf, MAX_MQTT_PASS_LENGTH) ) {
+                ESPCOM::print ("", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_PASS_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT Password\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_PASS_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+            #ifdef Moto_UI
             //9-STA SSID
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_STA_SSID), output, espresponse);
@@ -2411,9 +2519,9 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"H\":\"Station Password\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_PASSWORD_LENGTH), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
             #else//Moto_UI
 
-            ESPCOM::println (F (","), output, espresponse);
             //11-Station Network Mode
             ESPCOM::print (F ("{\"F\":\"wifi\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_STA_PHY_MODE), output, espresponse);
@@ -2631,7 +2739,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             }
             ESPCOM::print (F ("]}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
-
+#if defined( PLC_MASTER_UI) 
             // URL Version
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_URL_VER), output, espresponse);
@@ -2674,6 +2782,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             }
             ESPCOM::print (F ("\",\"H\":\"Update Mode\",\"O\":[{\"Check FW\":\"1\"},{\"None\":\"0\"}]}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
+#endif//
 #ifdef USE_LORA
             //2- Set CHANEL
             ESPCOM::print (F ("{\"F\":\"rf\",\"P\":\""), output, espresponse);
@@ -2842,7 +2951,8 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
                 ESPCOM::print ( (const char *) CONFIG::intTostr (ibuf), output, espresponse);
             }
             ESPCOM::print (F ("\",\"H\":\"Baud Rate\",\"O\":[{\"9600\":\"9600\"},{\"19200\":\"19200\"},{\"38400\":\"38400\"},{\"57600\":\"57600\"},{\"115200\":\"115200\"},{\"230400\":\"230400\"},{\"250000\":\"250000\"},{\"500000\":\"500000\"},{\"921600\":\"921600\"}]}"), output, espresponse);
-            ESPCOM::println (F (","), output, espresponse);    
+            ESPCOM::println (F (","), output, espresponse);   
+#if defined( PLC_MASTER_UI)  
             //23-Modbus IP
             ESPCOM::print (F ("{\"F\":\"tcp\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MODBUS_IP_VALUE), output, espresponse);
@@ -2892,7 +3002,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_DATA_PORT), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
-
+#endif//
            //FLAG Hardware         
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_OUTPUT_FLAG), output, espresponse);
@@ -2933,8 +3043,10 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         byte role_ = 0;byte run_ = 0;
         #ifndef Basic_UI
         CONFIG::read_byte(EP_EEPROM_ROLE, &role_);
+        #if defined( PLC_MASTER_UI) 
         CONFIG::read_byte(EP_EEPROM_RUN, &run_);
         if(run_ > 1) {CONFIG::write_byte(EP_EEPROM_RUN, 1);run_ = 1;}
+        #endif
         #endif//Basic_UI
         if(role_ == 1){ESPCOM::println (F ("\"ROLE\":\"1\""), output, espresponse);}
             else{ESPCOM::println (F ("\"ROLE\":\"0\""), output, espresponse);}
@@ -3132,12 +3244,20 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         parameter = get_param (cmd_params, "cmd=", false);
         String IDparameter = "";
         // LOGLN("recive [ESP403]" + parameter);
-        if (parameter == "run") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 1);//LOGLN("Run|ID:"+String(IDparameter));
+        if (parameter == "run") {IDparameter = get_param (cmd_params, "id=", true);
+            #ifdef PLC_MASTER_UI
+            cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 1);//LOGLN("Run|ID:"+String(IDparameter));
+            #endif//PLC_MASTER_UI
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
-        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
+        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);
+            #ifdef PLC_MASTER_UI
+            cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
+            #endif//PLC_MASTER_UI
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         if (parameter == "write") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
+            #ifdef PLC_MASTER_UI
             cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());
+            #endif//PLC_MASTER_UI
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
     }
     break;
@@ -3605,7 +3725,6 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
     //[ESP800]<header answer>
     case 800: {
         // Serial.begin(115200);
-
         #ifdef PLC_MASTER_UI
         PLC_cmd.connectWeb(0);
         #endif//PLC_MASTER_UI

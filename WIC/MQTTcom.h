@@ -17,7 +17,7 @@ bool          mqtt_connected = false;
     void mqttReconnect();
     
     void mqttPublish(String payload ) ;
-
+    bool connect_state();
 };
 
 extern MQTTCOM mqttcom;

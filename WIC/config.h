@@ -112,13 +112,13 @@
 // #define DHT_FEATURE
 
 //AUTHENTICATION_FEATURE: protect pages by login password
-// #define AUTHENTICATION_FEATURE
+#define AUTHENTICATION_FEATURE
 
 //WS_DATA_FEATURE: allow to connect serial from Websocket
 #define WS_DATA_FEATURE
 
 //TIMESTAMP_FEATURE: Time stamp feature on direct SD  files
-//#define TIMESTAMP_FEATURE
+#define TIMESTAMP_FEATURE
 #endif //USE_AS_UPDATER_ONLY
 //Extra features /////////////////////////////////////////////////////////////////////////
 
@@ -316,9 +316,9 @@
 #define DEBUG_WIC
 //Sanity check
 #ifdef SDCARD_FEATURE
-#ifdef TIMESTAMP_FEATURE
-#undef TIMESTAMP_FEATURE
-#endif
+// #ifdef TIMESTAMP_FEATURE
+// #undef TIMESTAMP_FEATURE
+// #endif
 #endif
 
 #if defined(ASYNCWEBSERVER)
@@ -404,6 +404,7 @@ extern const char * pathToFileName(const char * path);
 #ifdef DEBUG_OUTPUT_SERIAL
 #define DEBUG_PIPE SERIAL_PIPE
 #define LOG(string) {Serial.print(string);}
+#define LOGf(string, ...) {Serial.printf(string, ...);}
 #define LOGLN(string) {Serial.println(string);}
 
 #else
@@ -626,8 +627,9 @@ typedef enum {
 #define TIMESTAMP_FEATURE
 #endif//MESHCOM_UI
 #ifdef IOTDEVICE_UI
-#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
+#define isoft
 
+#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
 //   //define hardware
 //   networkID = 1;
 //   nodeID = 2;
@@ -653,9 +655,11 @@ typedef enum {
 #define EP_EEPROM_PIN_BUTTON 1089 // 1 bytes
 #define EP_EEPROM_NAME     1090//30  bytes = string
 #define EP_EEPROM_CATEGORY  1121//1  bytes
-#define EP_EEPROM_SLEEP_TIME 1122
-#define LAST_EEPROM_ADDRESS 1122
-// #define TIMESTAMP_FEATURE
+#define EP_EEPROM_SLEEP_TIME 1122//1byte
+#define EP_EEPROM_COM_MODE   1123// 1 bytes
+#define EP_MQTT_PORT        1124 //4  bytes = int
+#define LAST_EEPROM_ADDRESS 1128
+#define TIMESTAMP_FEATURE
 #endif//IOTDEVICE_UI
 #ifdef LOOKLINE_UI
 #define TestDisplayIntro
@@ -727,13 +731,15 @@ typedef enum {
 // #define USE_LORA
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
+#define isoft
 #define NodeIoT
 #define MCP_USE
 #define USE_LORA
 #define SDCARD_FEATURE
-
+#define MQTT_USE
 #define TestDisplayIntro
 // #define TEST_MODE
+#define TIMESTAMP_FEATURE
 #define DEBUG_
 #define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>
 #define EP_EEPROM_TEST_MODE     1079// 4 bytes
@@ -768,8 +774,11 @@ typedef enum {
 #define EP_MODBUS_GATEWAY_VALUE 1375//4  bytes xxx.xxx.xxx.xxx
 #define EP_MODBUS_PORT          1379//4  bytes = int
 #define EP_EEPROM_WIFI_MODE     1383// 1 bytes
+#define EP_MQTT_PORT            1384 //4  bytes = int
+#define EP_MQTT_TYPE            1388 //1  bytes
+#define EP_EEPROM_CATEGORY      1389//1  bytes
 
-#define LAST_EEPROM_ADDRESS 1384
+#define LAST_EEPROM_ADDRESS 1390
 #define Ethernet_W5500
 
 // #define WifiConnect
@@ -849,7 +858,11 @@ const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
 const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/version.txt";
 const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/firmware.bin";
 const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
-#define DEFAULT_TIME_ZONE           0
+const char DEFAULT_MQTT_BROKER []  PROGMEM =   "test.mosquitto.org";
+const int DEFAULT_MQTT_PORT  =   1883;
+const char DEFAULT_MQTT_USER []  PROGMEM =   "_";
+const char DEFAULT_MQTT_PASS []  PROGMEM =   "_";
+#define DEFAULT_TIME_ZONE           7
 #define DEFAULT_TIME_DST            0
 #define DEFAULT_PRIMARY_SD  2
 #define DEFAULT_SECONDARY_SD 1
@@ -901,6 +914,14 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define MOSI        23
 #define RXD2        16
 #define TXD2        17
+#else
+#ifdef IOTDEVICE_UI
+#define BootButton  0
+#define BTN_SET     26
+#define LED_STATUS  2
+#define RXD2        16
+#define TXD2        17
+#endif
 #endif//NodeIoT
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
@@ -988,7 +1009,7 @@ const uint16_t Setting[][2] = {
 
 
 //sizes
-#define EEPROM_SIZE                     2024 //max is 1024
+#define EEPROM_SIZE                     1389 //max is 1024
 #define MAX_SSID_LENGTH                 32
 #define MIN_SSID_LENGTH                 1
 #define MAX_PASSWORD_LENGTH             64
@@ -1159,7 +1180,11 @@ public:
     static bool GetState();
 #endif//Gyro_UI    
 #if defined(TIMESTAMP_FEATURE)
+    // static byte hours;
+    // static byte mins;
+    // static byte secs;
     static void init_time_client();
+    // static void readtime();
 #endif
 private:
     static uint8_t FirmwareTarget;

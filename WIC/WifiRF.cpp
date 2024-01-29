@@ -1,3 +1,4 @@
+#ifdef WIFIRF
 #include "WifiRF.h"
 #include "MeshWifi.h"
 
@@ -214,4 +215,4 @@ void WifiRF::sendDataNode(){
     }
     #endif//def ESP32
 }
-   
+#endif//WIFIRF

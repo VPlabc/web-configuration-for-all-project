@@ -437,8 +437,10 @@
       display: flex;
       flex-direction: row;
       position: absolute;
-      top: 100%;
       right: -40px;
+      align-items: baseline;
+      top: 35px;
+      right: -80px;
     }
 
     .navbar-nav li {
@@ -1523,6 +1525,31 @@
     font-size: 1.2rem;
     var (--bs-body-color);
     }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      left: -90px;
+      /* background-color: #f9f9f9; */
+      min-width: 200px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      padding: 12px 16px;
+      display: block;
+      text-decoration: none;
+      color: #333;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+    .authentication-menu {
+      position: absolute;
+      right: 30px;
+    }
+
   </style>
 </head>
 
@@ -1936,68 +1963,138 @@
           <li class="dropdown" onclick="toggleDropdown(this)">
           <a href="#" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#gear_fill_icon"></use></svg></a>
           <ul class="dropdow_100">
-            <li><a id="advanced" href="#advanced" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#gear_fill_icon"></use></svg></a>
+            <li><a id="advanced" href="#advanced" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"> <use xlink:href="#add_app_icon"></use></svg></a>
             <li><a id="board"    href="#main_board"  class="nav-link py-4 ">       <svg class="bi" width="24" height="24"><use xlink:href="#mainboard_icon"></use></svg></a></li>
             <li><a id="wifi"     href="#wifi_card"  class="nav-link py-4 ">     <svg class="bi" width="24" height="24"><use xlink:href="#wifi_icon"></use></svg></a></li>
             <li><a id="rf"       href="#RF_module"  class="nav-link py-4 ">    <svg class="bi" width="24" height="24"><use xlink:href="#broadcast_icon"></use></svg></a></li>
             <li><a id="ethernet" href="#ethernet" class="nav-link py-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#ethernet_icon"></use></svg></a></li>
-            <!-- <li><a id="modbus" href="#modbus" class="nav-link py-lg-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#modbus_icon"></use></svg></a></li> -->
+            <li><a id="modbus" href="#modbus" class="nav-link py-lg-4 ">       <svg class="bi" width="24" height="24" ><use xlink:href="#modbus_icon"></use></svg></a></li>
+            <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()">           <svg class="bi" width="24" height="24"> <use xlink:href="#z_icon"></use></svg></li>
           </ul>
           </li>
           <li><a id="features" href="#features" class="nav-link py-4 ">       <svg class="bi" width="24" height="24"><use xlink:href="#info_icon"></use></svg></a></li>
+          <li><span id="showSDused" style="position: relative; top: 20px;">&nbsp;</span></li>
         </span><span class="clearfix"></span></a>
-        <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()"><span class="pull-right" translate>Preferences</span> <span class="pull-left"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+        <!-- <li><div class="menu-divider"></div><a href="#" onclick="showpreferencesdlg ()"><span class="pull-right" translate>Preferences</span> <span class="pull-left"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
               <g transform="translate(50,1200) scale(1, -1)">
                 <path
                   d="M407 800l131 353q7 19 17.5 19t17.5 -19l129 -353h421q21 0 24 -8.5t-14 -20.5l-342 -249l130 -401q7 -20 -0.5 -25.5t-24.5 6.5l-343 246l-342 -247q-17 -12 -24.5 -6.5t-0.5 25.5l130 400l-347 251q-17 12 -14 20.5t23 8.5h429z">
                 </path>
               </g></svg>
-          </li>
+          </li> -->
 
-          <span id="fwName">&nbsp;</span> <span id="showSDused">&nbsp;</span></span>
+          <span id="fwName">&nbsp;</span> </span>
         </li>
+        <!-- style="position: relative; left: 200px;" -->
         </ul>
+        <!-- <ul class="nav navbar-nav navbar-right hide_it authentication-menu" id="menu_authentication">
+          <li class="dropdown_admin " > 
+            <a href="#" id="admin_link" onclick="toggleDropdown01()"><i class="dropbtn"><svg width="1.6em" height="1.6em" viewBox="0 0 1300 1200">                <g transform="translate(50,1200) scale(1, -1)">
+              <path fill="#337AB7"
+                d="M600 1200q124 0 212 -88t88 -212v-250q0 -46 -31 -98t-69 -52v-75q0 -10 6 -21.5t15 -17.5l358 -230q9 -5 15 -16.5t6 -21.5v-93q0 -10 -7.5 -17.5t-17.5 -7.5h-1150q-10 0 -17.5 7.5t-7.5 17.5v93q0 10 6 21.5t15 16.5l358 230q9 6 15 17.5t6 21.5v75q-38 0 -69 52 t-31 98v250q0 124 88 212t212 88z">
+              </path>
+            </g> </svg> <span id="current_ID"></span> <span id="current_auth_level"></span></i></a>
+            <div class="dropdown-content" id="admin_dropdown">
+              <a href="#" onclick="changepassworddlg()" id="password_menu" class="hide_it"><span class="pull-left"><svg
+                width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M900 800v200q0 83 -58.5 141.5t-141.5 58.5h-300q-82 0 -141 -59t-59 -141v-200h-100q-41 0 -70.5 -29.5t-29.5 -70.5v-600q0 -41 29.5 -70.5t70.5 -29.5h900q41 0 70.5 29.5t29.5 70.5v600q0 41 -29.5 70.5t-70.5 29.5h-100zM400 800v150q0 21 15 35.5t35 14.5h200 q20 0 35 -14.5t15 -35.5v-150h-300z">
+                  </path>
+                </g>
+              </svg>Change Password</a>
+              <a href="#" onclick="logindlg()"><svg width="1.3em" height="1.2em"
+                viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M550 1100h400q165 0 257.5 -92.5t92.5 -257.5v-400q0 -165 -92.5 -257.5t-257.5 -92.5h-400q-21 0 -35.5 14.5t-14.5 35.5v100q0 21 14.5 35.5t35.5 14.5h450q41 0 70.5 29.5t29.5 70.5v500q0 41 -29.5 70.5t-70.5 29.5h-450q-21 0 -35.5 14.5t-14.5 35.5v100 q0 21 14.5 35.5t35.5 14.5zM338 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
+                  </path>
+                </g>
+              </svg>Login</a>
+              <div class="menu-divider" id="logout_menu_divider" class="hide_it"></div>
+              <a href="#" onclick="confirmdlg(translate_text_item('Disconnection requested'), translate_text_item('Please confirm disconnection.'), DisconnectLogin);" id="logout_menu" class="hide_it"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M350 1100h400q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-450q-41 0 -70.5 -29.5t-29.5 -70.5v-500q0 -41 29.5 -70.5t70.5 -29.5h450q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-400q-165 0 -257.5 92.5t-92.5 257.5v400 q0 165 92.5 257.5t257.5 92.5zM938 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
+                  </path>
+                </g>
+              </svg>Log out</a>
+            </div>
+          </li>
+        </ul> -->
+        <ul class="nav navbar-nav navbar-right authentication-menu" id="menu_authentication">
+          <li class="dropdown_admin " > 
+            <a href="#" id="admin_link" onclick="toggleDropdown01()"><i class="dropbtn"><svg width="1.6em" height="1.6em" viewBox="0 0 1300 1200">                <g transform="translate(50,1200) scale(1, -1)">
+              <path fill="#337AB7"
+                d="M600 1200q124 0 212 -88t88 -212v-250q0 -46 -31 -98t-69 -52v-75q0 -10 6 -21.5t15 -17.5l358 -230q9 -5 15 -16.5t6 -21.5v-93q0 -10 -7.5 -17.5t-17.5 -7.5h-1150q-10 0 -17.5 7.5t-7.5 17.5v93q0 10 6 21.5t15 16.5l358 230q9 6 15 17.5t6 21.5v75q-38 0 -69 52 t-31 98v250q0 124 88 212t212 88z">
+              </path>
+            </g> </svg> <span id="current_ID"></span> <span id="current_auth_level"></span></i></a>
+            <div class="dropdown-content" id="admin_dropdown">
+              <a href="#" onclick="changepassworddlg()" id="password_menu"><span class="pull-left"><svg
+                width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M900 800v200q0 83 -58.5 141.5t-141.5 58.5h-300q-82 0 -141 -59t-59 -141v-200h-100q-41 0 -70.5 -29.5t-29.5 -70.5v-600q0 -41 29.5 -70.5t70.5 -29.5h900q41 0 70.5 29.5t29.5 70.5v600q0 41 -29.5 70.5t-70.5 29.5h-100zM400 800v150q0 21 15 35.5t35 14.5h200 q20 0 35 -14.5t15 -35.5v-150h-300z">
+                  </path>
+                </g>
+              </svg>Change Password</a>
+              <a href="#" onclick="logindlg()"><svg width="1.3em" height="1.2em"
+                viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M550 1100h400q165 0 257.5 -92.5t92.5 -257.5v-400q0 -165 -92.5 -257.5t-257.5 -92.5h-400q-21 0 -35.5 14.5t-14.5 35.5v100q0 21 14.5 35.5t35.5 14.5h450q41 0 70.5 29.5t29.5 70.5v500q0 41 -29.5 70.5t-70.5 29.5h-450q-21 0 -35.5 14.5t-14.5 35.5v100 q0 21 14.5 35.5t35.5 14.5zM338 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
+                  </path>
+                </g>
+              </svg>Login</a>
+              <div class="menu-divider" id="logout_menu_divider"></div>
+              <a href="#" onclick="confirmdlg(translate_text_item('Disconnection requested'), translate_text_item('Please confirm disconnection.'), DisconnectLogin);" id="logout_menu"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
+                <g transform="translate(50,1200) scale(1, -1)">
+                  <path
+                    d="M350 1100h400q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-450q-41 0 -70.5 -29.5t-29.5 -70.5v-500q0 -41 29.5 -70.5t70.5 -29.5h450q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-400q-165 0 -257.5 92.5t-92.5 257.5v400 q0 165 92.5 257.5t257.5 92.5zM938 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
+                  </path>
+                </g>
+              </svg>Log out</a>
+            </div>
+          </li>
+        </ul>
+        <button type="button" class="btn btn-default" onclick="openModalPLC()">PLC</button>
+        
+        <!-- Modal PLC-->
+        <div class="modal" tabindex="-1" role="dialog" id="myModal">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" style="position: relative; left: 220px; font-size: 1.3rem;">Config PLC</h5>
+                      <button type="button" class="close" onclick="closeModalPLC()">
+                          <span aria-hidden="true">&times;</span>
+                      </button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <h5 class="modal-title">IP PLC</h5>
+                                <input type="text" id="value1" class="form-control" placeholder="Please enter IP PLC" style="font-size: 1.3rem;">
+                            </div>
+                            <div class="col">
+                                <h5 class="modal-title">Port PLC</h5>
+                                <input type="text" id="value2" class="form-control" placeholder="Please enter Port PLC" style="font-size: 1.3rem;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                  <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" onclick="closeModalPLC()">Close</button>
+                      <button type="button" class="btn btn-warning" onclick="saveValues()">Save</button>
+                  </div>
+              </div>
+          </div>
+        </div>    
+
       </div>
     <!-- </div> -->
   </nav>
-    <ul class="nav navbar-nav navbar-right hide_it" id="menu_authentication">
-       <li class="dropdown"><a href="#"><i class="dropbtn"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
-               <g transform="translate(50,1200) scale(1, -1)">
-                 <path fill="#337AB7"
-                   d="M600 1200q124 0 212 -88t88 -212v-250q0 -46 -31 -98t-69 -52v-75q0 -10 6 -21.5t15 -17.5l358 -230q9 -5 15 -16.5t6 -21.5v-93q0 -10 -7.5 -17.5t-17.5 -7.5h-1150q-10 0 -17.5 7.5t-7.5 17.5v93q0 10 6 21.5t15 16.5l358 230q9 6 15 17.5t6 21.5v75q-38 0 -69 52 t-31 98v250q0 124 88 212t212 88z">
-                 </path>
-               </g>
-             </svg> <span id="current_ID"></span> <span id="current_auth_level"></span></i></a>
-         <div class="dropdown-content"><a href="#" onclick="changepassworddlg()" id="password_menu"
-             class="hide_it"><span class="pull-right" translate>Change Password</span> <span class="pull-left"><svg
-                 width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
-                 <g transform="translate(50,1200) scale(1, -1)">
-                   <path
-                     d="M900 800v200q0 83 -58.5 141.5t-141.5 58.5h-300q-82 0 -141 -59t-59 -141v-200h-100q-41 0 -70.5 -29.5t-29.5 -70.5v-600q0 -41 29.5 -70.5t70.5 -29.5h900q41 0 70.5 29.5t29.5 70.5v600q0 41 -29.5 70.5t-70.5 29.5h-100zM400 800v150q0 21 15 35.5t35 14.5h200 q20 0 35 -14.5t15 -35.5v-150h-300z">
-                   </path>
-                 </g>
-               </svg> </span><span class="clearfix"></span> </a><a href="#" onclick="logindlg()"><span
-               class="pull-right" translate>Login</span> <span class="pull-left"><svg width="1.3em" height="1.2em"
-                 viewBox="0 0 1300 1200">
-                 <g transform="translate(50,1200) scale(1, -1)">
-                   <path
-                     d="M550 1100h400q165 0 257.5 -92.5t92.5 -257.5v-400q0 -165 -92.5 -257.5t-257.5 -92.5h-400q-21 0 -35.5 14.5t-14.5 35.5v100q0 21 14.5 35.5t35.5 14.5h450q41 0 70.5 29.5t29.5 70.5v500q0 41 -29.5 70.5t-70.5 29.5h-450q-21 0 -35.5 14.5t-14.5 35.5v100 q0 21 14.5 35.5t35.5 14.5zM338 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
-                   </path>
-                 </g>
-               </svg> </span><span class="clearfix"></span></a>
-           <div class="menu-divider" id="logout_menu_divider" class="hide_it"></div><a href="#"
-             onclick="confirmdlg(translate_text_item('Disconnection requested'), translate_text_item('Please confirm disconnection.'), DisconnectLogin);"
-             id="logout_menu" class="hide_it"><span class="pull-right" translate>Log out</span> <span
-               class="pull-left"><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
-                 <g transform="translate(50,1200) scale(1, -1)">
-                   <path
-                     d="M350 1100h400q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-450q-41 0 -70.5 -29.5t-29.5 -70.5v-500q0 -41 29.5 -70.5t70.5 -29.5h450q21 0 35.5 -14.5t14.5 -35.5v-100q0 -21 -14.5 -35.5t-35.5 -14.5h-400q-165 0 -257.5 92.5t-92.5 257.5v400 q0 165 92.5 257.5t257.5 92.5zM938 867l324 -284q16 -14 16 -33t-16 -33l-324 -284q-16 -14 -27 -9t-11 26v150h-250q-21 0 -35.5 14.5t-14.5 35.5v200q0 21 14.5 35.5t35.5 14.5h250v150q0 21 11 26t27 -9z">
-                   </path>
-                 </g>
-               </svg> </span><span class="clearfix"></span></a>
-         </div>
-       </li>
-     </ul>
+
  <!-- </div> -->
 <!-- </div> -->
    
@@ -3967,8 +4064,8 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
     var number =    [ 1, 1, 1, 2, 1, 1, 1, 6,12,12, 7, 7, 7, 7,12]//số lượng thanh ghi của thẻ
     var button =    [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];//thẻ chứa button
     var CardName =  [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0];//thẻ chứa tên
-    var stateID =   [];//trạng thái của Run/Stop
-    ////////////////////////////////////// Chart button //////////////////////////////////////////////////
+    var stateID =   [];//trạng thái của Run/Stop (2/1)
+    var lock =    [];//trạng thái của Run/Stop (0/1)    ////////////////////////////////////// Chart button //////////////////////////////////////////////////
     var ChartButton = [8,9,10,11,12,13,14]//loại thẻ đưa vào chart button
     var ButtonName = ["Day AM of ","Day PM of","Week1 of ","Week2 of ","Week3 of ","Week4 of ","Year of "];
     //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4009,7 +4106,7 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
         fetchChartContent()
         // if(id == 'application')loadData()//hardcode
         if(id == 'wifi')build_HTML_lookline_list('wifi','wifi_list_data')
-        if(id == 'ethernet')build_HTML_lookline_list('wifi','ethernet_list_data')
+        if(id == 'ethernet')build_HTML_lookline_list('ethernet','ethernet_list_data')
         if(id == 'modbus')build_HTML_lookline_list('modbus','modbus_list_data')
         if(id == 'application')build_HTML_lookline_list('application','application_list_data')
         if(id == 'rf')build_HTML_lookline_list('rf','rf_list_data')
@@ -4322,7 +4419,7 @@ var modal = new Object;
       title.innerHTML = titledlg;body.innerHTML = textdlg;cardID = textdlg;if (typeof closefunc === 'undefined') closefunc = CardSetClose;ShowModalCardSet(closefunc);      loaddatasetting(textdlg);
 }
     function ShowModalCardSet(closefunc) {modalCardSet.active.style.display = "block";modalCardSet.closefn = closefunc; }
-    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);clearSaveTimeout();}
+    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);}
 
     function CardSetClose(value) {console.log(value);if (value == "Ok") {if(modalCardSet.active.getElementsByClassName("modal-title") == "Edit Application"){ console.log("Edit App");}else{ saveSettings(cardID);}}
     }
@@ -4450,7 +4547,8 @@ function loadAppSetup(e){
           if (stateID[BappID]) {
             document.getElementById("RunButton"+BappID).innerHTML = "Stop";
             document.getElementById("State0_"+BappID).innerHTML = "Run";
-          } else {
+          } 
+          if (stateID[BappID] == 2){
             document.getElementById("RunButton"+BappID).innerHTML = "Run";
             document.getElementById("State0_"+BappID).innerHTML = "Stop";
           }
@@ -4639,7 +4737,7 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
           html += "<div class='col'><h3 id=\"regs5_"+ BappID + "\">0</h3></div>";
           if(cmd == addapp){html+= "<div class='col' style='font-size: 1rem;'><select onchange='changeRegs(value, 6)' id=\"Regs6_"+ BappID + "\"></select></div>";}
           html += "</div>";
-          if(cmd == addapp){html+= "<div class=' row'><div class='col '>Run/Stop</div><div class='col' style='font-size: 1rem;'><select id=\"Button0_"+ BappID + "\"></select></div></div>";}
+          if(cmd == addapp){html+= "<div class=' row'><div class='col ' style='text-align: right; font-size: 1.3rem;'>Run/Stop</div><div class='col' style='font-size: 1rem; margin-left: 165px;'><select id=\"Button0_"+ BappID + "\"></select></div></div>";}
           // html += "</div>";
 
         }
@@ -4681,7 +4779,39 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
 //navbar
   function toggleDropdown(element) {
     element.classList.toggle('active');
-  }
+  }//navbar
+  // admin
+  function toggleDropdown01() {
+    var dropdown = document.getElementById("admin_dropdown");
+    dropdown.style.display = (dropdown.style.display === "none") ? "block" : "none";
+  }  // admin
+// modal PLC
+function openModalPLC() {
+        setDefaultValues();
+        $('#myModal').modal('show');
+    }
+function setDefaultValues() {
+    var defaultIP = "0.0.0.0";
+    var defaultPort = "1.1.1.1";
+    document.querySelector("#myModal input[placeholder='Please enter IP PLC']").value = defaultIP;
+    document.querySelector("#myModal input[placeholder='Please enter Port PLC']").value = defaultPort;
+}
+function saveValues() {
+    // Lấy giá trị từ hai ô input trong modal
+    var ipPLC = document.querySelector("#myModal input[placeholder='Please enter IP PLC']").value;
+    var portPLC = document.querySelector("#myModal input[placeholder='Please enter Port PLC']").value;
+    // Tạo chuỗi JSON
+    var jsonData = {
+        "IP PLC": ipPLC,
+        "Port PLC": portPLC
+    };
+    var jsonString = JSON.stringify(jsonData);
+    console.log(jsonString);
+}
+function closeModalPLC() {
+        $('#myModal').modal('hide');
+  }  // modal PLC
+
 function loaddatasetting(id){
   console.log("loaddatasetting"); 
   var UpdateDataApp = JSON.parse(AppMemories);
@@ -4710,38 +4840,27 @@ function getWifiSignalStrength(wifiData) {
         return "N/A";
     }
 }
-// bỏ nút save, nhập vào thì lưu
-var saveTimeout;
-// Hàm tự động lưu giá trị sau 1 giây
-function autoSaveSettings(id) {
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(function() {
-        saveSettings(id);
-    }, 1000);
-}
-// Gán sự kiện oninput cho từng trường input trong modal
-document.getElementById("planInput").oninput = function() {
-    autoSaveSettings(cardID);
+//bỏ nút save, nhập vào thì lưu
+// Gán sự kiện onblur cho từng trường input trong modal
+document.getElementById("planInput").onblur = function() {
+    saveSettings(cardID);
 };
-document.getElementById("resultInput").oninput = function() {
-    autoSaveSettings(cardID);
+document.getElementById("resultInput").onblur = function() {
+    saveSettings(cardID);
 };
-document.getElementById("planSetInput").oninput = function() {
-    autoSaveSettings(cardID);
+document.getElementById("planSetInput").onblur = function() {
+    saveSettings(cardID);
 };
-document.getElementById("resultSetInput").oninput = function() {
-    autoSaveSettings(cardID);
+document.getElementById("resultSetInput").onblur = function() {
+    saveSettings(cardID);
 };
-document.getElementById("TimeIncInput").oninput = function() {
-    autoSaveSettings(cardID);
+document.getElementById("TimeIncInput").onblur = function() {
+    saveSettings(cardID);
 };
-document.getElementById("PCSInput").oninput = function() {
-    autoSaveSettings(cardID);
+document.getElementById("PCSInput").onblur = function() {
+    saveSettings(cardID);
 };
-// Hàm xóa timeout khi modal được đóng
-function clearSaveTimeout() {
-    clearTimeout(saveTimeout);
-}
+
 
 function saveSettings(id) {
     console.log("app id= " + id);
@@ -4822,11 +4941,13 @@ function changeReset(id) {
 }
 
 
-  function changeState(id) {
+function changeState(id) {
       console.log("app id= "+id);
     var UpdateDataApp = JSON.parse(AppMemories);
     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
 
+    if(lock[id] == 0){stateID[id] = 2;}
+    if(lock[id] == 1){stateID[id] = 1;}
     // number[type]
     if (stateID[id]) {
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
@@ -4834,11 +4955,12 @@ function changeReset(id) {
       // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       // console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
       
-    } else {
+    } 
+    if (stateID[id]==2) {
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6]);
     }
-    stateID[id] = !stateID[id];
+    lock[id]= !lock[id];
   }
     function alertdlg(e, t, a) { var n = setactiveModal("alertdlg.html", a); if (null != n) { var r = n.element.getElementsByClassName("modal-title")[0], o = n.element.getElementsByClassName("modal-text")[0]; r.innerHTML = e, o.innerHTML = t, showModal() } }
     var Node_IoT_authentication = !1, page_id = "", convertDHT2Fahrenheit = !1, ws_source, event_source, log_off = !1, async_webcommunication = !1, websocket_port = 0, websocket_ip = "", esp_hostname = "Node_IoT WebUI", EP_HOSTNAME, EP_STA_SSID, EP_STA_PASSWORD, EP_STA_IP_MODE, EP_STA_IP_VALUE, EP_STA_GW_VALUE, EP_STA_MK_VALUE, EP_WIFI_MODE, EP_AP_SSID, EP_AP_PASSWORD, EP_AP_IP_VALUE, EP_BAUD_RATE = 112, EP_AUTH_TYPE = 119, EP_TARGET_FW = 461, EP_IS_DIRECT_SD = 850, EP_PRIMARY_SD = 851, EP_SECONDARY_SD = 852, EP_DIRECT_SD_CHECK = 853, SETTINGS_AP_MODE = 1, SETTINGS_STA_MODE = 2, interval_ping = -1, last_ping = 0, enable_ping = !0, esp_error_message = "", esp_error_code = 0;
@@ -5054,7 +5176,7 @@ function changeReset(id) {
     function update_UI_firmware_target() {
       var e; return initpreferences(),
       "lookline" == target_firmware ? (e = "Lookline") :
-      (e = "Unknown", document.getElementById("configtablink").style.display = 'none'), SETTINGS_STA_MODE = "grbl-embedded" == target_firmware || "marlin-embedded" == target_firmware ? (EP_HOSTNAME = "ESP_HOSTNAME", EP_STA_SSID = "STA_SSID", EP_STA_PASSWORD = "STA_PWD", EP_STA_IP_MODE = "STA_IP_MODE", EP_STA_IP_VALUE = "STA_IP", EP_STA_GW_VALUE = "STA_GW", EP_STA_MK_VALUE = "STA_MK", EP_WIFI_MODE = "grbl-embedded" == target_firmware ? "RADIO_MODE" : "WIFI_MODE", EP_AP_SSID = "AP_SSID", EP_AP_PASSWORD = "AP_PWD", EP_AP_IP_VALUE = "AP_IP", SETTINGS_AP_MODE = 2, 1) : (EP_HOSTNAME = 130, EP_STA_PASSWORD = 34, EP_STA_IP_MODE = 99, EP_STA_IP_VALUE = 100, EP_STA_MK_VALUE = 104, EP_STA_GW_VALUE = 108, EP_WIFI_MODE = 0, EP_AP_SSID = 218, EP_AP_PASSWORD = 251, EP_AP_IP_VALUE = 316, SETTINGS_AP_MODE = EP_STA_SSID = 1, 2), void 0 !== document.getElementById("fwName") && (document.getElementById("fwName").innerHTML = e), direct_sd && void 0 !== document.getElementById("showSDused") ? document.getElementById("showSDused").innerHTML = "<svg width='1.3em' height='1.2em' viewBox='0 0 1300 1200'><g transform='translate(50,1200) scale(1, -1)'><path  fill='#777777' d='M200 1100h700q124 0 212 -88t88 -212v-500q0 -124 -88 -212t-212 -88h-700q-124 0 -212 88t-88 212v500q0 124 88 212t212 88zM100 900v-700h900v700h-900zM500 700h-200v-100h200v-300h-300v100h200v100h-200v300h300v-100zM900 700v-300l-100 -100h-200v500h200z M700 700v-300h100v300h-100z' /></g></svg>" : document.getElementById("showSDused").innerHTML = "", e
+      (e = "Unknown", document.getElementById("configtablink").style.display = 'none'), SETTINGS_STA_MODE = "grbl-embedded" == target_firmware || "marlin-embedded" == target_firmware ? (EP_HOSTNAME = "ESP_HOSTNAME", EP_STA_SSID = "STA_SSID", EP_STA_PASSWORD = "STA_PWD", EP_STA_IP_MODE = "STA_IP_MODE", EP_STA_IP_VALUE = "STA_IP", EP_STA_GW_VALUE = "STA_GW", EP_STA_MK_VALUE = "STA_MK", EP_WIFI_MODE = "grbl-embedded" == target_firmware ? "RADIO_MODE" : "WIFI_MODE", EP_AP_SSID = "AP_SSID", EP_AP_PASSWORD = "AP_PWD", EP_AP_IP_VALUE = "AP_IP", SETTINGS_AP_MODE = 2, 1) : (EP_HOSTNAME = 130, EP_STA_PASSWORD = 34, EP_STA_IP_MODE = 99, EP_STA_IP_VALUE = 100, EP_STA_MK_VALUE = 104, EP_STA_GW_VALUE = 108, EP_WIFI_MODE = 0, EP_AP_SSID = 218, EP_AP_PASSWORD = 251, EP_AP_IP_VALUE = 316, SETTINGS_AP_MODE = EP_STA_SSID = 1, 2), void 0 !== document.getElementById("fwName") && (document.getElementById("fwName").innerHTML = e), direct_sd && void 0 !== document.getElementById("showSDused") ? document.getElementById("showSDused").innerHTML = "<svg width='1.6em' height='1.6em' viewBox='0 0 1300 1200'><g transform='translate(50,1200) scale(1, -1)'><path  fill='#777777' d='M200 1100h700q124 0 212 -88t88 -212v-500q0 -124 -88 -212t-212 -88h-700q-124 0 -212 88t-88 212v500q0 124 88 212t212 88zM100 900v-700h900v700h-900zM500 700h-200v-100h200v-300h-300v100h200v100h-200v300h300v-100zM900 700v-300l-100 -100h-200v500h200z M700 700v-300h100v300h-100z' /></g></svg>" : document.getElementById("showSDused").innerHTML = "", e
     }
     function Set_page_title(e) { void 0 !== e && (esp_hostname = e), document.title = esp_hostname }
     function initUI() { console.log("Init UI"), Node_IoT_authentication && connectdlg(!1), AddCmd(display_boot_progress), "undefined" != typeof target_firmware && "undefined" != typeof web_ui_version && "undefined" != typeof direct_sd || alert("Missing init data!"), update_UI_firmware_target(), Set_page_title(), void 0 !== document.getElementById("UI_VERSION") && (document.getElementById("UI_VERSION").innerHTML = web_ui_version), void 0 !== document.getElementById("FW_VERSION") && (document.getElementById("FW_VERSION").innerHTML = fw_version), document.getElementById("maintablink").click(),SwtichChart(0,0), initUI_2() }

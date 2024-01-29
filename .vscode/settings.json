@@ -5,6 +5,11 @@
         "string_view": "cpp",
         "system_error": "cpp",
         "*.tcc": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "deque": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "initializer_list": "cpp"
     }
 }

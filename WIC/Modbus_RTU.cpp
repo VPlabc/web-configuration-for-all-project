@@ -31,28 +31,28 @@ const long interval_ = 3000;
 unsigned long previousMillis_ = 0;
 bool Done = false;
 
-word regs_Master[ModbuS.HOLDING_REGS_SIZE*2];
+// word regs_Master[ModbuS.HOLDING_REGS_SIZE*2];
 
 void debugs();
 #define dataSize 32
 
-const int16_t offsetM0 = 2048;//
-const int16_t offsetD0 = 4096;//
+static const int16_t offsetM0 = 2048;//
+static const int16_t offsetD0 = 4096;//
 
-const int16_t Write_Coil = offsetM0+0;
-const int16_t Read_Coil = offsetM0+100;
-const int16_t RegWrite = offsetD0+2500;//Register Write
-const int16_t RegRead = offsetD0+2000;//Register Read
+static const int16_t Write_Coil = offsetM0+0;
+static const int16_t Read_Coil = offsetM0+100;
+static const int16_t RegWrite = offsetD0+2500;//Register Write
+static const int16_t RegRead = offsetD0+2000;//Register Read
 
-bool state0 = 0;
-bool state1 = 1;
-bool state2 = 0;
-int count_mb = 0;
-const long intervalupdate = 10000;
-unsigned long previousMillisupdate = 0;
-byte once = true;
-const long interval_update = 3000;
-unsigned long previousMillis_update = 0;
+ bool state0 = 0;
+ bool state1 = 1;
+ bool state2 = 0;
+ int count_mb = 0;
+static const long intervalupdate = 10000;
+ unsigned long previousMillisupdate = 0;
+ byte once = true;
+static const long interval_update = 3000;
+static unsigned long previousMillis_update = 0;
 #define baudrate 9600//19200
 // #define Enthernet
 // #define WifiConnect
@@ -126,7 +126,7 @@ ModbusIP Mb;
 #define     ETH_RST        -1
 
 // MgsModbus Mb;
-int inByte = 0; // incoming serial byte
+ int inByte = 0; // incoming serial byte
 
 // Ethernet settings (depending on MAC and Local network)
 byte mac[] = {0x90, 0xA2, 0xDA, 0x0E, 0x94, 0xB5 };
@@ -207,7 +207,7 @@ enum{Slave, Master};
 
 
 /// @brief /// Register address
-bool role = Master;
+ bool role = Master;
 
 
 void debugs();
@@ -235,9 +235,10 @@ initupdate();
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
-
+#ifdef Ethernet_W5500
     Mb.addHreg(RegWrite, 0, dataSize);
     Mb.addHreg(RegRead, 0, dataSize);
+#endif// Ethernet_W5500
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
@@ -329,21 +330,21 @@ initupdate();
 
 
 
-bool MB_Update_Once = true;
-bool MB_Update_Once1 = true;
-bool Reg_Update_Once = true;
-bool Reg_Update_Once1 = true;
+ bool MB_Update_Once = true;
+ bool MB_Update_Once1 = true;
+ bool Reg_Update_Once = true;
+ bool Reg_Update_Once1 = true;
 
- uint16_t regs_WRITE[30];
- uint16_t regs_READ[30];
+  uint16_t regs_WRITE[30];
+  uint16_t regs_READ[30];
 
 // Function to return an array of 30 elements
 uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}
 uint16_t* Modbus_Prog::getOutputRegs() {return holdingRegisters;}
 
-bool MB_Update_Data = false;
-uint16_t MB_Update_Address = 0;
-uint16_t MB_Update_Value = 0;
+static bool MB_Update_Data = false;
+static uint16_t MB_Update_Address = 0;
+static uint16_t MB_Update_Value = 0;
 
 void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
 void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
@@ -429,7 +430,7 @@ void Modbus_Prog::modbus_loop(bool role) {
   //   Modbus_Serial.write(inByte);
   // }
   // discreteInputs[0] = digitalRead(BootButton);
-  inputRegisters[0] = digitalRead(BootButton);
+  // inputRegisters[0] = digitalRead(BootButton);
   if(role == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
     for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}

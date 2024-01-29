@@ -13,7 +13,7 @@ IoT_Device AutoIT_MQTT;
 #include "AutoIT_IoT/AutoITGW.h"
 Auto_Device AutoIT_MQTT;
 #endif//AUTOITGW_UI
-WiFiClient            wifiClient_;
+WiFiClient wifiClient_;
 MQTTCOM mqttcom;
 
 #ifdef DEBUG_FLAG
@@ -51,10 +51,22 @@ String mqttbroker = "";
 String mqttUserName="";
 String mqttUserPassword="";
 int32_t MQTTcount = 0;
+
+
+#ifdef vplab
 String TopicUpdate = "/vplab/update";
 String TopicStatus = "/vplab/status";
 String TopicControl= "/vplab/control";
 String TopicSetting= "/vplab/setting";
+String Brand = "/stat";
+#endif//vplab
+#ifdef isoft
+String TopicUpdate = "/isoft_sensor/update";
+String TopicStatus = "/isoft_sensor/status";
+String TopicControl= "/isoft_sensor/control";
+String TopicSetting= "/isoft_sensor/setting";
+String Brand = "/isoft";
+#endif//isoft
 
 const char* chararray = "";
 
@@ -106,14 +118,18 @@ if(Debug){
     if(State != "null"){
     String NetID = obj["netid"];
     String DeviceID = obj["id"];
+    #ifdef AutoIT
     AutoIT_MQTT.Command("1",NetID ,DeviceID, State, "0");
+    #endif
     // if(Debug)
     }
 
     if(Category != "null"){
     String NetworkID = obj["networkid"];
     String DeviceID = obj["nodeid"];
-    AutoIT_MQTT.Command("0",NetworkID ,DeviceID, Category, SleepTime);
+    #ifdef AutoIT
+        AutoIT_MQTT.Command("0",NetworkID ,DeviceID, Category, SleepTime);
+    #endif
     // if(Debug)
 
     }
@@ -122,18 +138,24 @@ if(Debug){
 
 void MQTTCOM::setup()
 {
-  RF_Serial.begin(115200);
+  #ifdef RF
+    RF_Serial.begin(115200);
+  #endif
   if(CONFIG::read_string (EP_MQTT_BROKER, mqttbroker, MAX_MQTT_BROKER_LENGTH)){
     // LOGLN("mqtt broker:" + String(mqttbroker));
   }
+  int mqttPort;
+  CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &mqttPort, INTEGER_LENGTH);
     mqttbroker.replace(" ","");
     mqttserver = mqttbroker.c_str();
-    mqttClient.setServer( mqttserver, 1883);
+    mqttClient.setServer( mqttserver, mqttPort);
     mqttClient.setCallback(callback);
   String MAC = WiFi.macAddress();
   MAC.replace(":", "");
   thingName = "VPLAB_Hub_" + MAC;
-    Debug = DEBUG; 
+    #ifdef AutoIT
+        Debug = DEBUG; 
+    #endif
   if(CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug)){
     LOGLN("Debug:" + String((Debug==0)?"Not Debug":"Debug"));
   }
@@ -178,28 +200,32 @@ void MQTTCOM::mqttReconnect() {
           if(Debug){
           LOGLN("MQTT connected | user:" + String(charmqttUserName)+ "|pass:" + String(charmqttUserPassword) +"|");
           LOGLN("connected");}
-        String CharArray = "/stat" + TopicStatus;
+        String CharArray = Brand + TopicStatus;
         mqttClient.publish(CharArray.c_str(), "Gateway online");
         if(Debug)LOGLN(F("Gateway online "));
         if(Debug)LOGLN(CharArray.c_str());
 
-        CharArray = "/stat" + TopicSetting;
+        CharArray = Brand + TopicSetting;
         if(Debug)LOGLN(CharArray.c_str());
         mqttClient.subscribe(CharArray.c_str());
 
-        CharArray = "/stat" + TopicControl;
+        CharArray = Brand + TopicControl;
         if(Debug)LOGLN(CharArray.c_str());
         mqttClient.subscribe(CharArray.c_str());
         // showInfo("MQTT", "connected", 3);
         if(Debug)LOGLN("MQTT connected");
         //Command("0","0","0","0","0");//0_0_0_0_0 MQTT loss
         //Command("0","0","0","0","1");//0_0_0_0_1 MQTT ok  
-        AutoIT_MQTT.Command("0","0","0","0","1");//0_0_0_0_1 MQTT ok
+        #ifdef autoit
+            AutoIT_MQTT.Command("0","0","0","0","1");//0_0_0_0_1 MQTT ok
+        #endif
         ESPCOM::print("MQTT connected", WS_PIPE);
         mqtt_connected = true;
     } else {
         if(Debug)LOGLN("MQTT connect failed");
-        AutoIT_MQTT.Command("0","0","0","0","0");//0_0_0_0_0 MQTT loss
+        #ifdef autoit
+            AutoIT_MQTT.Command("0","0","0","0","0");//0_0_0_0_0 MQTT loss
+        #endif
         ESPCOM::print("MQTT connect failed", WS_PIPE);
         // showInfo("MQTT", "connection failed", 3);
         MQTTreconnect++;
@@ -208,10 +234,10 @@ void MQTTCOM::mqttReconnect() {
     }
   }
 }
-
+bool  MQTTCOM::connect_state() {return mqtt_connected;}
 void MQTTCOM::mqttPublish(String payload ) {
     //char mqttUserPassword[10];
-    String CharArray = "/stat" + TopicUpdate;
+    String CharArray = Brand + TopicUpdate;
     strcpy (mqttTopic, CharArray.c_str());
     //   strcat (mqttTopic, "/status");
     if(Debug){

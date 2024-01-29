@@ -11,59 +11,59 @@
 
 // #ifdef SLAVE_MODBUS
 /////////////// registers of your slave ///////////////////
-enum 
-{     
-  // just add or remove registers and you're good to go...
-  // The first register starts at address 0
-  RGS1,
-  RGS2,
-  RGS3,
-  RGS4,
-  RGS5,
-  RGS6,
-  RGS7,
-  RGS8,
-  RGS9,
-  RGS10,
-  RGS11,
-  RGS12,
-  RGS13,
-  RGS14,
-  RGS15,
-  RGS16,
-  RGS17,
-  RGS18,
-  RGS19,
-  RGS20,
-  RGS21,
-  RGS22,
-  RGS23,
-  RGS24,
-  RGS25,
-  RGS26,
-  RGS27,
-  RGS28,
-  RGS29,
-  RGS30,
-  // RGS31,
-  // RGS32,
-  // leave this one
-  TOTAL_REGS_SIZE 
-  // total number of registers for function 3 and 16 share the same register array
-};
+// enum 
+// {     
+//   // just add or remove registers and you're good to go...
+//   // The first register starts at address 0
+//   RGS1,
+//   RGS2,
+//   RGS3,
+//   RGS4,
+//   RGS5,
+//   RGS6,
+//   RGS7,
+//   RGS8,
+//   RGS9,
+//   RGS10,
+//   RGS11,
+//   RGS12,
+//   RGS13,
+//   RGS14,
+//   RGS15,
+//   RGS16,
+//   RGS17,
+//   RGS18,
+//   RGS19,
+//   RGS20,
+//   RGS21,
+//   RGS22,
+//   RGS23,
+//   RGS24,
+//   RGS25,
+//   RGS26,
+//   RGS27,
+//   RGS28,
+//   RGS29,
+//   RGS30,
+//   // RGS31,
+//   // RGS32,
+//   // leave this one
+//   TOTAL_REGS_SIZE 
+//   // total number of registers for function 3 and 16 share the same register array
+// };
 
 // #endif//SLAVES_MODBUS
 
 
 
 
-enum
-{
-  PACKET1,
-  PACKET2,
-  // leave this last entry
-  TOTAL_NO_OF_PACKETS
-};
+// enum
+// {
+//   PACKET1,
+//   PACKET2,
+//   // leave this last entry
+//   TOTAL_NO_OF_PACKETS
+// };
 
 ////////////////////////////////////////////////////////////
 //   extern void handleRoot();
@@ -75,32 +75,32 @@ bool MB_connect = false;
 DFRobot_RTU Modbus_Master;
 ModbusRTU mb;
 //////////////// registers of your slave ///////////////////
-enum 
-{     
-  // just add or remove registers and your good to go...
-  // The first register starts at address 0
-  // BOARDID,
-  // NETID,
-  // RUNSTOP,
-  // ONOFF,
-  // PLAN,
-  // PLANSET,
-  // RESULT,
-  // RESULTSET,
-  // MAXPLAN,
-  // PCS,
-  // TIMEINC,
-  // DELAYCOUNTER,
-  // ROLE,
-  // COMMODE,
-  // TYPE,
-  // ONWIFI,
-  // RSSI,  
-  // CMD,   
-  HOLDING_REGS_SIZE = 60// leave this one
-  // total number of registers for function 3 and 16 share the same register array
-  // i.e. the same address space
-};
+// enum 
+// {     
+//   // just add or remove registers and your good to go...
+//   // The first register starts at address 0
+//   // BOARDID,
+//   // NETID,
+//   // RUNSTOP,
+//   // ONOFF,
+//   // PLAN,
+//   // PLANSET,
+//   // RESULT,
+//   // RESULTSET,
+//   // MAXPLAN,
+//   // PCS,
+//   // TIMEINC,
+//   // DELAYCOUNTER,
+//   // ROLE,
+//   // COMMODE,
+//   // TYPE,
+//   // ONWIFI,
+//   // RSSI,  
+//   // CMD,   
+//   HOLDING_REGS_SIZE = 60// leave this one
+//   // total number of registers for function 3 and 16 share the same register array
+//   // i.e. the same address space
+// };
 //////////////////// Port information ///////////////////
 // #define baudrate 9600
 #define timeouts 300
@@ -125,7 +125,7 @@ uint16_t inputRegisters[60];// data tu web gui ve public
 // The data from the PLC will be stored
 // in the regs array
 
-unsigned int regs_Data[HOLDING_REGS_SIZE*2];
+// unsigned int regs_Data[HOLDING_REGS_SIZE*2];
 uint16_t* getInputRegs();
 uint16_t* getOutputRegs();
 void update();
