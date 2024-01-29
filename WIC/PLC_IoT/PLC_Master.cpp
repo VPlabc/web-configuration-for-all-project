@@ -100,7 +100,7 @@ byte ModbusRole = master;
 #else
 byte ModbusRole = slave;
 #endif//MASTER_MODBUS
-byte connectWebSocket = 0;
+byte connectWebSocket = 2;
 byte IDList[255];
 int16_t Register[4][HOLDING_REGS_SIZE];
 
@@ -230,13 +230,14 @@ bool onceInfo = true;
 
  time_t time_log;
 void PLC_MASTER::loop(){// LOG("Loop");
-
-   PLCModbusCom.modbus_loop(ModbusRole);
+if (connectWebSocket == 1 || connectWebSocket == 2){
+   PLCModbusCom.modbus_loop(ModbusRole);  
+}
    
   if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
-    PLCModbusCom.setModbusupdateState(0);
     LOGLN( PLCModbusCom.getModbusupdateData());
     PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
+    PLCModbusCom.setModbusupdateState(0);
   }
   static unsigned long lastEventTime1 = millis();
 // static unsigned long lastEventTimess = millis();
@@ -332,7 +333,7 @@ json += "}";
 }
 json += "]}";
 // LOG(json);LOG(json);
-    if(connectWebSocket == 1){socket_server->broadcastTXT(json);sendInfo();}
+    if(connectWebSocket == 1 || connectWebSocket ==2){socket_server->broadcastTXT(json);sendInfo();}
 // PLCModbusCom.modbus_loop(ModbusRole);
       // for (int i = 0; i < 30; i++){LOG(PLCModbusCom.inputRegisters[i]);LOGLN(" ");}
 

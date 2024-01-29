@@ -370,7 +370,7 @@ void Modbus_Prog::modbus_loop(bool role) {
   if(role == Master && MB_connect == true){
     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
     delay(5);
-    Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
+    if(MB_Update_Data == 0)Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
 
     delay(5);
   #ifdef Ethernet_W5500
