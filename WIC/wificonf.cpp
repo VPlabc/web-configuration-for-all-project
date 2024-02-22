@@ -172,8 +172,8 @@ void  WIFI_CONFIG::Safe_Setup()
     IPAddress gateway (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
     IPAddress subnet (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
 
-    String ssid = FPSTR (DEFAULT_AP_SSID);
-    String pwd = FPSTR (DEFAULT_AP_PASSWORD);
+    String ssid = DEFAULT_AP_SSID;
+    String pwd = DEFAULT_AP_PASSWORD;
     if (!CONFIG::read_string (EP_AP_SSID, ssid, MAX_SSID_LENGTH) ) {
             // return false;
     }

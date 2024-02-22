@@ -80,6 +80,8 @@ String CONFIG::getLoRaPower(){return Lora_PWR;}
 void CONFIG::SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX ){SetPinLoRa( _M0,  _M1,  _TX,  _RX );}
 #endif//USE_LORA
 
+
+
 #ifdef MCP_USE
 #include "MCP_DAC.h"
 // MCP4921 MCP(19, 18);  //  SW SPI
@@ -398,10 +400,13 @@ bool CONFIG::InitBaudrate(long value)
     if (Serial.baudRate() != baud_rate) {
 #ifdef ARDUINO_ARCH_ESP8266
         Serial.begin (baud_rate);
-#else
+#endif
+#if defined(esp32dev)
         Serial.begin (baud_rate, ESP_SERIAL_PARAM, ESP_RX_PIN, ESP_TX_PIN);
 #endif
-
+#if defined(esp32s2)
+    // MySerial0.begin(baud_rate, SERIAL_8N1, rxPin, txPin);
+#endif
     }
 #endif
 #ifdef USE_SERIAL_1

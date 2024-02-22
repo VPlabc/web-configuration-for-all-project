@@ -8,6 +8,12 @@
 #define E32_TTL_1W
     #include "LoRa_E32.h"
 #endif//USE_LORA
+#if defined(esp32s2)
+#include <HardwareSerial.h> 
+const int printerBaudrate = 9600;  // or 19200 usually
+// HardwareSerial MySerial0(0);
+// HardwareSerial MySerial1(1);
+#endif//ESP32
   uint8_t M0_ = 0;
   uint8_t M1_ = 0;
   uint8_t TX_ = 0;
@@ -35,13 +41,27 @@ extern void WriteLoRaConfig(byte CH, byte ID);
 // 	WriteLoRaConfig(CH);
 // }
 // LoRa_E32 e32ttl100(16, 17, &Serial2, UART_BPS_RATE_9600, SERIAL_8N1); // e32 TX e32 RX
-LoRa_E32 e32ttl100(&Serial2, -1, M0_, M1_, UART_BPS_RATE_9600);
 
+#if defined(esp32dev)
+LoRa_E32 e32ttl100(&Serial2, -1, M0_, M1_, UART_BPS_RATE_9600);
+#endif//defined(esp32dev)
+
+#if defined(esp32s2)
+LoRa_E32 e32ttl100(&MySerial0, -1, M0_, M1_, UART_BPS_RATE_9600);
+#endif//defined(esp32s2)
 void printParameters(struct Configuration configuration);
 void Lora_Config_update(String Parameter[]);
 
 void ReadLoRaConfig()
 {
+#if defined(esp32s2)
+      // And configure MySerial1 on pins RX=D9, TX=D10
+    // MySerial1.begin(printerBaudrate, SERIAL_8N1, rxPin1, txPin1);
+    // MySerial1.println("MySerial1");
+    // Configure MySerial0 on pins TX=6 and RX=7 (-1, -1 means use the default)
+    // MySerial0.begin(printerBaudrate, SERIAL_8N1, rxPin0, txPin0);
+    // MySerial0.println("MySerial0");
+#endif//ESP32s2
 #ifdef USE_LORA
   digitalWrite(M0_, HIGH);
   digitalWrite(M1_, HIGH);

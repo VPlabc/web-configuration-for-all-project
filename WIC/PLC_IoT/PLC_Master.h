@@ -27,8 +27,10 @@ public:
 
 #define LED_ON(pin)    digitalWrite(pin, HIGH)
 #define LED_OFF(pin)   digitalWrite(pin, LOW)
+#ifdef MQTTSSL
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
-
+#endif// MQTTSSL
+void update();
 void modbusSet(uint16_t addr, uint16_t value);
 void GetIdList(int idlist[]);
 void connectWeb(byte connected);

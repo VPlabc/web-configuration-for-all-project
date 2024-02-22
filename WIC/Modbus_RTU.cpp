@@ -13,18 +13,24 @@ LOOKLINE_PROG Lookline_modbus;
 #endif//LOOKLINE_UI
 
 // #define ESP32_C3
+#define esp32s2
+// #define esp32dev
 
 #if defined(ESP32_C3)
 #define Modbus_Serial Serial1
-#elif defined(ESP32)
+#elif defined(ESP32dev)
 #define ModbusSerial Serial2
-#else
-
+#elif defined(ESP8266)
 #include <SoftwareSerial.h>
  SoftwareSerial serial_ESP1(5,4);
 #define Modbus_Serial serial_ESP1
+#endif//ESP8266
+#if defined(esp32s2)
+// #include <HardwareSerial.h> 
+const int printerBaudrate = 9600;  // or 19200 usually
+// HardwareSerial MySerial0(0);
+// HardwareSerial MySerial1(1);
 #endif//ESP32
-
 
 // #define DEBUG
 const long interval_ = 3000;
@@ -224,14 +230,34 @@ void Modbus_Prog::modbus_setup(bool role) {
   
 #ifdef SerialPort
   LOGLN("_________________________________________ MODBUS RTU ________________________________________");
+#if defined(ESP32dev)
 Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2,false);
+#endif//ESP32
+#if defined(esp32s2)
+      // And configure MySerial1 on pins RX=D9, TX=D10
+    // MySerial1.begin(printerBaudrate, SERIAL_8N1, rxPin1, txPin1);
+    // MySerial1.println("MySerial1");
+    // Configure MySerial0 on pins TX=6 and RX=7 (-1, -1 means use the default)
+    // MySerial0.begin(printerBaudrate, SERIAL_8N1, rxPin, txPin);
+    // MySerial0.println("MySerial0");
+#endif//ESP32s2
 initupdate();
   if(role == Master){
   Modbus_Master.setTimeoutTimeMs(100);
+  #if defined(ESP32dev)
   Modbus_Master.begin(&Serial2);
+  #endif//esp32dev
+  #if defined(esp32s2)
+  // Modbus_Master.begin(&MySerial0);
+  #endif//esp32s2
   }
   if(role ==Slave){
+  #if defined(ESP32dev)
     mb.begin(&Serial2);
+  #endif//esp32dev
+  #if defined(esp32s2)
+    // mb.begin(&MySerial0);
+  #endif//esp32s2
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
@@ -242,7 +268,6 @@ initupdate();
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
-  LOGLN("________________________________________________________________________________________");
 #endif//SerialPort
 #ifdef WifiConnect
   // mb.config("Hoang Vuong", "91919191");
@@ -318,7 +343,6 @@ initupdate();
   LOG("My IP address: ");
   LOGLN(Ethernet.localIP());
   LOGLN();
-  LOGLN("_________________________________________________________________________________________");
 
 
 #endif//ETHER_W5500

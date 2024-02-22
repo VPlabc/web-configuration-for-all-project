@@ -17,6 +17,8 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+// #define esp32s2
+#define esp32dev
 //#define HomeKit
 //Device Type
 //#define ESP3D_UI 
@@ -241,6 +243,17 @@
 //-1 means use default pins of your board what ever the serial you choose
 #define ESP_RX_PIN -1
 #define ESP_TX_PIN -1
+
+#if defined(esp32s2)
+#include <HardwareSerial.h> 
+#define rxPin0 5
+#define txPin0 7
+#define rxPin1 1
+#define txPin1 3
+
+// HardwareSerial MySerial0(0);
+// HardwareSerial MySerial1(1);
+#endif//ESP32
 
 #ifdef RECOVERY_FEATURE
 //pin used to reset setting
@@ -733,10 +746,11 @@ typedef enum {
 #ifdef PLC_MASTER_UI
 #define isoft
 #define NodeIoT
-#define MCP_USE
+// #define MCP_USE
 #define USE_LORA
 #define SDCARD_FEATURE
-#define MQTT_USE
+// #define MQTT_USE
+// #define MQTTSSL
 #define TestDisplayIntro
 // #define TEST_MODE
 #define TIMESTAMP_FEATURE
@@ -779,7 +793,7 @@ typedef enum {
 #define EP_EEPROM_CATEGORY      1389//1  bytes
 
 #define LAST_EEPROM_ADDRESS 1390
-#define Ethernet_W5500
+// #define Ethernet_W5500
 
 // #define WifiConnect
 // #define MQTT_Mode

@@ -49,7 +49,10 @@ extern DHTesp dhts;
 #ifdef NOTIFICATION_FEATURE
 #include "notifications_service.h"
 #endif
-
+#ifdef MQTT_USE
+#include "MQTTcom.h"
+MQTTCOM commandMQTT;
+#endif//MQTT_USER
 #ifdef PLC_MASTER_UI
 #include "PLC_IoT/PLC_Master.h"
 PLC_MASTER PLC_cmd;
@@ -3176,6 +3179,11 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
                 if (!CONFIG::write_string (pos, sval.c_str() ) ) {
                     response = false;
                 }
+                #ifdef MQTT_USE
+                if(pos == EP_MQTT_BROKER || pos == EP_MQTT_USER || pos == EP_MQTT_PASS ){
+                    commandMQTT.update();
+                }
+                #endif//MQTT_USE
             }
             if (styp == "A") {
                 byte ipbuf[4];

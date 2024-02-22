@@ -13,6 +13,10 @@ IoT_Device AutoIT_MQTT;
 #include "AutoIT_IoT/AutoITGW.h"
 Auto_Device AutoIT_MQTT;
 #endif//AUTOITGW_UI
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER mqtt_PLC;
+#endif//PLC_MASTER
 WiFiClient wifiClient_;
 MQTTCOM mqttcom;
 
@@ -135,6 +139,7 @@ if(Debug){
     }
 }
 
+void MQTTCOM::update(){mqtt_PLC.update();}
 
 void MQTTCOM::setup()
 {
