@@ -103,6 +103,9 @@ void dateTime (uint16_t* date, uint16_t* dtime)
 }
 #endif
 bool LED_OFF = true;
+byte ID;
+byte IDfix = 1;
+
 WIFI_CONFIG::WIFI_CONFIG()
 {
     iweb_port = DEFAULT_WEB_PORT;
@@ -189,9 +192,9 @@ void  WIFI_CONFIG::Safe_Setup()
         String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION ;
         WiFi.softAP(AP_NAME.c_str(), "");
     #else
-    byte ID;
     CONFIG::read_byte (EP_EEPROM_ID, &ID);
-    ssid += "_"+String(ID)+"|Ver:" + FW_VERSION ;
+    if(ID == 255){ID = IDfix;}
+    ssid += "(" + String(ID) + ")|Ver:" + FW_VERSION;
     WiFi.softAP (ssid.c_str(), pwd.c_str() );
     #endif//LOOKLINE_UI
     CONFIG::wait (500);
@@ -232,8 +235,8 @@ void onWiFiEvent(WiFiEvent_t event)
     case WIFI_EVENT_STAMODE_DISCONNECTED:
     #ifndef Moto_UI 
         ESPCOM::println (F ("(STA)Disconnected\n"), PRINTER_PIPE);
-        digitalWrite(LED_STATUS, !LED_OFF);
         #ifdef PLC_MASTER_UI
+        digitalWrite(LED_STATUS, !LED_OFF);
         PLC_wifi.connectWeb(0);
         #endif//PLC_MASTER_UI
     #endif//Moto_UI
@@ -260,6 +263,7 @@ void onWiFiEvent(WiFiEvent_t event)
         ESPCOM::println (F ("(AP)Disconnected"), PRINTER_PIPE);
         #ifdef PLC_MASTER_UI
         PLC_wifi.connectWeb(0);
+        ESP.restart();
         #endif//PLC_MASTER_UI
     #endif//Moto_UI
         #ifdef LOOKLINE_UI
@@ -343,7 +347,6 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
     char sbuf[MAX_SSID_LENGTH + 1];
     char hostname [MAX_HOSTNAME_LENGTH + 1];
     String pwds = "";
-    byte b_ID;
     //int wstatus;
     IPAddress currentIP;
     byte bflag = 0;
@@ -462,9 +465,9 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
         MOTO.WiFi_on = true;
         #endif//Moto_UI 
         delay (50);
-        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {return false;}
-        if(b_ID == 255)b_ID = (uint16_t) (ESP.getEfuseMac() >> 32)%100; 
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION;
+        if (! CONFIG::read_byte (EP_EEPROM_ID, &ID)) {return false;};
+        if(ID == 255){ID = IDfix;}
+        String AP_NAME = "Node_BOX(" + String(ID) + ")|Ver:" + FW_VERSION;
         WiFi.softAP (AP_NAME.c_str(), pwd);
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
@@ -803,21 +806,21 @@ bool WIFI_CONFIG::Enable_servers()
     //ask server to track these headers
     web_interface->web_server.collectHeaders (headerkeys, headerkeyssize );
 #endif
-#ifdef CAPTIVE_PORTAL_FEATURE
+#ifdef CAPTIVE_PORTAL_FEATURE_FIX 
     if (WiFi.getMode() != WIFI_STA ) {
         // if DNSServer is started with "*" for domain name, it will reply with
         // provided IP to all DNS request
         String sbuf = "";
         String pwds = "";
         if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {return false;}
-        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {return false;}
-        byte b_ID = 0;
-        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {return false;}
+        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH)) {return false;}      
+        if (!CONFIG::read_byte (EP_EEPROM_ID, &ID)) {return false;};
+        if(ID == 255){ID = IDfix;}
         #ifdef LOOKLINE_UI
         String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V" + FW_VERSION;
         WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
         #endif//LOOKLINE_UI
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:" + FW_VERSION;
+        String AP_NAME = "Node_BOX(" + String(ID) + ")|Ver:" + FW_VERSION;
         WiFi.softAP (AP_NAME.c_str(), pwds.c_str());
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );

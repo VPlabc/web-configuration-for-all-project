@@ -52,8 +52,5 @@ public:
     #ifdef LOOKLINE_UI
     void SetDebug(bool state);
     #endif//LooklineUI
-
-
-
 };
 #endif

@@ -11,7 +11,9 @@ byte bbuf;
 enum {slave,master};
 
   for (;;) {
+#ifdef PLC_MASTER_UI
  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {role = bbuf;}
+ #endif//PLC_MASSTER_UI
 if(role == slave ){
 
 }

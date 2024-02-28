@@ -2256,6 +2256,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         #endif//LOOKLINE_UI
             // cmdWic.Set_Init_UI("AUTH: 0");
         }
+        
         //Start JSON
         ESPCOM::println (F ("{\"EEPROMLL\":["), output, espresponse);
         if (cmd_params == "network" || cmd_params == "") {
@@ -2674,6 +2675,21 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             }
             ESPCOM::print (F ("\",\"H\":\"Update Mode\",\"O\":[{\"Check FW\":\"1\"},{\"None\":\"0\"}]}"), output, espresponse);
             ESPCOM::println (F (","), output, espresponse);
+            
+            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_ID), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_EEPROM_ID, &bbuf) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Board ID\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MAX_ID), output, espresponse);
+            ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_ID), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);    
 #ifdef USE_LORA
             //2- Set CHANEL
             ESPCOM::print (F ("{\"F\":\"rf\",\"P\":\""), output, espresponse);
@@ -2793,22 +2809,9 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
                 ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
             }
             ESPCOM::print (F ("\",\"H\":\"Module type\",\"O\":[{\"Auto Detect\":\"0\"},{\"Lookline Gateway V14\":\"1\"},{\"LED7 seg Board V13.0\":\"4\"},{\"LED7 seg Board V14.0\":\"2\"},{\"LED7 seg Board V14.1\":\"3\"}]}"), output, espresponse);
-           
             ESPCOM::println (F (","), output, espresponse);
-            ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
-            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_ID), output, espresponse);
-            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
-            if (!CONFIG::read_byte (EP_EEPROM_ID, &bbuf) ) {
-                ESPCOM::print ("???", output, espresponse);
-            } else {
-                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
-            }
-            ESPCOM::print (F ("\",\"H\":\"Board ID\",\"S\":\""), output, espresponse);
-            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MAX_ID), output, espresponse);
-            ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
-            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_ID), output, espresponse);
-            ESPCOM::print (F ("\"}"), output, espresponse);
-            ESPCOM::println (F (","), output, espresponse);    
+           
+           
             //DEBUG
             ESPCOM::print (F ("{\"F\":\"printer\",\"P\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_DEBUG), output, espresponse);
@@ -3083,12 +3086,20 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
     }
     break;
     //update new firmware form host
-    //[ESP403]
+    //[ESP403]cmd=readfile 
     case 403: {
         parameter = get_param (cmd_params, "cmd=", true);
         if (parameter == "update") {
-            ESPCOM::println (F ("update fw"), output, espresponse);
+            ESPCOM::println (F ("update fw"), output, espresponse);//Serial.println
             LOGLN();LOGLN("Update Firmware");UDFWCmd.FirmwareUpdate();
+            ESPCOM::println (OK_CMD_MSG, output, espresponse);
+        }
+
+        if (parameter == "readfile") {
+            ESPCOM::println (F ("read file"), output, espresponse);//Serial.println
+            #ifdef PLC_MASTER_UI
+            PLC_cmd.readfile();
+            #endif//PLC_MASTER_UI
             ESPCOM::println (OK_CMD_MSG, output, espresponse);
         }
         #ifdef LOOKLINE_UI
@@ -3132,13 +3143,15 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         parameter = get_param (cmd_params, "cmd=", false);
         String IDparameter = "";
         // LOGLN("recive [ESP403]" + parameter);
+        #ifdef PLC_MASTER_UI
         if (parameter == "run") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 1);//LOGLN("Run|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
-        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 0);//LOGLN("Stop|ID:"+String(IDparameter));
+        if (parameter == "stop") {IDparameter = get_param (cmd_params, "id=", true);cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), 2);//LOGLN("Stop|ID:"+String(IDparameter));
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
         if (parameter == "write") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
             cmd_modbus.modbusSet((uint16_t)IDparameter.toInt(), (uint16_t)Valueparameter.toInt());
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
+        #endif//PLC_MASSTER_UI
     }
     break;
     
@@ -3674,6 +3687,8 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             LOG("\r\nap mode\r\n")
             LOGLN(WiFi.softAPIP().toString());
              sp += WiFi.softAPIP().toString();
+            PLC_cmd.connectWeb(0);
+
         } else {
             LOG("\rdon't know mode\r\n")
              sp += "192.168.0.1";

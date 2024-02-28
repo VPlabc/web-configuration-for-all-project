@@ -31,6 +31,9 @@ void connectWeb(byte connected);
 void SetLoRaValue();
 void setup();
 void loop();
+void readfile();
+void UpdateFW(bool UDFW);
+
 };
 extern PLC_MASTER PLC_master;
 #endif//PLC_MASTER_UI

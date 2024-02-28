@@ -546,8 +546,19 @@ typedef enum {
 #define EP_MQTT_PASS     1043//30  bytes = string
 
 #ifdef Basic_UI
-#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
-#define EP_EEPROM_DEBUG 1083 // 1 bytes flag
+#define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
+#define EP_EEPROM_DEBUG         1083 // 1 bytes flag
+#define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
+#define EP_EEPROM_URL_VER       1083// 4 bytes
+#define EP_EEPROM_URL_FW        1083// 4 bytes
+#define EP_MODBUS_IP_VALUE      1083// 4 bytes
+#define EP_MODBUS_MASK_VALUE    1083// 4 bytes
+#define EP_MODBUS_GATEWAY_VALUE 1083// 4 bytes
+#define EP_MODBUS_PORT          1083// 4 bytes
+#define EP_EEPROM_ID            1083// 6 bytes = ESP3D<V on one byte>
+#define LED_STATUS 26//1  bytes = flag
+
+
 #define LAST_EEPROM_ADDRESS 1083
 #endif//Basic_UI
 
@@ -728,10 +739,10 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define NodeIoT
-#define MCP_USE
-#define USE_LORA
-#define SDCARD_FEATURE
-
+// #define MCP_USE
+// #define USE_LORA
+// #define SDCARD_FEATURE
+#define CAPTIVE_PORTAL_FEATURE_FIX
 #define TestDisplayIntro
 // #define TEST_MODE
 #define DEBUG_
@@ -739,7 +750,7 @@ typedef enum {
 #define EP_EEPROM_TEST_MODE     1079// 4 bytes
 #define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
 #define EP_EEPROM_DEBUG         1087// 4 bytes
-#define EP_EEPROM_ID            1091// 4 bytes
+#define EP_EEPROM_ID            1091// 1 bytes
 #define EP_EEPROM_NETID         1095// 4 bytes
 #define EP_EEPROM_CHANELS       1099// 4 bytes
 #define EP_EEPROM_ROLE          1103// 4 bytes Node|gateway|repearter
@@ -770,13 +781,14 @@ typedef enum {
 #define EP_EEPROM_WIFI_MODE     1383// 1 bytes
 
 #define LAST_EEPROM_ADDRESS 1384
-#define Ethernet_W5500
+// #define Ethernet_W5500
 
 // #define WifiConnect
 // #define MQTT_Mode
 #define SDCARD_FEATURE
-
+#define DEFAULT_ROLE           1//master
 #endif//PLC_MASTER_UI
+
 //default values
 #define DEFAULT_WIFI_MODE           STA_MODE
 #ifdef MESHCOM_UI
@@ -807,7 +819,7 @@ const char DEFAULT_AP_SSID []  PROGMEM =        "Lookline";
 const char DEFAULT_AP_SSID []  PROGMEM =        "AutoIT";
 #endif//AutoIT_UI
 #ifdef PLC_MASTER_UI
-const char DEFAULT_AP_SSID []  PROGMEM =        "PLC_Master_safe";
+const char DEFAULT_AP_SSID []  PROGMEM =        "Node_BOX";
 #endif//PLC_MASTER_UI
 
 #ifdef Basic_UI
@@ -849,7 +861,7 @@ const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
 const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/version.txt";
 const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/firmware.bin";
 const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
-#define DEFAULT_TIME_ZONE           0
+#define DEFAULT_TIME_ZONE           7
 #define DEFAULT_TIME_DST            0
 #define DEFAULT_PRIMARY_SD  2
 #define DEFAULT_SECONDARY_SD 1

@@ -215,16 +215,20 @@ void debugs();
 
 
 void Modbus_Prog::modbus_setup(bool role) { 
-
+#ifdef PLC_MASSTER_UI
   #ifndef MCP_USE
   pinMode(BTN_SET,    INPUT_PULLUP);
   #endif//MCP_USE
   pinMode(BootButton, INPUT_PULLUP);
   // Serial.begin(115200);
-  
+ #endif//PLC_MASTER_PROG 
 #ifdef SerialPort
   LOGLN("_________________________________________ MODBUS RTU ________________________________________");
+#ifdef PLC_MASTER_UI
 Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2,false);
+#else
+Serial2.begin(9600, SERIAL_8N1, 16, 17,false);
+ #endif//PLC_MASTER_PROG 
 initupdate();
   if(role == Master){
   Modbus_Master.setTimeoutTimeMs(100);
@@ -235,13 +239,14 @@ initupdate();
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
-
+#ifdef Ethernet_W5500
     Mb.addHreg(RegWrite, 0, dataSize);
     Mb.addHreg(RegRead, 0, dataSize);
+#endif//Ethernet_W5500
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
-  LOGLN("________________________________________________________________________________________");
+  // LOGLN("________________________________________________________________________________________");
 #endif//SerialPort
 #ifdef WifiConnect
   // mb.config("Hoang Vuong", "91919191");
@@ -278,8 +283,7 @@ initupdate();
  // serial setup
   // Serial.begin(9600);
   LOGLN("_________________________________________ ETHERNET ________________________________________");
-  SPI.begin(SCLK, MISO, MOSI,-1);
-
+    SPI.begin(SCLK, MISO, MOSI,-1);
     ethernetReset(ETH_RST);
     Ethernet.init(SCS);
     byte ip_buf[4];
@@ -348,7 +352,8 @@ uint16_t MB_Update_Value = 0;
 void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
 void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
 
-void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();
+LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
 
 void Modbus_Prog::connectModbus(bool update){ MB_connect = update;}
 void Modbus_Prog::setModbusupdateState(bool state){ MB_Update_Data = state;}
@@ -358,8 +363,11 @@ uint16_t Modbus_Prog::getModbusupdateData(){return MB_Update_Value;}
 uint16_t Modbus_Prog::getModbusupdateAddr(){ return MB_Update_Address;}
 
 void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
-  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) + " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite));
+  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) 
+  //+ " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite)
+  );
   Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
+
 }
 
 void Modbus_Prog::modbus_loop(bool role) {
@@ -368,7 +376,6 @@ void Modbus_Prog::modbus_loop(bool role) {
     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
     delay(5);
     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
-
     delay(5);
   #ifdef Ethernet_W5500
       Mb.task();
@@ -418,18 +425,6 @@ void Modbus_Prog::modbus_loop(bool role) {
     // debugs();
   // #endif//MASTER
   #ifdef SerialPort
-  // if (Modbus_Serial.available()) {
-  //   int inByte = Modbus_Serial.read();
-  //   Serial.write(inByte);
-  // }
-
-  // // read from port 0, send to port 1:
-  // if (Serial.available()) {
-  //   int inByte = Serial.read();
-  //   Modbus_Serial.write(inByte);
-  // }
-  // discreteInputs[0] = digitalRead(BootButton);
-  inputRegisters[0] = digitalRead(BootButton);
   if(role == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
     for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
