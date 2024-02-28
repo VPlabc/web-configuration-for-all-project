@@ -4,4 +4,9 @@
 .vscode/launch.json
 .vscode/ipch
 .pioenvs/
+<<<<<<< HEAD
 .piolibdeps/
+=======
+.piolibdeps/
+.vscode/
+>>>>>>> a1491b2e113991920e1483de802e9bbea02b86ed

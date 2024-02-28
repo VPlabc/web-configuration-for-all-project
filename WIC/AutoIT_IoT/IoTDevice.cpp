@@ -34,7 +34,7 @@ MQTTCOM mqttcommu;
 
 //________ Sensor
 #include "DHTesp.h"
-DHTesp dht_iot;
+DHTesp dht;
 #define DHTPin 32
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -60,6 +60,7 @@ const byte AnalogPins[] = { 32, 33, 34, 35 ,36 ,39};
 #define GROUP_TEMP            6
 #define GROUP_VALVE           7
 #define GROUP_POSITION        8
+#define GROUP_SHT             9
 #define battery_cutoff_volt   3.3
 
 // Define variables to store BME280 readings to be sent
@@ -76,7 +77,8 @@ byte OLED_MODE = 0;
 
 byte ButtonUpdateFw = 0;
 byte UpdateFw = 0;
-byte ButtonPin = 13;
+byte ButtonPin = 15;
+// byte ButtonPin = 13;
 byte LEDPin = 2;
 String NameBoard = "";
 String mqtt_server = "";
@@ -272,11 +274,21 @@ void IoT_Device::Command(String Cmd, String netID, String ID, String CAT, String
     }
   }
 }
-
-
+byte hours;
+byte mins;
+byte secs;
+void readtime()
+{
+  time_t now = time(nullptr);
+  //Wed Sep 1 21:59:03 2021
+  hours = ((ctime(&now)[11]-48)*10)+(ctime(&now)[12]-48);
+  mins = ((ctime(&now)[14]-48)*10)+(ctime(&now)[15]-48);
+  secs = ((ctime(&now)[17]-48)*10)+(ctime(&now)[18]-48);
+}
 void IoT_Device::UpdateStatus()// MQTT
 {
   DynamicJsonDocument sensor(500);
+#ifdef vplab
   sensor["deviceid"] = incomingnodeID;
   sensor["networkid"] = incomingnetworkID;
   sensor["category"] = incomingCatagory;
@@ -286,6 +298,21 @@ void IoT_Device::UpdateStatus()// MQTT
   sensor["mbattery"] = incomingmbattery;
   sensor["battery"] = incomingmbattery;
   sensor["rssi"] = incomingrssi_display;
+#endif//isoft
+#ifdef isoft
+  // CONFIG::readtime();
+  CONFIG::read_byte (EP_EEPROM_ID, &incomingnodeID);
+  sensor["id"] = incomingnodeID;
+  sensor["name"] = "temp";
+  sensor["value"]  = temperature;
+  sensor["unit"]  = "calcius";
+  sensor["name"] = "humi";
+  sensor["value"]  = humidity;
+  sensor["unit"]  = "%";
+  time_t now = time(nullptr);
+  sensor["createAt"] = ctime(&now);
+#endif//isoft
+
   String payload = "";
   size_t n = serializeJson(sensor, payload);
   LOGLN(payload);
@@ -299,13 +326,16 @@ void IoT_Device::WifiMode()
 {
     RunMode = WIFIMODE;
     if(wifi_config.GetWifiMode() == true){
-        // WiFi.mode(WIFI_STA);
+      esp_wifi_set_protocol(current_wifi_interface, 7);
+      check_protocol();
+        WiFi.mode(WIFI_AP_STA);
         if(LEDType == 0){ledFadeToBeat(0,0,255,BRIGHTNESS_HEART);colorWipe(0x000000, 100);}
         else{LED_Signal(3, 100);}
-          // if (!wifi_config.Setup() ) {}
-          // OLED_DISPLAY::clear_lcd();
-          // OLED_DISPLAY::BigDisplay("WiFi ON", 15, 17);
-          // OLED_DISPLAY::setCursor(40, 48);
+          if (!wifi_config.Setup(0,LED_STATUS, HIGH) ) {
+          OLED_DISPLAY::clear_lcd();
+          OLED_DISPLAY::BigDisplay("WiFi ON", 15, 17);
+          OLED_DISPLAY::setCursor(40, 48);
+          }
           ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
           checkFW = true;
 
@@ -554,7 +584,7 @@ void IoT_Device::setup() {
     strip.show();  // Initialize all pixels to 'off' 
   }
   else{pinMode(PIXEL_PIN,OUTPUT);}
- 
+
   
         
 
@@ -578,7 +608,6 @@ void IoT_Device::setup() {
 
   }
   #endif//OLED_SSD1306
-  
   //----------------------------------------------------------------
   // MQTT
   if(RunMode == WIFIMODE)mqttcommu.setup();
@@ -848,6 +877,7 @@ void IoT_Device::NodeDataUpdate(){
   if (now_node - last_node_update > 30000) {//Node Update after 5000 ms
         last_node_update = now_node;
     if(ROLE == Node)sendDataNode();
+    
     String msg = "";
     // msg = "Master WS: update";
     // ESPCOM::println(msg.c_str(), WS_PIPE, &espresponse);
@@ -862,7 +892,7 @@ void IoT_Device::NodeDataUpdate(){
 /// @brief Node Category
 /// @param cat 
 void IoT_Device::NodeCategoryRead(byte cat){
-if(RunMode == MESHMODE){
+// if(RunMode == MESHMODE){
     if(cat == GROUP_HT){
       static uint32_t last_dht_update= 0;
       uint32_t now_dht = millis();
@@ -876,6 +906,26 @@ if(RunMode == MESHMODE){
               humidity = 0;
               temperature = 0;
           }
+          if(COMMODE == MQTT){ UpdateStatus();}
+
+      }
+    }
+    if(cat == GROUP_SHT){
+      static uint32_t last_dht_update= 0;
+      uint32_t now_dht = millis();
+      if (now_dht - last_dht_update > 333) {
+          last_dht_update = now_dht;
+          Sensor.UpdateData();
+          humidity = Sensor.GetRelHumidity();
+          temperature = Sensor.GetTemperature();
+          if(COMMODE == MQTT){ 
+            incomingtemperature = temperature;
+            UpdateStatus();}
+          // Serial.print();
+          // if(Sensor.getStatusString() == "TIMEOUT"){
+          //     humidity = 0;
+          //     temperature = 0;
+          // }
 
       }
     }
@@ -891,6 +941,7 @@ if(RunMode == MESHMODE){
           Serial.print(" is ");
           Serial.println(temperature);
         }
+          if(COMMODE == MQTT){ UpdateStatus();}
       }
     } 
     if(cat == GROUP_SWITCH){
@@ -935,7 +986,7 @@ if(RunMode == MESHMODE){
       if(analogRead(ANALOGPIN1) <= 20){Status = 0;}
       if(analogRead(ANALOGPIN1) >= 100 && analogRead(ANALOGPIN2) >= 100){Status = 2;}
     }
-  }
+  // }
 }
 void IoT_Device::NodeCategoryInit(byte cat)
 {
@@ -943,7 +994,7 @@ void IoT_Device::NodeCategoryInit(byte cat)
       pinMode(SWITCHPIN, INPUT_PULLUP);
     }
     else if (cat == GROUP_HT){
-      dht_iot.setup(DHTPin); 
+      dht.setup(DHTPin); 
     }
     else if (cat == GROUP_MOTION){
       pinMode(SWITCHPIN, INPUT_PULLUP);
@@ -997,6 +1048,11 @@ void IoT_Device::getConfig(){
     if(Debug && STT)LOGLN("Read CATEGORY OK, value:" + String(category));
   }
 
+  category = MESHWIFI;
+  if(CONFIG::read_byte (EP_EEPROM_COM_MODE, &COMMODE)){
+    if(Debug && STT)LOGLN("Read COM MODE OK, value:" + String(COMMODE));
+  }
+
   Status = 0;
   temperature = 26.8;
   humidity = 76.5;
@@ -1047,6 +1103,7 @@ void IoT_Device::getConfig(){
   char mqttUserName[MAX_MQTT_USER_LENGTH + 1];
   char mqttUserPassword[MAX_MQTT_PASS_LENGTH + 1];
   char mqttbroker[MAX_MQTT_BROKER_LENGTH + 1];
+  byte mqttPort;
   if(CONFIG::read_string (EP_MQTT_BROKER, mqttbroker, MAX_MQTT_BROKER_LENGTH)){
     if(Debug && STT)LOGLN("mqtt broker:" + String(mqttbroker));
   }
@@ -1057,6 +1114,9 @@ void IoT_Device::getConfig(){
   if(CONFIG::read_string (EP_MQTT_PASS, mqttUserPassword, MAX_MQTT_PASS_LENGTH)){
     if(String(mqttUserPassword) == "_"){str_.toCharArray(mqttUserPassword, str_.length());}
     if(Debug && STT)LOGLN("mqtt pass:" + String(mqttUserPassword));
+  }   
+  if(CONFIG::read_byte (EP_MQTT_PORT, &mqttPort)){
+    if(Debug && STT)LOGLN("mqtt port:" + String(mqttPort));
   } 
 
   STT = false;

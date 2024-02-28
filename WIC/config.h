@@ -17,6 +17,8 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+// #define esp32s2
+#define esp32dev
 //#define HomeKit
 //Device Type
 //#define ESP3D_UI 
@@ -112,13 +114,13 @@
 // #define DHT_FEATURE
 
 //AUTHENTICATION_FEATURE: protect pages by login password
-// #define AUTHENTICATION_FEATURE
+#define AUTHENTICATION_FEATURE
 
 //WS_DATA_FEATURE: allow to connect serial from Websocket
 #define WS_DATA_FEATURE
 
 //TIMESTAMP_FEATURE: Time stamp feature on direct SD  files
-//#define TIMESTAMP_FEATURE
+#define TIMESTAMP_FEATURE
 #endif //USE_AS_UPDATER_ONLY
 //Extra features /////////////////////////////////////////////////////////////////////////
 
@@ -242,6 +244,17 @@
 #define ESP_RX_PIN -1
 #define ESP_TX_PIN -1
 
+#if defined(esp32s2)
+#include <HardwareSerial.h> 
+#define rxPin0 5
+#define txPin0 7
+#define rxPin1 1
+#define txPin1 3
+
+// HardwareSerial MySerial0(0);
+// HardwareSerial MySerial1(1);
+#endif//ESP32
+
 #ifdef RECOVERY_FEATURE
 //pin used to reset setting
 #define RESET_CONFIG_PIN 2
@@ -316,9 +329,9 @@
 #define DEBUG_WIC
 //Sanity check
 #ifdef SDCARD_FEATURE
-#ifdef TIMESTAMP_FEATURE
-#undef TIMESTAMP_FEATURE
-#endif
+// #ifdef TIMESTAMP_FEATURE
+// #undef TIMESTAMP_FEATURE
+// #endif
 #endif
 
 #if defined(ASYNCWEBSERVER)
@@ -404,6 +417,7 @@ extern const char * pathToFileName(const char * path);
 #ifdef DEBUG_OUTPUT_SERIAL
 #define DEBUG_PIPE SERIAL_PIPE
 #define LOG(string) {Serial.print(string);}
+#define LOGf(string, ...) {Serial.printf(string, ...);}
 #define LOGLN(string) {Serial.println(string);}
 
 #else
@@ -545,23 +559,6 @@ typedef enum {
 #define EP_MQTT_USER     1013//30  bytes = string
 #define EP_MQTT_PASS     1043//30  bytes = string
 
-#ifdef Basic_UI
-#define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
-#define EP_EEPROM_DEBUG         1083 // 1 bytes flag
-#define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
-#define EP_EEPROM_URL_VER       1083// 4 bytes
-#define EP_EEPROM_URL_FW        1083// 4 bytes
-#define EP_MODBUS_IP_VALUE      1083// 4 bytes
-#define EP_MODBUS_MASK_VALUE    1083// 4 bytes
-#define EP_MODBUS_GATEWAY_VALUE 1083// 4 bytes
-#define EP_MODBUS_PORT          1083// 4 bytes
-#define EP_EEPROM_ID            1083// 6 bytes = ESP3D<V on one byte>
-#define LED_STATUS 26//1  bytes = flag
-
-
-#define LAST_EEPROM_ADDRESS 1083
-#endif//Basic_UI
-
 #ifdef AUTOITGW_UI
 #define EP_EEPROM_DEBUG 1083 // 1 bytes flag
 #define LAST_EEPROM_ADDRESS 1083
@@ -637,8 +634,6 @@ typedef enum {
 #define TIMESTAMP_FEATURE
 #endif//MESHCOM_UI
 #ifdef IOTDEVICE_UI
-#define EP_EEPROM_VERSION 1073// 6 bytes = ESP3D<V on one byte>EP_EEPROM_VERSION
-
 //   //define hardware
 //   networkID = 1;
 //   nodeID = 2;
@@ -664,9 +659,11 @@ typedef enum {
 #define EP_EEPROM_PIN_BUTTON 1089 // 1 bytes
 #define EP_EEPROM_NAME     1090//30  bytes = string
 #define EP_EEPROM_CATEGORY  1121//1  bytes
-#define EP_EEPROM_SLEEP_TIME 1122
-#define LAST_EEPROM_ADDRESS 1122
-// #define TIMESTAMP_FEATURE
+#define EP_EEPROM_SLEEP_TIME 1122//1byte
+#define EP_EEPROM_COM_MODE   1123// 1 bytes
+#define EP_MQTT_PORT        1124 //4  bytes = int
+#define LAST_EEPROM_ADDRESS 1128
+#define TIMESTAMP_FEATURE
 #endif//IOTDEVICE_UI
 #ifdef LOOKLINE_UI
 #define TestDisplayIntro
@@ -737,58 +734,6 @@ typedef enum {
 // #define Mesh_Network
 // #define USE_LORA
 #endif//LOOKLINE_UI
-#ifdef PLC_MASTER_UI
-#define NodeIoT
-// #define MCP_USE
-// #define USE_LORA
-// #define SDCARD_FEATURE
-#define CAPTIVE_PORTAL_FEATURE_FIX
-#define TestDisplayIntro
-// #define TEST_MODE
-#define DEBUG_
-#define EP_EEPROM_VERSION       1073// 6 bytes = ESP3D<V on one byte>
-#define EP_EEPROM_TEST_MODE     1079// 4 bytes
-#define EP_EEPROM_UPDATE_MODE   1083// 4 bytes
-#define EP_EEPROM_DEBUG         1087// 4 bytes
-#define EP_EEPROM_ID            1091// 1 bytes
-#define EP_EEPROM_NETID         1095// 4 bytes
-#define EP_EEPROM_CHANELS       1099// 4 bytes
-#define EP_EEPROM_ROLE          1103// 4 bytes Node|gateway|repearter
-#define EP_EEPROM_RUN           1107// 4 bytes Run/Stop/Sleep
-#define EP_EEPROM_AMOUNTNODE    1111// 4 bytes
-#define EP_EEPROM_COM_MODE      1115// 4 bytes
-#define EP_EEPROM_MODULE_TYPE   1119// 4 bytes
-#define EP_EEPROM_PLAN          1123// 4 bytes
-#define EP_EEPROM_RESULT        1127// 4 bytes
-#define EP_EEPROM_PLANMAX       1131// 4 bytes
-#define EP_EEPROM_PCS           1135// 4 bytes
-#define EP_EEPROM_TIME_PLAN     1139// 4 bytes
-#define EP_EEPROM_TIMESENT      1143// 4 bytes
-#define EP_EEPROM_URL_VER       1147// 100 bytes
-#define EP_EEPROM_URL_FW        1247// 100 bytes
-#define EP_EEPROM_PLAN_SET      1347// 4 bytes
-#define EP_EEPROM_RESULT_SET    1351// 4 bytes
-#define EP_EEPROM_ON_OFF        1355// 1 bytes
-#define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
-#define EP_LORA_CHANEL          1360//4  bytes = byte
-#define EP_LORA_AIRRATE         1364//1  bytes = byte
-#define EP_LORA_POWER           1365//1  bytes = byte
-#define EP_LORA_PROTOCOL        1366//1  bytes = byte
-#define EP_MODBUS_IP_VALUE      1367//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_MASK_VALUE    1371//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_GATEWAY_VALUE 1375//4  bytes xxx.xxx.xxx.xxx
-#define EP_MODBUS_PORT          1379//4  bytes = int
-#define EP_EEPROM_WIFI_MODE     1383// 1 bytes
-
-#define LAST_EEPROM_ADDRESS 1384
-// #define Ethernet_W5500
-
-// #define WifiConnect
-// #define MQTT_Mode
-#define SDCARD_FEATURE
-#define DEFAULT_ROLE           1//master
-#endif//PLC_MASTER_UI
-
 //default values
 #define DEFAULT_WIFI_MODE           STA_MODE
 #ifdef MESHCOM_UI
@@ -818,9 +763,6 @@ const char DEFAULT_AP_SSID []  PROGMEM =        "Lookline";
 #ifdef AutoIT_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "AutoIT";
 #endif//AutoIT_UI
-#ifdef PLC_MASTER_UI
-const char DEFAULT_AP_SSID []  PROGMEM =        "Node_BOX";
-#endif//PLC_MASTER_UI
 
 #ifdef Basic_UI
 const char DEFAULT_AP_SSID []  PROGMEM =        "VPlab";
@@ -861,7 +803,7 @@ const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
 const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/version.txt";
 const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/firmware.bin";
 const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
-#define DEFAULT_TIME_ZONE           7
+#define DEFAULT_TIME_ZONE           0
 #define DEFAULT_TIME_DST            0
 #define DEFAULT_PRIMARY_SD  2
 #define DEFAULT_SECONDARY_SD 1
@@ -890,30 +832,26 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define ESP_LINE_NOTIFICATION       3
 #define ESP_IFTTT_NOTIFICATION      4
 
-#ifdef NodeIoT
-//SD card CS 5
-//OUTPUT 32 33 25 27 14 13
-//INPUT  34 35
-//MCP4922 CS 4 26
-// [ESP201]P32 V0 [PULLUP=YES RAW=YES ANALOG=NO ANALOG_RANGE=255 CLEARCHANNELS=NO]
+#ifdef LOOKLINE_UI
+#define DEFAULT_PLAN           0
+#define DEFAULT_PLANSET        1
+#define DEFAULT_RESULT         0
+#define DEFAULT_RESULTSET      1
+#define DEFAULT_TIMEPLAN       100
+#define DEFAULT_PLANLIMIT      9999
+#define DEFAULT_PCS            100
 
-#define BootButton  0
-#define LED_STATUS  25
-#define BTN_SET     26
-#define SW_1        27
-#define SW_2        14 
-#define IO1_HEADER  2.
-#define IO2_HEADER  15
-#define I2C_SDA     21
-#define I2C_SCL     22
-#define SDCard_CS   5
-#define SCS         5
-#define SCLK        18
-#define MISO        19
-#define MOSI        23
-#define RXD2        16
-#define TXD2        17
-#endif//NodeIoT
+#define DEFAULT_TIMESENT       15
+#define DEFAULT_AMOUNTNODE     5
+#define DEFAULT_BOARDID        1
+#define DEFAULT_NETID          1
+#define DEFAULT_CHANEL         0
+#define DEFAULT_ROLE           0
+#define DEFAULT_COMMODE        0
+#define DEFAULT_MODULETYPE     0
+
+#endif//LOOKLINE_UI
+
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
 #ifdef PLC_MASTER_UI
@@ -1000,7 +938,7 @@ const uint16_t Setting[][2] = {
 
 
 //sizes
-#define EEPROM_SIZE                     2024 //max is 1024
+#define EEPROM_SIZE                     1389 //max is 1024
 #define MAX_SSID_LENGTH                 32
 #define MIN_SSID_LENGTH                 1
 #define MAX_PASSWORD_LENGTH             64
@@ -1171,7 +1109,11 @@ public:
     static bool GetState();
 #endif//Gyro_UI    
 #if defined(TIMESTAMP_FEATURE)
+    // static byte hours;
+    // static byte mins;
+    // static byte secs;
     static void init_time_client();
+    // static void readtime();
 #endif
 private:
     static uint8_t FirmwareTarget;

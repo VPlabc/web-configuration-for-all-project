@@ -61,55 +61,6 @@ byte CONFIG::GyroStates = DEFAULT_GYRO_STATE;
 #include <SD.h>
 #endif//SDCARD_FEATURE
 
-#ifdef USE_LORA
-#include "LoRa.h"
-void CONFIG::SetLoRaValue(){byte BoardIDs;byte Lora_CH;
-  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
-  #ifdef USE_LORA
-  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
-  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
-  #endif//  #ifdef USE_LORA
-}
-//   LOG("LoRa chanel:" + Str_Lora_CH);
-//   LOG("| LoRa Air rate:" + Air_Rate);
-//   LOG("| LoRa baudrate:" + Baud_Rate);
-//   LOGLN("| LoRa Power:" + Lora_PWR);
-String CONFIG::getLoRaChanel(){return Str_Lora_CH;}
-String CONFIG::getLoRaAirate(){return Air_Rate;}
-String CONFIG::getLoRaPower(){return Lora_PWR;}
-void CONFIG::SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX ){SetPinLoRa( _M0,  _M1,  _TX,  _RX );}
-#endif//USE_LORA
-
-#ifdef MCP_USE
-#include "MCP_DAC.h"
-// MCP4921 MCP(19, 18);  //  SW SPI
-MCP4921 MCP0;  //  HW SPI
-MCP4921 MCP1;  //  HW SPI
-volatile int x;
-uint32_t start, stop;
-#endif//MCP_USE
-
-
-#ifdef LOOKLINE_UI
-const int DEFAULT_PLAN =          0;
-const int DEFAULT_PLANSET =       1;
-const int DEFAULT_RESULT =        0;
-const int DEFAULT_RESULTSET =     1;
-const int DEFAULT_TIMEPLAN =      10;
-const int DEFAULT_PLANLIMIT =     9999;
-const int DEFAULT_PCS      =      100;
-
-byte DEFAULT_TIMESENT =      15;
-const int DEFAULT_COUNTER_DELAY = 200;
-byte DEFAULT_AMOUNTNODE =    5;
-byte DEFAULT_BOARDID =       1;
-byte DEFAULT_NETID  =        1;
-byte DEFAULT_CHANEL =        0;
-#define DEFAULT_ROLE           0//NODE
-#define DEFAULT_COMMODE        0//LoRa
-#define DEFAULT_MODULETYPE     1//GATEWAY
-
-#endif//LOOKLINE_UI
 
 uint8_t CONFIG::FirmwareTarget = UNKNOWN_FW;
 byte CONFIG::output_flag = DEFAULT_OUTPUT_FLAG;
@@ -398,10 +349,13 @@ bool CONFIG::InitBaudrate(long value)
     if (Serial.baudRate() != baud_rate) {
 #ifdef ARDUINO_ARCH_ESP8266
         Serial.begin (baud_rate);
-#else
+#endif
+#if defined(esp32dev)
         Serial.begin (baud_rate, ESP_SERIAL_PARAM, ESP_RX_PIN, ESP_TX_PIN);
 #endif
-
+#if defined(esp32s2)
+    // MySerial0.begin(baud_rate, SERIAL_8N1, rxPin, txPin);
+#endif
     }
 #endif
 #ifdef USE_SERIAL_1
@@ -530,6 +484,7 @@ void CONFIG::init_time_client()
         }
     }
 }
+
 #endif
 
 bool CONFIG::is_direct_sd = false;
@@ -795,11 +750,11 @@ bool CONFIG::adjust_EEPROM_settings()
 bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == 0 ||  pos + size_max + 1 > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_max == 0 ||  pos + size_max + 1 > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read string\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     byte b = 13; // non zero for the while loop below
     int i = 0;
 
@@ -822,7 +777,7 @@ bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == -1 ||  pos + size_max + 1 > EEPROM_SIZE ) {
+    if (size_max == -1 ||  pos + size_max + 1 > LAST_EEPROM_ADDRESS ) {
         LOG ("Error read string\r\n")
         return false;
     }
@@ -830,7 +785,7 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
     int i = 0;
     sbuffer = "";
 
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //read until max size is reached or \0 is found
     while (i < size_max && b != 0) {
         b = EEPROM.read (pos + i);
@@ -848,12 +803,12 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 {
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read buffer\r\n")
         return false;
     }
     int i = 0;
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //read until max size is reached
     while (i < size_buffer ) {
         byte_buffer[i] = EEPROM.read (pos + i);
@@ -867,11 +822,11 @@ bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 bool CONFIG::read_byte (int pos, byte * value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 > LAST_EEPROM_ADDRESS) {
         LOG ("Error read byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     value[0] = EEPROM.read (pos);
     EEPROM.end();
     return true;
@@ -887,7 +842,7 @@ bool CONFIG::write_string (int pos, const __FlashStringHelper *str)
 bool CONFIG::write_string (int pos, const char * byte_buffer)
 {
     int size_buffer;
-    int maxsize = EEPROM_SIZE;
+    int maxsize = LAST_EEPROM_ADDRESS;
     size_buffer = strlen (byte_buffer);
     //check if parameters are acceptable
     switch (pos) {
@@ -919,10 +874,10 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         maxsize = MAX_NOTIFICATION_SETTINGS_LENGTH;
         break;
     default:
-        maxsize = EEPROM_SIZE;
+        maxsize = LAST_EEPROM_ADDRESS;
         break;
     }
-    if ( pos + size_buffer + 1 > EEPROM_SIZE || size_buffer > maxsize  ) {
+    if ( pos + size_buffer + 1 > LAST_EEPROM_ADDRESS || size_buffer > maxsize  ) {
         LOG ("Error write string\r\n")
         return false;
     }
@@ -934,7 +889,7 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         }
     }
     //copy the value(s)
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
     }
@@ -950,11 +905,11 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
 bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 {
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error write buffer\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //copy the value(s)
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
@@ -968,11 +923,11 @@ bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 bool CONFIG::write_byte (int pos, const byte value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 > LAST_EEPROM_ADDRESS) {
         LOG ("Error write byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     EEPROM.write (pos, value);
     EEPROM.commit();
     EEPROM.end();
@@ -1051,6 +1006,84 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_byte (EP_DHT_TYPE, DEFAULT_DHT_TYPE) ) {
         return false;
     }
+#if defined(LOOKLINE_UI)
+    if (!CONFIG::write_byte (EP_EEPROM_PLAN, DEFAULT_PLAN) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PLAN_SET, DEFAULT_PLANSET) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_RESULT, DEFAULT_RESULT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_RESULT_SET, DEFAULT_RESULTSET) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PLANMAX, DEFAULT_PLANLIMIT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIME_PLAN, DEFAULT_TIMEPLAN) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT, DEFAULT_TIMESENT) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_PCS, DEFAULT_PCS) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
+        return false;
+    }
+
+#endif//LOOKLINE_UI
+#if defined(TIMESTAMP_FEATURE)
+    if (!CONFIG::write_byte (EP_TIMEZONE, DEFAULT_TIME_ZONE) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_byte (EP_TIME_ISDST, DEFAULT_TIME_DST) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_string (EP_TIME_SERVER1, FPSTR (DEFAULT_TIME_SERVER1) ) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_string (EP_TIME_SERVER2, FPSTR (DEFAULT_TIME_SERVER2) ) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_string (EP_TIME_SERVER3, FPSTR (DEFAULT_TIME_SERVER3) ) ) {
+        return false;
+    }
+#endif
+
+    if (!CONFIG::write_byte (EP_OUTPUT_FLAG, DEFAULT_OUTPUT_FLAG) ) {
+        return false;
+    }
+#ifdef DHT_FEATURE
+    if (!CONFIG::write_buffer (EP_DHT_INTERVAL, (const byte *) &DEFAULT_DHT_INTERVAL, INTEGER_LENGTH) ) {
+        return false;
+    }
+
+    if (!CONFIG::write_byte (EP_DHT_TYPE, DEFAULT_DHT_TYPE) ) {
+        return false;
+    }
 #endif
 #ifdef IOTDEVICE_UI
     if (!CONFIG::write_string (EP_EEPROM_NAME, FPSTR (DEFAULT_BOARD_NAME) ) ) {
@@ -1060,56 +1093,6 @@ bool CONFIG::reset_config()
 #ifdef LOOKLINE_UI
 
 
-    if (!CONFIG::write_buffer (EP_EEPROM_PLAN,(const byte *) &DEFAULT_PLAN, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_PLAN_SET,(const byte *) &DEFAULT_PLANSET, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_RESULT,(const byte *) &DEFAULT_RESULT, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_RESULT_SET ,(const byte *) &DEFAULT_RESULTSET, INTEGER_LENGTH) ) {
-        return false;
-    }
-
-
-    if (!CONFIG::write_buffer (EP_EEPROM_PLANMAX ,(const byte *) &DEFAULT_PLANLIMIT, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_PCS ,(const byte *) &DEFAULT_PCS, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_TIME_PLAN ,(const byte *) &DEFAULT_TIMEPLAN, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_EEPROM_COUNTER_DELAY ,(const byte *) &DEFAULT_COUNTER_DELAY, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ROLE , DEFAULT_ROLE))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE , DEFAULT_AMOUNTNODE)) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT , DEFAULT_TIMESENT))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ID , DEFAULT_BOARDID))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_NETID , DEFAULT_NETID))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_CHANELS , DEFAULT_CHANEL))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_COM_MODE , DEFAULT_COMMODE))  {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE , DEFAULT_MODULETYPE))  {
-        return false;
-    }
 
     if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
         return false;

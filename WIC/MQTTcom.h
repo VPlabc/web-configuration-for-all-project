@@ -10,14 +10,14 @@ class MQTTCOM
 {
 public:
 bool          mqtt_connected = false;
-
+    void update();
     void setup();
     void loop();
     void sensorMessageReceived(int category,int message, int status, float temperature, float humidity, float battery);
     void mqttReconnect();
     
     void mqttPublish(String payload ) ;
-
+    bool connect_state();
 };
 
 extern MQTTCOM mqttcom;

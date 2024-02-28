@@ -196,6 +196,7 @@ const uint8_t PAGE_CAPTIVE [] PROGMEM = "<HTML>\n<HEAD>\n<title>Captive Portal</
 
 void handle_web_interface_root()
 {
+    
     String path = "/index.html";
     String contentType =  web_interface->getContentType(path);
     String pathWithGz = path + ".gz";

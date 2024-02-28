@@ -191,7 +191,6 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
   timerAlarmWrite(timer, 10, true);
   timerAlarmEnable(timer);
 #endif//TIMER_INTER
-
 #ifdef Moto_UI
     // ModeRun = 0;CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &ModeRun);
     if (ModeRun == 1)
@@ -338,41 +337,26 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     file.close();
                 }
             }
-#ifdef LOOKLINE_UI
-// CONFIG::read_byte(EP_EEPROM_COM_MODE, &RunMode);
-// if(RunMode != MESH){
-#endif// lookline_ui
-#ifdef PLC_MASTER_UI
-CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
-if(RunMode == 2){
-#endif//PLC_MASTER_UI
+
             // setup wifi according settings
-// wifi_config.Setup(true, LED_STATUS, 1);
-// #ifndef LOOKLINE_UI
-//             if (!wifi_config.Setup(false, LED_STATUS, 1))
-//             {
-// #ifdef ESP3D_UI
-//                 OLED_DISPLAY::setCursor(0, 11);
-// #endif // Moto
+            if (!wifi_config.Setup())
+            {
+#ifdef ESP3D_UI
+                OLED_DISPLAY::setCursor(0, 11);
+                ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
+#endif // Moto
        // try again in AP mode
                 ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
                     // LOGLN("Safe mode 1");
                 if (!wifi_config.Setup(true, LED_STATUS, 1))
                 {
-// #ifdef ESP3D_UI
-                    wifi_config.Safe_Setup();
-// #endif //
-                    // LOGLN("Safe mode 2");
+#ifdef ESP3D_UI
                     ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
+                    wifi_config.Safe_Setup();
+#endif //
+                    LOG("Safe mode 2");
                 }
-            // }
-// #endif// lookline_ui
-        #ifdef LOOKLINE_UI
-        // }
-        #endif// lookline_ui
-        #ifdef PLC_MASTER_UI
-        }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
-        #endif//PLC_MASTER_UI
+            }
             delay(100);
             // setup servers
             if (!wifi_config.Enable_servers())
