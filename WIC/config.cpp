@@ -399,8 +399,8 @@ bool CONFIG::InitBaudrate(long value)
 #ifdef ARDUINO_ARCH_ESP8266
         Serial.begin (baud_rate);
 #endif
-#if defined(esp32dev)
-        Serial.begin (baud_rate, ESP_SERIAL_PARAM, ESP_RX_PIN, ESP_TX_PIN);
+#if defined(ESP32)
+        Serial.begin (baud_rate);
 #endif
 #if defined(esp32s2)
     // MySerial0.begin(baud_rate, SERIAL_8N1, rxPin, txPin);

@@ -47,7 +47,7 @@ public:
 #endif//ServerUpdateFW
 
     WIC();
-    void begin(uint16_t startdelayms = 1000, uint16_t recoverydelayms = 1000);
+    void begin(uint16_t startdelayms = 100, uint16_t recoverydelayms = 100);
     void process();
     #ifdef LOOKLINE_UI
     void SetDebug(bool state);
