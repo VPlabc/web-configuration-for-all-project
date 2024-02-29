@@ -114,7 +114,7 @@
 // #define DHT_FEATURE
 
 //AUTHENTICATION_FEATURE: protect pages by login password
-#define AUTHENTICATION_FEATURE
+// #define AUTHENTICATION_FEATURE
 
 //WS_DATA_FEATURE: allow to connect serial from Websocket
 #define WS_DATA_FEATURE
@@ -1023,7 +1023,7 @@ const uint16_t Setting[][2] = {
 
 
 //sizes
-#define EEPROM_SIZE                     1389 //max is 1024
+#define EEPROM_SIZE                     2000 //max is 1024
 #define MAX_SSID_LENGTH                 32
 #define MIN_SSID_LENGTH                 1
 #define MAX_PASSWORD_LENGTH             64

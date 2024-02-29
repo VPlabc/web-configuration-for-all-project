@@ -265,9 +265,11 @@ void PLC_MASTER::setup(){
   #ifdef ModbusCom
   LOGLN("_________________________________________ MODBUS ________________________________________");
   if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {ModbusRole = bbuf;}
-    PLCModbusCom.modbus_setup(ModbusRole);
+    if(ModbusRole > 254){ModbusRole = 1;}
     if(ModbusRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
     if(ModbusRole == slave){LOG("Modbus Slave ");}
+    PLCModbusCom.modbus_setup(ModbusRole);
+
     LOGLN("Start!!");
 #endif//ModbusCom 
 #ifdef SDCARD_FEATURE
@@ -333,7 +335,7 @@ void PLC_MASTER::loop(){// LOG("Loop");
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
-   if(connectWebSocket == 1)PLCModbusCom.modbus_loop(ModbusRole);
+  if(connectWebSocket == 1)PLCModbusCom.modbus_loop(ModbusRole);
    
   if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
     PLCModbusCom.setModbusupdateState(0);
@@ -484,6 +486,7 @@ void sendInfo() {
 }
 
 void PLC_MASTER::connectWeb(byte connected){
+  LOGLN("Connected: "+String(connected));
   connectWebSocket = connected;
   PLCModbusCom.connectModbus(connected);
 }

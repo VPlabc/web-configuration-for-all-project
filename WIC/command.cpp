@@ -2073,7 +2073,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         #endif//LOOKLINE_UI
 
         #ifdef PLC_MASTER_UI
-        PLC_cmd.connectWeb(1);
+        // PLC_cmd.connectWeb(1);
         #endif//PLC_MASTER_UI
     }
     break;

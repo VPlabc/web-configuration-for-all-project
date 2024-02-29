@@ -805,7 +805,7 @@ bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
         LOG ("Error read string\r\n")
         return false;
     }
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     byte b = 13; // non zero for the while loop below
     int i = 0;
 
@@ -836,7 +836,7 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
     int i = 0;
     sbuffer = "";
 
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     //read until max size is reached or \0 is found
     while (i < size_max && b != 0) {
         b = EEPROM.read (pos + i);
@@ -859,7 +859,7 @@ bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
         return false;
     }
     int i = 0;
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     //read until max size is reached
     while (i < size_buffer ) {
         byte_buffer[i] = EEPROM.read (pos + i);
@@ -877,7 +877,7 @@ bool CONFIG::read_byte (int pos, byte * value)
         LOG ("Error read byte\r\n")
         return false;
     }
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     value[0] = EEPROM.read (pos);
     EEPROM.end();
     return true;
@@ -940,7 +940,7 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         }
     }
     //copy the value(s)
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
     }
@@ -960,7 +960,7 @@ bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
         LOG ("Error write buffer\r\n")
         return false;
     }
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     //copy the value(s)
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
@@ -978,7 +978,7 @@ bool CONFIG::write_byte (int pos, const byte value)
         LOG ("Error write byte\r\n")
         return false;
     }
-    EEPROM.begin (LAST_EEPROM_ADDRESS);
+    EEPROM.begin (EEPROM_SIZE);
     EEPROM.write (pos, value);
     EEPROM.commit();
     EEPROM.end();

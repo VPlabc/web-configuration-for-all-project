@@ -40,7 +40,7 @@ bool Done = false;
 // word regs_Master[ModbuS.HOLDING_REGS_SIZE*2];
 
 void debugs();
-#define dataSize 32
+#define dataSize 30
 
 static const int16_t offsetM0 = 2048;//
 static const int16_t offsetD0 = 4096;//
@@ -384,13 +384,13 @@ uint16_t Modbus_Prog::getModbusupdateAddr(){ return MB_Update_Address;}
 
 void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
   LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) + " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite));
-  Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
+  // Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
 }
 
 void Modbus_Prog::modbus_loop(bool role) {
   // #ifdef MASTER_MODBUS
   if(role == Master && MB_connect == true){
-    Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
+    // Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
     delay(5);
     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
 

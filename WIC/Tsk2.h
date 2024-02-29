@@ -22,7 +22,7 @@ void Task2code( void * pvParameters ) {
 // }
    
 #ifdef PLC_MASTER_UI
-PLC_prog.loop();
+// PLC_prog.loop();
 // mb_prog.loop();
 #endif//PLC_MASTER_UI
   // LOG("Task1 running on core ");

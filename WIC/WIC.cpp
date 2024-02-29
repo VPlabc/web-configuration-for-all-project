@@ -339,9 +339,14 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                 }
             }
 #ifdef LOOKLINE_UI
-// CONFIG::read_byte(EP_EEPROM_COM_MODE, &RunMode);
-// if(RunMode != MESH){
+CONFIG::read_byte(EP_EEPROM_COM_MODE, &RunMode);
+if(RunMode != MESH){
 #endif// lookline_ui
+#ifdef PLC_MASTER_UI
+CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
+//AP mode = 1; Station client mode = 2
+if(RunMode == 2){
+#endif
             // setup wifi according settings
 // wifi_config.Setup(true, LED_STATUS, 1);
 // #ifndef LOOKLINE_UI
@@ -366,6 +371,9 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
         #ifdef LOOKLINE_UI
         // }
         #endif// lookline_ui
+        #ifdef PLC_MASTER_UI
+        }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        #endif
             delay(100);
             // setup servers
             if (!wifi_config.Enable_servers())

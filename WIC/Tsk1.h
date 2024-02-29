@@ -10,10 +10,10 @@ void Task1code( void * pvParameters ) {
   for (;;) {
 
 #ifdef PLC_MASTER_UI
-// PLC_MASTER_Prog.loop();
+PLC_MASTER_Prog.loop();
 // mb_prog.loop();
 #endif//PLC_MASTER_UI
-    delay(200);
+    delay(2000);
 
   }//End loop
 }
