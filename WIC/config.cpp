@@ -61,6 +61,55 @@ byte CONFIG::GyroStates = DEFAULT_GYRO_STATE;
 #include <SD.h>
 #endif//SDCARD_FEATURE
 
+#ifdef USE_LORA
+#include "LoRa.h"
+void CONFIG::SetLoRaValue(){byte BoardIDs;byte Lora_CH;
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  #ifdef USE_LORA
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
+  #endif//  #ifdef USE_LORA
+}
+//   LOG("LoRa chanel:" + Str_Lora_CH);
+//   LOG("| LoRa Air rate:" + Air_Rate);
+//   LOG("| LoRa baudrate:" + Baud_Rate);
+//   LOGLN("| LoRa Power:" + Lora_PWR);
+String CONFIG::getLoRaChanel(){return Str_Lora_CH;}
+String CONFIG::getLoRaAirate(){return Air_Rate;}
+String CONFIG::getLoRaPower(){return Lora_PWR;}
+void CONFIG::SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX ){SetPinLoRa( _M0,  _M1,  _TX,  _RX );}
+#endif//USE_LORA
+
+#ifdef MCP_USE
+#include "MCP_DAC.h"
+// MCP4921 MCP(19, 18);  //  SW SPI
+MCP4921 MCP0;  //  HW SPI
+MCP4921 MCP1;  //  HW SPI
+volatile int x;
+uint32_t start, stop;
+#endif//MCP_USE
+
+
+#ifdef LOOKLINE_UI
+const int DEFAULT_PLAN =          0;
+const int DEFAULT_PLANSET =       1;
+const int DEFAULT_RESULT =        0;
+const int DEFAULT_RESULTSET =     1;
+const int DEFAULT_TIMEPLAN =      10;
+const int DEFAULT_PLANLIMIT =     9999;
+const int DEFAULT_PCS      =      100;
+
+byte DEFAULT_TIMESENT =      15;
+const int DEFAULT_COUNTER_DELAY = 200;
+byte DEFAULT_AMOUNTNODE =    5;
+byte DEFAULT_BOARDID =       1;
+byte DEFAULT_NETID  =        1;
+byte DEFAULT_CHANEL =        0;
+#define DEFAULT_ROLE           0//NODE
+#define DEFAULT_COMMODE        0//LoRa
+#define DEFAULT_MODULETYPE     1//GATEWAY
+
+#endif//LOOKLINE_UI
 
 uint8_t CONFIG::FirmwareTarget = UNKNOWN_FW;
 byte CONFIG::output_flag = DEFAULT_OUTPUT_FLAG;
@@ -993,82 +1042,22 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_string (EP_TIME_SERVER3, FPSTR (DEFAULT_TIME_SERVER3) ) ) {
         return false;
     }
-#endif
-
-    if (!CONFIG::write_byte (EP_OUTPUT_FLAG, DEFAULT_OUTPUT_FLAG) ) {
+    if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {
         return false;
     }
-#ifdef DHT_FEATURE
-    if (!CONFIG::write_buffer (EP_DHT_INTERVAL, (const byte *) &DEFAULT_DHT_INTERVAL, INTEGER_LENGTH) ) {
+    if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
         return false;
     }
-
-    if (!CONFIG::write_byte (EP_DHT_TYPE, DEFAULT_DHT_TYPE) ) {
+    if (!CONFIG::write_string (EP_MQTT_BROKER, FPSTR (DEFAULT_MQTT_BROKER) ) ) {
         return false;
     }
-#if defined(LOOKLINE_UI)
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN, DEFAULT_PLAN) ) {
+    if (!CONFIG::write_string (EP_MQTT_PORT, FPSTR (DEFAULT_MQTT_PORT) ) ) {
         return false;
     }
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN_SET, DEFAULT_PLANSET) ) {
+    if (!CONFIG::write_string (EP_MQTT_USER, FPSTR (DEFAULT_MQTT_USER) ) ) {
         return false;
     }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT, DEFAULT_RESULT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT_SET, DEFAULT_RESULTSET) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PLANMAX, DEFAULT_PLANLIMIT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIME_PLAN, DEFAULT_TIMEPLAN) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT, DEFAULT_TIMESENT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PCS, DEFAULT_PCS) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
-        return false;
-    }
-
-#endif//LOOKLINE_UI
-#if defined(TIMESTAMP_FEATURE)
-    if (!CONFIG::write_byte (EP_TIMEZONE, DEFAULT_TIME_ZONE) ) {
-        return false;
-    }
-
-    if (!CONFIG::write_byte (EP_TIME_ISDST, DEFAULT_TIME_DST) ) {
-        return false;
-    }
-
-    if (!CONFIG::write_string (EP_TIME_SERVER1, FPSTR (DEFAULT_TIME_SERVER1) ) ) {
-        return false;
-    }
-
-    if (!CONFIG::write_string (EP_TIME_SERVER2, FPSTR (DEFAULT_TIME_SERVER2) ) ) {
-        return false;
-    }
-
-    if (!CONFIG::write_string (EP_TIME_SERVER3, FPSTR (DEFAULT_TIME_SERVER3) ) ) {
+    if (!CONFIG::write_string (EP_MQTT_PASS, FPSTR (DEFAULT_MQTT_PASS) ) ) {
         return false;
     }
 #endif
@@ -1093,6 +1082,56 @@ bool CONFIG::reset_config()
 #ifdef LOOKLINE_UI
 
 
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN,(const byte *) &DEFAULT_PLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN_SET,(const byte *) &DEFAULT_PLANSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT,(const byte *) &DEFAULT_RESULT, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT_SET ,(const byte *) &DEFAULT_RESULTSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+
+
+    if (!CONFIG::write_buffer (EP_EEPROM_PLANMAX ,(const byte *) &DEFAULT_PLANLIMIT, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PCS ,(const byte *) &DEFAULT_PCS, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_TIME_PLAN ,(const byte *) &DEFAULT_TIMEPLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_COUNTER_DELAY ,(const byte *) &DEFAULT_COUNTER_DELAY, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE , DEFAULT_ROLE))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE , DEFAULT_AMOUNTNODE)) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT , DEFAULT_TIMESENT))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ID , DEFAULT_BOARDID))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_NETID , DEFAULT_NETID))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_CHANELS , DEFAULT_CHANEL))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_COM_MODE , DEFAULT_COMMODE))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE , DEFAULT_MODULETYPE))  {
+        return false;
+    }
 
     if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
         return false;
