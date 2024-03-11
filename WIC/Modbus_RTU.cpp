@@ -207,14 +207,14 @@ enum{Slave, Master};
 
 
 /// @brief /// Register address
-bool role = Master;
+bool ModbusRole = Master;
 
 
 void debugs();
 
 
 
-void Modbus_Prog::modbus_setup(bool role) { 
+void Modbus_Prog::modbus_setup(bool ModbusRole) { 
 #ifdef PLC_MASSTER_UI
   #ifndef MCP_USE
   pinMode(BTN_SET,    INPUT_PULLUP);
@@ -230,11 +230,11 @@ Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2,false);
 Serial2.begin(9600, SERIAL_8N1, 16, 17,false);
  #endif//PLC_MASTER_PROG 
 initupdate();
-  if(role == Master){
+  if(ModbusRole == Master){
   Modbus_Master.setTimeoutTimeMs(100);
   Modbus_Master.begin(&Serial2);
   }
-  if(role ==Slave){
+  if(ModbusRole ==Slave){
     mb.begin(&Serial2);
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
@@ -325,7 +325,7 @@ initupdate();
 
 
 #endif//ETHER_W5500
-// if(role == 0){
+// if(ModbusRole == 0){
     // read 5 registers starting at address 0
 //Modbus Setup
 
@@ -370,9 +370,9 @@ void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
 
 }
 
-void Modbus_Prog::modbus_loop(bool role) {
+void Modbus_Prog::modbus_loop(bool ModbusRole) {
   // #ifdef MASTER_MODBUS
-  if(role == Master && MB_connect == true){
+  if(ModbusRole == Master && MB_connect == true){
     Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
     delay(5);
     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
@@ -412,7 +412,7 @@ void Modbus_Prog::modbus_loop(bool role) {
 
             #ifdef LOOKLINE_UI
             Lookline_modbus.lookline_modbus_get(ModbuS.regs_WRITE);
-        if(Lookline_modbus.Get_role() == GATEWAY){
+        if(Lookline_modbus.Get_ModbusRole() == GATEWAY){
             Lookline_modbus.lookline_modbus_get(ModbuS.regs_WRITE);
         }
       #endif// LOOKLINE_UI
@@ -425,7 +425,7 @@ void Modbus_Prog::modbus_loop(bool role) {
     // debugs();
   // #endif//MASTER
   #ifdef SerialPort
-  if(role == Master && MB_connect == true){
+  if(ModbusRole == Master && MB_connect == true){
     Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
     for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
   // inputRegisters = ;
@@ -443,7 +443,7 @@ void Modbus_Prog::modbus_loop(bool role) {
       }
     #endif// defined(Enthernet) || defined(WifiConnect) 
   }
-  if(role == Slave ){
+  if(ModbusRole == Slave ){
 
       mb.task();
       
@@ -476,8 +476,8 @@ void Modbus_Prog::modbus_loop(bool role) {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     // for (int i = 0; i < dataSize; i++){inputRegisters[i] = random(0,100);}
-    // if(role == Slave){LOGLN("slave");}
-    // if(role == Master){LOGLN("master");}
+    // if(ModbusRole == Slave){LOGLN("slave");}
+    // if(ModbusRole == Master){LOGLN("master");}
     //   LOG("holdingRegisters: ");
     //   // Your code here to print to serial every 2 seconds
     //   LOG(holdingRegisters[0]);
@@ -528,7 +528,7 @@ holdingRegs[ModbuS.HOLDING_REGS_SIZE*2] = NodeSlave.modbus_update(holdingRegs);
 
     // (int BoardID,int NetID,bool RunStop,bool OnOff,int Plan,
     // int PlanSet, int Result,int ResultSet,int PlanLimit,
-    // int Pcs,int TimeInc,int ComMode,int Type,int Role,
+    // int Pcs,int TimeInc,int ComMode,int Type,int ModbusRole,
     // int OnWifi,int DelayCounter);
 // #ifdef DEBUG
 //   unsigned long currentMillis_1 = millis();

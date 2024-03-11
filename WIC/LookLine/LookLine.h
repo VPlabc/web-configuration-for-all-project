@@ -140,6 +140,7 @@ unsigned int EncodeRespond(byte bytel,byte byteh);
 void SetDone();
 void SetStart(bool START);
 void SetConfig(bool CONFIG);
+bool GetConfigState();
 byte GetRun();
 byte GetDebug();
 bool GetFW();

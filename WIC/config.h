@@ -29,9 +29,11 @@
 // #define AUTOITGW_UI
 // #define Moto_UI
 // #define Switch_UI
-// #define LOOKLINE_UI
-#define PLC_MASTER_UI
+#define LOOKLINE_UI
+// #define PLC_MASTER_UI
 //  #define Basic_UI
+
+
 
 #ifdef ARDUINO_ARCH_ESP8266
 // #ifndef IOTDEVICE_UI
@@ -439,6 +441,8 @@ extern const char * pathToFileName(const char * path);
 
 #include "wificonf.h"
 
+enum{IDfix = 100};
+
 typedef enum {
     UPLOAD_STATUS_NONE = 0,
     UPLOAD_STATUS_FAILED = 1,
@@ -484,6 +488,7 @@ typedef enum {
 
 
 //flags
+#define AP_STA_MODE     2
 #define STA_MODE        1
 #define AP_MODE         0
 #define CLIENT_MODE     2
@@ -697,8 +702,15 @@ typedef enum {
 #define EP_EEPROM_RESULT_SET    1351// 4 bytes
 #define EP_EEPROM_ON_OFF        1355// 1 bytes
 #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
+#define EP_MQTT_PORT            1360// 4 bytes
+#define EP_LORA_POWER           1364//1  bytes = byte
+#define EP_LORA_AIRRATE         1365//1  bytes = byte
+#define EP_LORA_PROTOCOL        1366//1  bytes = byte
 
-#define LAST_EEPROM_ADDRESS 1360
+#define LAST_EEPROM_ADDRESS 1367
+
+#define LED_STATUS 25//1  bytes = flag
+
 #define TIMESTAMP_FEATURE
 // #define MQTT_Mode
 #define Mesh_Network
@@ -861,6 +873,11 @@ const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
 const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/version.txt";
 const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/firmware.bin";
 const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
+const char DEFAULT_MQTT_BROKER []  PROGMEM =   "name";
+const char DEFAULT_MQTT_USER []  PROGMEM =   "name";
+const char DEFAULT_MQTT_PASS []  PROGMEM =   "name";
+const int DEFAULT_MQTT_PORT =           1883;
+
 #define DEFAULT_TIME_ZONE           7
 #define DEFAULT_TIME_DST            0
 #define DEFAULT_PRIMARY_SD  2

@@ -77,10 +77,11 @@ enum {slave,master};
 
 
 unsigned long EVENT_INTERVAL_MS1 = 3000;
+unsigned long REFRESH_INTERVAL_MS = 60000;
 #ifdef MASTER_MODBUS
-byte ModbusRole = master;
+byte MBRole = master;
 #else
-byte ModbusRole = slave;
+byte MBRole = slave;
 #endif//MASTER_MODBUS
 byte connectWebSocket = 0;
 byte IDList[255];
@@ -136,10 +137,10 @@ void PLC_MASTER::setup(){
   #endif//  #ifdef USE_LORA
   #ifdef ModbusCom
   LOGLN("MODBUS ________________________________________");
-  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {ModbusRole = 1;} else {ModbusRole = bbuf;}
-    PLCModbusCom.modbus_setup(ModbusRole);
-    if(ModbusRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
-    if(ModbusRole == slave){LOG("Modbus Slave ");}
+  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {MBRole = 1;} else {MBRole = bbuf;}
+    PLCModbusCom.modbus_setup(MBRole);
+    if(MBRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
+    if(MBRole == slave){LOG("Modbus Slave ");}
     LOGLN("Start!!");
 #endif//ModbusCom 
 #ifdef SDCARD_FEATURE
@@ -203,7 +204,16 @@ void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;LOGLN("disable for up
 
 bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
+//Refresh wifi
 if(UpdateFirmware==false){
+static unsigned long lastRefresh1 = millis();
+if (((millis() - lastRefresh1) > REFRESH_INTERVAL_MS )){lastRefresh1 = millis();
+   if(connectWebSocket == 0){
+    WiFi.disconnect();WiFi.mode(WIFI_OFF);
+    wifi_config.Setup(true, LED_STATUS, 1);
+   }
+}
+/////
 #ifdef MQTT_USE
   #ifdef MQTTSSL
      if(WiFi.status() == WL_CONNECTED)webSocket.loop();
@@ -212,7 +222,7 @@ if(UpdateFirmware==false){
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
-   if(connectWebSocket == 1){PLCModbusCom.modbus_loop(ModbusRole);}
+   if(connectWebSocket == 1){PLCModbusCom.modbus_loop(MBRole);}
    
   if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
     PLCModbusCom.setModbusupdateState(0);
@@ -372,9 +382,9 @@ void PLC_MASTER::connectWeb(byte connected){
 }
 
 void PLC_MASTER::GetIdList(int idlist[]){
-  for(byte i=0;i<sizeof(idlist);i++){
-    IDList[i] = idlist[i];
-  }
+  // for(byte i=0;i<sizeof(idlist);i++){
+  //   IDList[i] = idlist[i];
+  // }
 }
 #endif//PLC_MASSTER_UI
 

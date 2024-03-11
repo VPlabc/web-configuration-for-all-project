@@ -54,7 +54,7 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
 }
   char bufferMesh[250];
   bool Meshdone;
-
+  bool Meshdebug = false;
 void formatMacAddress(const uint8_t *macAddr, char *buffer, int maxLength)
 {
   snprintf(buffer, maxLength, "%02x:%02x:%02x:%02x:%02x:%02x", macAddr[0], macAddr[1], macAddr[2], macAddr[3], macAddr[4], macAddr[5]);
@@ -80,7 +80,7 @@ void MeshRecive(const uint8_t *macAddr, const uint8_t *data, int dataLen)
       ids += bufferMesh[1];
       ids += bufferMesh[2];
       ids += bufferMesh[3];
-      NodeID = ids.toInt();
+      int NodeID = ids.toInt();
       LOG("Mesh revice | ID:");LOGLN(NodeID);
       Data_Proccess(bufferMesh);
 }
@@ -101,14 +101,14 @@ void sentCallback(const uint8_t *macAddr, esp_now_send_status_t status)
 int check_protocol()
 {
     char error_buf1[100];
-  if(LooklineDebug){
+  if(Meshdebug){
     LOGLN();
-    LOGLN("___________________________________");
+    LOGLN("Mesh___________________________________");
     LOGLN();
   }
      esp_err_t error_code = esp_wifi_get_protocol(current_wifi_interface, &current_protocol);
      esp_err_to_name_r(error_code,error_buf1,100);
-  if(LooklineDebug){
+  if(Meshdebug){
      LOG("esp_wifi_get_protocol error code: ");
      LOGLN(error_buf1);
     LOGLN("Code: " + String(current_protocol));
@@ -147,18 +147,21 @@ void OnMeshDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 void MeshSetup()
 {
 String dataDisp = "";
- 
+ bool Meshdebug = Lookline_PROG.GetDebug();
+ LOGLN("Mesh: " + String(Meshdebug));
   // Init ESP-NOW
   WiFi.mode(WIFI_STA);
   #ifdef ARDUINO_ARCH_ESP8266
   #else
+  if(Meshdebug){
   if(check_protocol() != 8){
   esp_wifi_set_protocol(current_wifi_interface, WIFI_PROTOCOL_LR);
   check_protocol();
   }
   #endif//#ifdef ARDUINO_ARCH_ESP8266
   if (esp_now_init() != ESP_OK) {
-    if(LooklineDebug)LOGLN("Error initializing ESP-NOW");
+    LOGLN("Error initializing ESP-NOW");
+  }
   }
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
@@ -169,13 +172,13 @@ String dataDisp = "";
   peerInfo.encrypt = false;
   // Add peer        
   if (esp_now_add_peer(&peerInfo) != ESP_OK){
-    if(LooklineDebug)LOGLN("Failed to add peer");
+    if(Meshdebug)LOGLN("Failed to add peer");
   
     // RunMode = 1;
     return;
   }
   else{
-    if(LooklineDebug)LOGLN("add peer OK");
+    if(Meshdebug)LOGLN("add peer OK");
   }
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(MeshRecive);

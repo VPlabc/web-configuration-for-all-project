@@ -151,10 +151,10 @@ void printParameters(struct Configuration configuration) {
   Baud_Rate = configuration.SPED.getUARTBaudRate();
   Lora_PWR = configuration.OPTION.getTransmissionPowerDescription();
 
-  LOG("LoRa chanel:" + Str_Lora_CH);
-  LOG("| LoRa Air rate:" + Air_Rate);
-  LOG("| LoRa baudrate:" + Baud_Rate);
-  LOGLN("| LoRa Power:" + Lora_PWR);
+//   LOG("LoRa chanel:" + Str_Lora_CH);
+//   LOG("| LoRa Air rate:" + Air_Rate);
+//   LOG("| LoRa baudrate:" + Baud_Rate);
+//   LOGLN("| LoRa Power:" + Lora_PWR);
 }
 #endif //USE_LORA
 #endif//LORA_

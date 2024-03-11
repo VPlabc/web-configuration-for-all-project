@@ -1011,11 +1011,11 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_string (EP_ADMIN_PWD, FPSTR (DEFAULT_ADMIN_PWD) ) ) {return false;}
     if (!CONFIG::write_string (EP_USER_PWD, FPSTR (DEFAULT_USER_PWD) ) ) {return false;}
     if (!CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ) {return false;}
+    #ifdef PLC_MASTER_UI
     if (!CONFIG::write_buffer (EP_MODBUS_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {return false;}
     if (!CONFIG::write_buffer (EP_MODBUS_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {return false;}
     if (!CONFIG::write_buffer (EP_MODBUS_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {return false;}
 
-#ifdef PLC_MASTER_UI
     if (!CONFIG::write_byte (EP_EEPROM_ROLE , DEFAULT_ROLE))  { return false;}
     
     if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {return false;}
