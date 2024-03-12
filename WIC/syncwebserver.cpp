@@ -71,7 +71,10 @@ WIC W;
 #include "nofile.h"
 #include "syncwebserver.h"
 WebSocketsServer * socket_server;
-
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER webPLC;
+#endif//PLC_MASTER_UI
 #ifdef Switch_UI
 #include "LightTimer/LightTimer.h"
 LightTimer lights;
@@ -1371,6 +1374,10 @@ String webpage = "";
 #ifdef WEB_UPDATE_FEATURE
 void WebUpdateUpload()
 {
+    #ifdef PLC_MASTER_UI
+    webPLC.connectWeb(0);
+    webPLC.UpdateFW(1);
+    #endif//PLC_MASTER_UI
     static size_t last_upload_update;
     static uint32_t maxSketchSpace ;
     //only admin can update FW

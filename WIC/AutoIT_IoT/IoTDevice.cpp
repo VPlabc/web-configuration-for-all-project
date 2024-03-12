@@ -34,11 +34,7 @@ MQTTCOM mqttcommu;
 
 //________ Sensor
 #include "DHTesp.h"
-DHTesp dht_iot;
-
-#include <SHT3x.h>
-SHT3x Sensor;
-
+DHTesp dht;
 #define DHTPin 32
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -998,10 +994,7 @@ void IoT_Device::NodeCategoryInit(byte cat)
       pinMode(SWITCHPIN, INPUT_PULLUP);
     }
     else if (cat == GROUP_HT){
-      dht_iot.setup(DHTPin); 
-    }
-    else if (cat == GROUP_SHT){
-        Sensor.Begin();
+      dht.setup(DHTPin); 
     }
     else if (cat == GROUP_MOTION){
       pinMode(SWITCHPIN, INPUT_PULLUP);

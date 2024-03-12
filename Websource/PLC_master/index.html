@@ -1561,6 +1561,24 @@
       right: 0px;
     }
 
+/* CSS để hiển thị kẻ bảng */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table, th, td {
+  border: 1px solid black;
+}
+
+th, td {
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: #f2f2f2;
+}
 
 
   </style>
@@ -2010,8 +2028,8 @@
       </button> -->
       <div class="collapse navbar-collapse" id="navbarNav" style="width: 10px;">
         <ul class="navbar-nav">
-          <li><a id="dashboard" href="#dashboard"  class="nav-link py-4  active" style="display: none;"><svg class="bi" width="24" height="24" ><use xlink:href="#home_icon"></use></svg></a></li>
-          <li><a id="application" href="#application" class="nav-link py-4 " style="display: none;">       <svg class="bi" width="24" height="24"><use xlink:href="#app_icon"></use></svg></a></li>
+          <li><a id="dashboard" href="#dashboard"  class="nav-link py-4  active" ><svg class="bi" width="24" height="24" ><use xlink:href="#home_icon"></use></svg></a></li>
+          <li><a id="application" href="#application" class="nav-link py-4 " >       <svg class="bi" width="24" height="24"><use xlink:href="#app_icon"></use></svg></a></li>
           <li><a id="console"  href="#console"  class="nav-link py-4 " style="display: none;">       <svg class="bi" width="24" height="24"><use xlink:href="#console_icon"></use></svg></a></li>
           <li class="dropdown" onclick="toggleDropdown(this)">
           <a id="settingA" href="#" class="nav-link py-4 " style="display: none;">       <svg class="bi" width="24" height="24"> <use xlink:href="#gear_fill_icon"></use></svg></a>
@@ -2282,7 +2300,7 @@
             <span class="" id="busy_box2"></span>
         </div>
     </div>
-
+    <!-- <input type="text" class="form-control w50" id="ProductDataSave" -->
         <div class="row p-4" id="dashAppItem"></div> 
 
         <div class="row  p-4"></div>
@@ -2738,7 +2756,6 @@
             onkeyup="App_OnKeyUp(event)" translateph placeholder="Application code">
         </div>
       </div>
-          
           <button type="button" class="btn btn-info"
         onclick="AppGet();"><span><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
             <g transform="translate(50,1200) scale(1, -1)">
@@ -3802,9 +3819,59 @@
           <button type="button" class="btn-close" onclick="CloseModalCardSet('cancel')"  aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <span class="modal-text"></span>
+          <span class="modal-text" id="cardID"></span>
           <!-- Form inside the modal with input fields for each value -->
           <form>
+
+      <div class="row" id="name_product">
+        <div class="input-group" style="width:100%">
+          <input type="text" class="form-control w50" id="dataProduct" translateph placeholder="Product json">
+        </div>
+      
+        <div style="margin-top: 10px;"> 
+          <label for="doiten" class="form-label">Change name</label>
+          <div style="display: flex; align-items: center;"> 
+            <input type="text" class="form-control" id="doiten" maxlength="20">
+            <button type="button" class="btn btn-warning" style="margin-left: 10px;" onclick="changeName()">Change</button> 
+          </div> 
+        </div>
+
+        <div style="margin-top: 10px;"> 
+          <label for="doiten" class="form-label">Add Product</label>
+          <div style="display: flex; align-items: center;"> 
+            <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
+            <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
+            <!-- Button mở danh sách xóa sản phẩm -->
+            <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
+          </div>
+
+          <!-- Bảng danh sách sản phẩm và nút xóa -->
+          <div id="deleteProductList" style="display: none; margin-top: 20px;">
+            <table id="productTable">
+              <thead>
+                <tr>
+                  <th style="width: 50%;">List of products</th>
+                  <th>Click to edit</th>
+                  <th>Click to delete</th>
+                </tr>
+              </thead>
+              <tbody id="productTableBody">
+              </tbody>
+            </table>
+
+            <div id="editForm" data-index="0" style="display: none;">
+              <input type="text"  id="editProductName" maxlength="20" placeholder="Product Name" style="width: 36%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <input type="text"  id="editProductSet" placeholder="Plan/Result set" style="width: 25%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <input type="text"  id="editCycleTime" placeholder="Cycle Time" style="width: 25%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <button type="button" onclick="saveProduct()" type="button" class="btn btn-warning">Save</button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+      
             <div class="row">
                 <div class="col -3">
                     <label for="planInput" class="form-label">Plan</label>
@@ -3817,20 +3884,26 @@
             </div>
             <div class="row">
               <div class="col -3">
-                  <label for="planSetInput" class="form-label">Plan set</label>
+                  <label for="planSetInput" class="form-label">Plan/Result set</label>
                   <input type="text" class="form-control" id="planSetInput">
               </div>
               <div class="col -3">
-                  <label for="resultSetInput" class="form-label">Result set</label>
-                  <input type="text" class="form-control" id="resultSetInput">
+                  <!-- <label for="resultSetInput" class="form-label">Result set</label>
+                  <input type="text" class="form-control" id="resultSetInput"> -->
+                  <label  class="form-label">Product</label>
+                  <div class="col">
+                    <select id="ProductDataSave1" onchange="displaySelectedProduct()" style="width: 100%; text-align: center; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;"></select>
+                  </div>
+                 
               </div>
-          </div><div class="row">
+          </div>
+          <div class="row">
             <div class="col -3">
-                <label for="TimeIncInput" class="form-label">Time inc</label>
+                <label for="TimeIncInput" class="form-label">Cycle Time</label>
                 <input type="text" class="form-control" id="TimeIncInput">
             </div>
             <div class="col -3">
-                <label for="PCSInput" class="form-label">pcs/h</label>
+                <label for="PCSInput" class="form-label">Total Plan</label>
                 <input type="text" class="form-control" id="PCSInput">
             </div>
         </div>
@@ -4148,6 +4221,7 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
     iconHistory = "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' class='bi bi-clock-history' viewBox='0 0 16 16'><path d='M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z'/><path d='M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z'/><path d='M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z'/></svg>";
     iconRSSI = "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' class='bi bi-broadcast' viewBox='0 0 16 16'><path d='M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'/></svg>";
     
+
     var DataCurrent = [0, 0, 0, 0]
     var DataSet = [0, 0, 0, 0]
     var DataName = []
@@ -4224,6 +4298,9 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
     var ButtonName = ["Day AM of ","Day PM of","Week1 of ","Week2 of ","Week3 of ","Week4 of ","Year of "];
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // const CONST = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp]
+    var dataProduct;//global
+    var productJSON;//global
+
     var cd,id;
     $('#add_app').click(function(event){ AppChange(0);Reg_Adddlg('Add application', AppID);})
     $('#restart').click(function(event){ restart_esp();})
@@ -4574,7 +4651,7 @@ var modal = new Object;
       title.innerHTML = titledlg;body.innerHTML = textdlg;cardID = textdlg;if (typeof closefunc === 'undefined') closefunc = CardSetClose;ShowModalCardSet(closefunc);      loaddatasetting(textdlg);
 }
     function ShowModalCardSet(closefunc) {modalCardSet.active.style.display = "block";modalCardSet.closefn = closefunc; }
-    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response);}
+    function CloseModalCardSet(response) {modalCardSet.active.style.display = 'none';modalCardSet.closefn(response); var deleteProductList = document.getElementById("deleteProductList");deleteProductList.style.display = "none"; }
 
     function CardSetClose(value) {console.log(value);if (value == "Ok") {if(modalCardSet.active.getElementsByClassName("modal-title") == "Edit Application"){ console.log("Edit App");}else{ saveSettings(cardID);}}
     }
@@ -4866,7 +4943,7 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
         html += "<div class='card-header2 row bg-warning '>\
         <div class='col' style='position: relative; left: 20px;'>ID:"+BnodeID+"/"+ BnetID +"</div><div class='col' id=\"State0_"+ BappID + "\" style='position: relative; right: 20px; text-align: right'>state:Stop</div>\
         <div class='row'>";
-        if(cmd == addapp){html += "<div class='col'><input type='text' class='form-control' id=\"machineInput_"+BappID+"\"></div>"}
+        if(cmd == addapp){html += "<div class='col'><input type='text' class='form-control'  id=\"machineInput_"+BappID+"\" maxlength='20 '></div>"}
         if(cmd == dash || cmd == showapp){html += "<div class='col' style='text-align: center'><h3 id='machineValue"+BnodeID+"'>"+name+" </h3></div>"}
         html += "</div></div>\
       <div class='card-body2'>\
@@ -4889,11 +4966,11 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
           html += "<div class='col'><h3 id=\"regs3_"+ BappID + "\">0</h3></div>";
           if(cmd == addapp){html+= "<div class='col' style='font-size: 1rem;'><select onchange='changeRegs(value, 4)' id=\"Regs4_"+ BappID + "\"></select></div>";}
           html += "</div><div class='card-body-row card-body01 row'>\
-            <div class='col text-muted'>Time Inc: </div>";
+            <div class='col text-muted'>Cycle Time: </div>";
           html += "<div class='col'><h3 id=\"regs4_"+ BappID + "\">0</h3></div>";
           if(cmd == addapp){html+= "<div class='col' style='font-size: 1rem;'><select onchange='changeRegs(value, 5)' id=\"Regs5_"+ BappID + "\"></select></div>";}
             html += "</div><div class='card-body-row card-body01 row'>\
-            <div class='col text-muted'>PCS/h: </div>";
+            <div class='col text-muted'>Total Plan: </div>";
           html += "<div class='col'><h3 id=\"regs5_"+ BappID + "\">0</h3></div>";
           if(cmd == addapp){html+= "<div class='col' style='font-size: 1rem;'><select onchange='changeRegs(value, 6)' id=\"Regs6_"+ BappID + "\"></select></div>";}
           html += "</div>";
@@ -4966,18 +5043,39 @@ function loaddatasetting(id){
   console.log("loaddatasetting"); 
   var UpdateDataApp = JSON.parse(AppMemories);
   var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+  document.getElementById("doiten").value=name;
   document.getElementById("planInput").value=regsvalue[r1];
   document.getElementById("resultInput").value=regsvalue[r2];
+  // document.getElementById("resultSetInput").value=regsvalue[r4];
   document.getElementById("planSetInput").value=regsvalue[r3];
-  document.getElementById("resultSetInput").value=regsvalue[r4];
   document.getElementById("TimeIncInput").value=regsvalue[r5];
   document.getElementById("PCSInput").value=regsvalue[r6];
-  console.log("r1:"+regsvalue[r1]); 
-  console.log("r2:"+regsvalue[r2]); 
-  console.log("r3:"+regsvalue[r3]); 
-  console.log("r4:"+regsvalue[r4]); 
-  console.log("r5:"+regsvalue[r5]); 
-  console.log("r6:"+regsvalue[r6]); 
+  // console.log("r1:"+regsvalue[r1]); 
+  // console.log("r2:"+regsvalue[r2]); 
+  // console.log("r3:"+regsvalue[r3]); 
+  // console.log("r4:"+regsvalue[r4]); 
+  // console.log("r5:"+regsvalue[r5]); 
+  // console.log("r6:"+regsvalue[r6]); 
+  document.getElementById("dataProduct").value = preferenceslist[0].product;
+    var productData;
+    var productParse = document.getElementById("dataProduct").value;
+    productJSON =  JSON.parse(productParse)
+    if(productJSON.data[id] != null){productData = productJSON.data[id].product;
+
+    var selectElement = document.getElementById("ProductDataSave1");
+
+    selectElement.innerHTML = '';
+    var optionID = 0;
+    productData.forEach(function(product) {
+        var option = document.createElement("option");
+        option.text = product;
+        option.value = optionID; 
+        optionID = optionID + 1;
+        selectElement.appendChild(option);
+        console.log("id:" + option.id)
+    });
+  }
+  displaySelectedProduct();
 }
 // lỗi getWifiSignalStrength
 function getWifiSignalStrength(wifiData) {
@@ -5001,9 +5099,9 @@ document.getElementById("resultInput").onblur = function() {
 document.getElementById("planSetInput").onblur = function() {
     saveSettings(cardID);
 };
-document.getElementById("resultSetInput").onblur = function() {
-    saveSettings(cardID);
-};
+// document.getElementById("resultSetInput").onblur = function() {
+//     saveSettings(cardID);
+// };
 document.getElementById("TimeIncInput").onblur = function() {
     saveSettings(cardID);
 };
@@ -5020,7 +5118,7 @@ function saveSettings(id) {
     var planValue = document.getElementById("planInput").value;
     var resultValue = document.getElementById("resultInput").value;
     var planSetValue = document.getElementById("planSetInput").value;
-    var resultSetValue = document.getElementById("resultSetInput").value;
+    // var resultSetValue = document.getElementById("resultSetInput").value;
     var TimeIncValue = document.getElementById("TimeIncInput").value;
     var PCSValue = document.getElementById("PCSInput").value;
 
@@ -5028,7 +5126,7 @@ function saveSettings(id) {
     var originalPlanValue = regsvalue[r1];
     var originalResultValue = regsvalue[r2];
     var originalPlanSetValue = regsvalue[r3];
-    var originalResultSetValue = regsvalue[r4];
+    // var originalResultSetValue = regsvalue[r4];
     var originalTimeIncValue = regsvalue[r5];
     var originalPCSValue = regsvalue[r6];
 
@@ -5036,7 +5134,7 @@ function saveSettings(id) {
     var planValueNum = parseFloat(planValue);
     var resultValueNum = parseFloat(resultValue);
     var planSetValueNum = parseFloat(planSetValue);
-    var resultSetValueNum = parseFloat(resultSetValue);
+    // var resultSetValueNum = parseFloat(resultSetValue);
     var TimeIncValueNum = parseFloat(TimeIncValue);
     var PCSValueNum = parseFloat(PCSValue);
 
@@ -5044,7 +5142,7 @@ function saveSettings(id) {
     var originalPlanValueNum = parseFloat(originalPlanValue);
     var originalResultValueNum = parseFloat(originalResultValue);
     var originalPlanSetValueNum = parseFloat(originalPlanSetValue);
-    var originalResultSetValueNum = parseFloat(originalResultSetValue);
+    // var originalResultSetValueNum = parseFloat(originalResultSetValue);
     var originalTimeIncValueNum = parseFloat(originalTimeIncValue);
     var originalPCSValueNum = parseFloat(originalPCSValue);
 
@@ -5064,13 +5162,13 @@ function saveSettings(id) {
         SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r3 + " value=" + planSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
 
-    if (resultSetValueNum !== originalResultSetValueNum) {
-        console.log("Result Set ("+r4+") value changed: " + originalResultSetValue + " to " + resultSetValue);
-        SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r4 + " value=" + resultSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
-    }
+    // if (resultSetValueNum !== originalResultSetValueNum) {
+    //     console.log("Result Set ("+r4+") value changed: " + originalResultSetValue + " to " + resultSetValue);
+    //     SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r4 + " value=" + resultSetValue), getLooklineCmdSuccess, getLooklineCmdfailed);
+    // }
 
     if (TimeIncValueNum !== originalTimeIncValueNum) {
-        console.log("Time Inc ("+r5+") value changed: " + originalTimeIncValue + " to " + TimeIncValue);
+        console.log("Cycle Time ("+r5+") value changed: " + originalTimeIncValue + " to " + TimeIncValue);
         SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r5 + " value=" + TimeIncValue), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
 
@@ -5105,7 +5203,7 @@ function changeReset(id) {
 // }
 
 function changeState(id) {
-      console.log("app id= "+id);
+    console.log("app id= "+id);
     var UpdateDataApp = JSON.parse(AppMemories);
     var vals = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
 
@@ -5257,12 +5355,38 @@ function changeState(id) {
       else{
       document.getElementById("BoardTitle").innerHTML = "Gateway";
       document.getElementById("LooklineInfo").style.display = "none";
-      document.getElementById("RunBnt").style.display = "none";document.getElementById("StopBnt").style.display = "none";}
+      document.getElementById("RunBnt").style.display = "none";
+      document.getElementById("StopBnt").style.display = "none";}
     } 
 
     function showAll() {
         document.getElementById("loadingmsg").style.display = 'none';
         show_main_UI();
+        var BuildApp ="";
+            fetch("./preferences.json")
+                .then((res) => {
+                    if (!res.ok) {
+                        throw new Error
+                            (`HTTP error! Status: ${res.status}`);
+                    }
+                    return res.json();
+                })
+                    .then((preferenceslist_hardcode) => {
+                      console.log(preferenceslist_hardcode)
+
+                      preferenceslist = preferenceslist_hardcode;
+                      var dataJson = JSON.stringify(preferenceslist_hardcode);
+                      console.log("data id:" + dataJson)
+                      var dataJsonNew = dataJson.replace(/\"/g,'"')
+                      var dataParse = JSON.parse(dataJsonNew);
+                      console.log(dataParse.product)
+
+                      dataProduct = JSON.parse(dataParse.product);
+                      document.getElementById("dataProduct").value =  JSON.stringify(dataProduct);
+                  })
+
+                .catch((error) => 
+                       console.error("Unable to fetch data:", error));
     }
     function showSetup(SP) {
       if(SP=='2'){document.getElementById("showStaffSetup").style.display = "block";document.getElementById("showStaffButton").style.display = "block";document.getElementById("showAdminSetup").style.display = "block";document.getElementById("showAdminStatus").style.display = "block";}
@@ -5277,7 +5401,7 @@ function UnlockStaff() {
   unlockValue = 1;
   document.getElementById("tennutluu").innerHTML = "Save new staff passwords";
   document.getElementById("roleAccount").innerHTML = "Staff";
-  var ids = ['dashboard', 'settingA','features', 'board', 'openbuttonchange'];
+  var ids = ['dashboard', 'settingA','features', 'board', 'openbuttonchange', 'name_product'];
   ids.forEach(function(id) {
     var element = document.getElementById(id);
     if (element) {
@@ -5292,7 +5416,7 @@ function UnlockAdmin() {
   unlockValue = 2;
   document.getElementById("tennutluu").innerHTML = "Save new admin passwords";
   document.getElementById("roleAccount").innerHTML = "Admin";
-  var ids = ['dashboard', 'settingA', 'features', 'board', 'application', 'console', 'advanced', 'wifi', 'rf', 'ethernet', 'modbus', 'zicon', 'openbuttonchange'];
+  var ids = ['dashboard', 'settingA', 'features', 'board', 'application', 'console', 'advanced', 'wifi', 'rf', 'ethernet', 'modbus', 'zicon', 'openbuttonchange', 'name_product'];
   ids.forEach(function(id) {
     var element = document.getElementById(id);
     if (element) {
@@ -5334,7 +5458,7 @@ document.getElementById("pass_Save").addEventListener("keyup", function(event) {
 function LogOut() {
   unlockValue = 0;
   document.getElementById("roleAccount").innerHTML = "User";
-  var ids = ['dashboard', 'settingA', 'features', 'board', 'application', 'console', 'advanced', 'wifi', 'rf', 'ethernet', 'modbus', 'zicon', 'openbuttonchange', 'changePassA'];
+  var ids = ['dashboard', 'settingA', 'features', 'board', 'application', 'console', 'advanced', 'wifi', 'rf', 'ethernet', 'modbus', 'zicon', 'openbuttonchange', 'changePassA', 'name_product'];
   ids.forEach(function(id) {
     var element = document.getElementById(id);
     if (element) {
@@ -5443,6 +5567,7 @@ function ChangeSuccess(){
       document.getElementById("RunBnt").style.display = "block";
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop"), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
+    //{"name":"ten"}
     function check_ping() { }
     function disable_items(e, t) { var a = e.getElementsByTagName("*"); for (i = 0; i < a.length; i++)a[i].disabled = t }
     function ontogglePing(e) {
@@ -5464,7 +5589,7 @@ function ChangeSuccess(){
     function initUI_2() { AddCmd(display_boot_progress), console.log("Get settings"), refreshLooklineSettings(!0),refreshSettings(!0), initUI_3() }
     function initUI_3() { AddCmd(display_boot_progress), console.log("Get macros"), loadmacrolist(), console.log("Get preferences"), getpreferenceslist(), initUI_4()}
     function initUI_4() { AddCmd(display_boot_progress), init_command_panel(), init_files_panel(!1),showNewFWStt(0), "???" == target_firmware ? (console.log("Launch Setup"), AddCmd(display_boot_progress), closeModal("Connection successful"), setupdlg()) : (do_not_build_settings = !(setup_is_done = !0), do_not_build_looklines = !(setup_ll_is_done = !0),AddCmd(display_boot_progress), build_HTML_setting_list(current_setting_filter), AddCmd(closeModal), AddCmd(show_main_UI)),loadLookline() }
-    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet(),PassGet() }
+    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet() }
     function compareStrings(e, t) { return (e = e.toLowerCase()) < (t = t.toLowerCase()) ? -1 : t < e ? 1 : 0 }
     function compareInts(e, t) { return e < t ? -1 : t < e ? 1 : 0 }
     function HTMLEncode(e) { for (var t = e.length, a = []; t--;) { var n = e[t].charCodeAt(); n < 65 || 127 < n || 90 < n && n < 97 ? (65533 == n && (n = 176), a[t] = "&#" + n + ";") : a[t] = e[t] } return a.join("") }
@@ -5474,8 +5599,306 @@ function ChangeSuccess(){
     function cameraformataddress() { var e = document.getElementById("AppDataSave").value, t = e.trim().toLowerCase(); 0 < (e = e.trim()).length && -1 == t.indexOf("https://") && -1 == t.indexOf("http://") && -1 == t.indexOf("rtp://") && -1 == t.indexOf("rtps://") && -1 == t.indexOf("rtp://") && (e = "http://" + e), document.getElementById("AppDataSave").value = e }
 
     function App_OnKeyUp(e) { return 13 == e.keyCode , !0 }
+
     function AppSave() { try{preferenceslist[0].app_data = document.getElementById("AppDataSave").value, SavePreferences(!0)}catch(e) {console.log(e);} }
+// nút hiện selet
+function toggleDeleteProductList() {
+  var deleteProductList = document.getElementById("deleteProductList");
+  if (deleteProductList.style.display === "none") {
+    deleteProductList.style.display = "block";
+    displayDeleteProductList();
+  } else {
+    deleteProductList.style.display = "none";
+  }
+}
+// Hàm hiển thị danh sách sản phẩm để xóa
+function displayDeleteProductList() {
+  var editForm = document.getElementById("editForm");  
+  editForm.style.display = "none";
+
+  var productTableBody = document.getElementById("productTableBody");
+  productTableBody.innerHTML = ""; // Xóa nội dung bảng sản phẩm cũ
+
+  // Lấy danh sách sản phẩm từ chuỗi JSON
+  var productJSON = JSON.parse(document.getElementById("dataProduct").value);
+
+  // Lấy id của card
+  var id = document.getElementById("cardID").innerHTML;
+
+  // Hiển thị danh sách sản phẩm của card
+  productJSON.data[id].product.forEach(function(product, index) {
+    var row = document.createElement("tr");
+
+    // Tạo cột hiển thị tên sản phẩm
+    var productCell = document.createElement("td");
+    productCell.textContent = product;
+
+    // Tạo cột chứa nút Edit
+    var editButtonCell = document.createElement("td");
+    var editButton = document.createElement("button");
+    editButton.textContent = "Edit";
+    editButton.className = "btn btn-warning";
+    editButton.type = "button";
+    editButton.onclick = function() {
+      editProduct(id, index); // Truyền id của card và index của sản phẩm vào hàm chỉnh sửa sản phẩm
+    };
+    editButtonCell.appendChild(editButton);
+
+    // Tạo cột chứa nút Xóa
+    var deleteButtonCell = document.createElement("td");
+    var deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.className = "btn btn-warning";
+    deleteButton.type = "button";
+    deleteButton.onclick = function() {
+      deleteProduct(id, index); // Truyền id của card và index của sản phẩm vào hàm xóa sản phẩm
+    };
+    deleteButtonCell.appendChild(deleteButton);
+
+    // Thêm cột vào hàng
+    row.appendChild(productCell);
+    row.appendChild(editButtonCell);
+    row.appendChild(deleteButtonCell);
+
+    // Thêm hàng vào bảng
+    productTableBody.appendChild(row);
+  });
+  SaveDataProduct();
+}
+
+function editProduct(cardID, index) {
+  var productJSON = JSON.parse(document.getElementById("dataProduct").value);
+  var product = productJSON.data[cardID].product[index];
+  var cycleTime = productJSON.data[cardID].cycletime[index];
+  var productSet = productJSON.data[cardID].productset[index];
+
+  // Ẩn bảng hiển thị sản phẩm
+  document.getElementById("productTable").style.display = "none";
+
+  // Hiển thị form chỉnh sửa sản phẩm
+  var editForm = document.getElementById("editForm");
+  editForm.style.display = "block";
+
+  // Điền thông tin sản phẩm vào form chỉnh sửa
+  document.getElementById("editProductName").value = product;
+  document.getElementById("editCycleTime").value = cycleTime;
+  document.getElementById("editProductSet").value = productSet;
+}
+
+function saveProduct() {
+  var id = document.getElementById("cardID").innerHTML;
+  var productJSON = JSON.parse(document.getElementById("dataProduct").value);
+
+  // Lấy thông tin sản phẩm từ form chỉnh sửa
+  var editedProductName = document.getElementById("editProductName").value;
+  var editedCycleTime = document.getElementById("editCycleTime").value;
+  var editedProductSet = document.getElementById("editProductSet").value;
+
+  // Cập nhật thông tin sản phẩm vào đối tượng JSON
+  var cardID = parseInt(document.getElementById("cardID").innerText);
+  var index = parseInt(document.getElementById("editForm").dataset.index);
+
+
+  productJSON.data[cardID].product[index] = editedProductName;
+  productJSON.data[cardID].cycletime[index] = editedCycleTime;
+  productJSON.data[cardID].productset[index] = editedProductSet;
+
+  // Chuyển đối tượng JSON thành chuỗi JSON và lưu vào phần tử HTML
+  document.getElementById("dataProduct").value = JSON.stringify(productJSON);
+
+  // Hiển thị lại bảng sản phẩm
+  document.getElementById("productTable").style.display = "table";
+
+  // Ẩn form chỉnh sửa sản phẩm
+  var editForm = document.getElementById("editForm");
+  editForm.style.display = "none";
+  SaveDataProduct();
+  loaddatasetting(id);
+  displayDeleteProductList();
+}
+
+
+
+
+
+// // Hàm hiển thị danh sách sản phẩm để xóa
+// function displayDeleteProductList() {
+//   var productTableBody = document.getElementById("productTableBody");
+//   productTableBody.innerHTML = ""; // Xóa nội dung bảng sản phẩm cũ
+
+//   // Lấy danh sách sản phẩm từ chuỗi JSON
+//   var productJSON = JSON.parse(document.getElementById("dataProduct").value);
+
+//   // Lấy id của card
+//   var id = document.getElementById("cardID").innerHTML;
+
+//   // Hiển thị danh sách sản phẩm của card
+//   productJSON.data[id].product.forEach(function(product, index) {
+//     var row = document.createElement("tr");
+
+//     // Tạo cột hiển thị sản phẩm
+//     var productCell = document.createElement("td");
+//     productCell.textContent = product;
+
+//     // Tạo cột chứa nút xóa
+//     var deleteButtonCell = document.createElement("td");
+//     var deleteButton = document.createElement("button");
+//     deleteButton.textContent = "Delete";
+//     deleteButton.className = "btn btn-warning";
+//     deleteButton.type = "button";
+//     deleteButton.onclick = function() {
+//       deleteProduct(id, index); // Truyền id của card và index của sản phẩm vào hàm xóa sản phẩm
+//     };
+//     deleteButtonCell.appendChild(deleteButton);
+
+//     // Thêm cột vào hàng
+//     row.appendChild(productCell);
+//     row.appendChild(deleteButtonCell);
+
+//     // Thêm hàng vào bảng
+//     productTableBody.appendChild(row);
+//   });
+//   loaddatasetting(id);
+// }
+
+
+// Hàm xóa sản phẩm từ danh sách sản phẩm của card dựa trên id và index
+function deleteProduct(cardID, index) {
+  var id = document.getElementById("cardID").innerHTML;
+  var DataPRODUCT = document.getElementById("dataProduct").value;
+  var productJSON = JSON.parse(DataPRODUCT);
+
+  // Xóa sản phẩm khỏi danh sách của card
+  productJSON.data[cardID].product.splice(index, 1);
+  productJSON.data[cardID].cycletime.splice(index, 1);
+  productJSON.data[cardID].productset.splice(index, 1);
+
+  // Cập nhật lại chuỗi JSON chứa danh sách sản phẩm
+  document.getElementById("dataProduct").value = JSON.stringify(productJSON);
+
+  // Hiển thị lại danh sách sản phẩm để xóa
+  loaddatasetting(id);
+  displayDeleteProductList();
+  
+}
+
+
+    function addProduct() {
+      var productName = document.getElementById("newProductName").value.trim();
+      if (productName === "") {
+          alert("Tên sản phẩm không được để trống!");
+          return;
+      }
+      var newProductName = document.getElementById("newProductName").value;
+      var selectElement = document.getElementById("ProductDataSave1");
+      var id = document.getElementById("cardID").innerHTML;  
+      var UpdateDataApp = JSON.parse(AppMemories);
+      var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+      var DataPRODUCT = document.getElementById("dataProduct").value;
+      productJSON =  JSON.parse(DataPRODUCT)
+      var idEnd = productJSON.data.length;
+      if(productJSON.data[id] == null){
+      console.log("tao moi");
+      var datas = [];
+      datas.push(newProductName)//idEnd
+      productJSON.data.push({id: idEnd,product: datas});
+      dataProduct = productJSON;
+        console.log("newData: " + JSON.stringify(dataProduct));
+      document.getElementById("dataProduct").value = JSON.stringify(dataProduct);
+      var option = document.createElement("option");
+      option.text = newProductName;
+      option.value = 0;
+      selectElement.appendChild(option);
+      document.getElementById("newProductName").value = "";
+      }
+      else {
+        // Lấy giá trị mới từ các phần tử HTML
+        var newProductName = document.getElementById("newProductName").value;
+        var newCycleTime = document.getElementById("TimeIncInput").value;
+        var newProductSet = document.getElementById("planSetInput").value;
+        // In ra các giá trị mới
+        console.log("newProductName:", newProductName);
+        console.log("newCycleTime:", newCycleTime);
+        console.log("newProductSet:", newProductSet);
+        // Lấy danh sách sản phẩm từ chuỗi JSON
+        var productJSON = JSON.parse(DataPRODUCT);
+        // Lấy số lượng sản phẩm hiện có
+        var newID = productJSON.data[id].product.length;
+        // Thêm tên sản phẩm mới vào mảng product
+        productJSON.data[id].product.push(newProductName);
+        // Thêm giá trị mới của cycletime và productset cho sản phẩm mới
+        productJSON.data[id].cycletime.push(newCycleTime);
+        productJSON.data[id].productset.push(newProductSet);
+        // Cập nhật lại chuỗi JSON chứa danh sách sản phẩm
+        document.getElementById("dataProduct").value = JSON.stringify(productJSON);
+        // In ra chuỗi JSON đã được cập nhật
+        console.log("Updated JSON:", JSON.stringify(productJSON));
+        // Tạo một option mới để thêm vào dropdown list
+        var selectElement = document.getElementById("ProductDataSave1");
+        var option = document.createElement("option");
+        option.text = newProductName;
+        option.value = newID;
+        selectElement.appendChild(option);
+        // Xóa giá trị của phần tử HTML sau khi đã thêm sản phẩm mới thành công
+        document.getElementById("newProductName").value = "";
+        
+      }
+      SaveDataProduct();
+      loaddatasetting(id);
+      displayDeleteProductList();
+}
+
+function SaveDataProduct(){
+  preferenceslist[0].product = document.getElementById("dataProduct").value ; SavePreferences(!0)
+}
+function displaySelectedProduct() {
+
+  var id = document.getElementById("cardID").innerHTML;
+  var UpdateDataApp = JSON.parse(AppMemories);
+  var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+
+  var productID = document.getElementById("ProductDataSave1").value;
+  console.log("Select id:" + productID);
+  var cardid = document.getElementById("cardID").innerHTML;
+
+  var CyleTime = productJSON.data[cardid].cycletime[productID];
+  document.getElementById("TimeIncInput").value = CyleTime;
+  // console.log(CyleTime);
+
+  var ProductSet = productJSON.data[cardid].productset[productID];
+  document.getElementById("planSetInput").value = ProductSet;
+  // console.log(ProductSet);
+
+  var sp = productJSON.data[cardid].product[productID];
+  console.log("id:"+ id);
+  console.log("ProductSet:" + ProductSet);
+  console.log("CyleTime:" + CyleTime);
+  
+
+
+  // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+
+  SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=product id=" + id + " value=" + sp), getLooklineCmdSuccess, getLooklineCmdfailed);
+  
+  SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r3 + " value=" + ProductSet), getLooklineCmdSuccess, getLooklineCmdfailed);
+
+  SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r5 + " value=" + CyleTime), getLooklineCmdSuccess, getLooklineCmdfailed);
     
+}
+
+    function changeName() {
+      var id = document.getElementById("cardID").innerHTML;
+      console.log("id:" + id);
+      var UpdateDataApp = JSON.parse(AppMemories);
+      var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+      var newName = document.getElementById("doiten").value;
+      console.log("new name:" + newName);
+      var cardDATA = document.getElementById("AppDataSave").value;
+      cardDATA = cardDATA.replace(name, newName);
+      document.getElementById("AppDataSave").value = cardDATA;
+      AppGet();
+}
+
     function AppGet() { try{void 0 !== preferenceslist[0].app_data ? document.getElementById("AppDataSave").value = preferenceslist[0].app_data : document.getElementById("AppDataSave").value = "",
      void 0 !== preferenceslist[0].app_data ? AppMemories = document.getElementById("AppDataSave").value : AppMemories = "" ;}catch(e) {console.log(e);}
     
@@ -5588,7 +6011,7 @@ function ChangeSuccess(){
     function confirmdlg(e, t, a) { var n = setactiveModal("confirmdlg.html", a); if (null != n) { var r = n.element.getElementsByClassName("modal-title")[0], o = n.element.getElementsByClassName("modal-text")[0]; r.innerHTML = e, o.innerHTML = t, showModal() } }
     function connectdlg(e) { 
         // connect board hardcode
-         var t = !0; null != setactiveModal("connectdlg.html") && (showModal(), void 0 !== e && (t = e), t && retryconnect())
+          var t = !0; null != setactiveModal("connectdlg.html") && (showModal(), void 0 !== e && (t = e), t && retryconnect())
     }
     function getFWdata(e) { var t = e.split("#"); if (t.length < 3) return !1; var a = t[0].split(":"); if (2 != a.length) return !1; if (fw_version = a[1].toLowerCase().trim(), 2 != (a = t[1].split(":")).length) return !1; if (target_firmware = a[1].toLowerCase().trim(), 2 != (a = t[2].split(":")).length) return !1; var n = a[1].toLowerCase().trim(); return direct_sd = "direct sd" == n, 2 == (a = t[3].split(":")).length && (direct_sd || "smoothieware" != target_firmware ? primary_sd = a[1].toLowerCase().trim() : primary_sd = "sd/", 2 == (a = t[4].split(":")).length && (direct_sd || "smoothieware" != target_firmware ? secondary_sd = a[1].toLowerCase().trim() : secondary_sd = "ext/", 2 == (a = t[5].split(":")).length && (Node_IoT_authentication = "authentication" == a[0].trim() && "yes" == a[1].trim(), 6 < t.length && ("webcommunication" == (a = t[6].split(":"))[0].trim() && "Async" == a[1].trim() ? async_webcommunication = !0 : (async_webcommunication = !1, websocket_port = a[2].trim(), websocket_ip = 3 < a.length ? a[3].trim() : (console.log("No IP for websocket, use default"), document.location.hostname))), 7 < t.length && "hostname" == (a = t[7].split(":"))[0].trim() && (esp_hostname = a[1].trim()), "grbl-embedded" == target_firmware && 8 < t.length && "axis" == (a = t[8].split(":"))[0].trim() && (grblaxis = parseInt(a[1].trim())), async_webcommunication && window.EventSource && ((event_source = new EventSource("/events")).addEventListener("InitID", Init_events, !1), event_source.addEventListener("ActiveID", ActiveID_events, !1), event_source.addEventListener("DHT", DHT_events, !1)), startSocket(), !0))) }
     function connectsuccess(e) { getFWdata(e) ? (console.log("Fw identification:" + e), Node_IoT_authentication ? (closeModal("Connection successful"), document.getElementById("menu_authentication").style.display = "inline", logindlg(initUI, !0)) : (document.getElementById("menu_authentication").style.display = 'none', initUI())) : (console.log(e), connectfailed(406, "Wrong data")) }
@@ -5774,12 +6197,18 @@ function ChangeSuccess(){
     function ChangePasswordsuccess(e) { document.getElementById("password_loader").style.display = 'none', closeModal("Connection successful") }
     function SubmitChangePassword() { var e = document.getElementById("current_ID").innerHTML.trim(), t = document.getElementById("password_password_text").value.trim(), a = document.getElementById("password_password_text1").value.trim(), n = "/login?USER=" + encodeURIComponent(e) + "&PASSWORD=" + encodeURIComponent(t) + "&NEWPASSWORD=" + encodeURIComponent(a) + "&SUBMIT=yes"; document.getElementById("password_loader").style.display = "block", document.getElementById("change_password_content").style.display = 'none', SendGetHttp(n, ChangePasswordsuccess, ChangePasswordfailed) }
     var preferenceslist = [], language_save = language, default_preferenceslist = [], defaultpreferenceslist = '[{ "language":"vn", "enable_lock_UI":"false", "enable_ping":"true", "enable_DHT":"false",             "enable_commands_panel":"true", "enable_autoscroll":"true", "enable_verbose_mode":"true"}]', preferences_file_name = "/preferences.json";
-    function initpreferences() { "grbl-embedded" == target_firmware || "grbl" == target_firmware ? (defaultpreferenceslist = '[{ "language":"en", "enable_lock_UI":"false", "enable_ping":"true", "enable_DHT":"false",           "enable_commands_panel":"true", "enable_autoscroll":"true", "enable_verbose_mode":"true",}]', document.getElementById("DHT_pref_panel").style.display = 'none') : (defaultpreferenceslist = '[{ "language":"en", "enable_lock_UI":"false", "enable_ping":"true", "enable_DHT":"false",  "enable_commands_panel":"true", "enable_autoscroll":"true", "enable_verbose_mode":"true" }]', "marlin-embedded" == target_firmware ? document.getElementById("DHT_pref_panel").style.display = 'none' : document.getElementById("DHT_pref_panel").style.display = "block"), default_preferenceslist = JSON.parse(defaultpreferenceslist) }
+    function initpreferences() 
+    { "grbl-embedded" == target_firmware || "grbl" == target_firmware ? (defaultpreferenceslist = '[{ "language":"en", "enable_lock_UI":"false", "enable_ping":"true", "enable_DHT":"false",           "enable_commands_panel":"true", "enable_autoscroll":"true", "enable_verbose_mode":"true",}]', document.getElementById("DHT_pref_panel").style.display = 'none') : (
+      
+    defaultpreferenceslist = '[{ "language":"en", "enable_lock_UI":"false", "enable_ping":"true", "enable_DHT":"false",  "enable_commands_panel":"true", "enable_autoscroll":"true", "enable_verbose_mode":"true" }]', "marlin-embedded" == target_firmware ? document.getElementById("DHT_pref_panel").style.display = 'none' : document.getElementById("DHT_pref_panel").style.display = "block"
+    ), default_preferenceslist = JSON.parse(defaultpreferenceslist) }
+
     function getpreferenceslist() { var e = preferences_file_name + "?" + Date.now(); preferenceslist = [], SendGetHttp(e, processPreferencesGetSuccess, processPreferencesGetFailed) }
     function build_extruder_list(e) { var t = 2, a = "", n = document.getElementById("preferences_control_nb_extruders").value; document.getElementById("enable_mixed_E_controls").checked && (t = 9), void 0 !== e && (t = e); for (var r = 1; r <= t; r++)a += "<option value='" + r + "'>" + r + "</option>"; document.getElementById("preferences_control_nb_extruders").innerHTML = a, parseInt(n) > t && (n = 1), document.getElementById("preferences_control_nb_extruders").value = n }
     function prefs_toggledisplay(e, t) { switch (void 0 !== t && (document.getElementById(e).checked = t), e) { case "show_commands_panel": document.getElementById(e).checked ? document.getElementById("cmd_preferences").style.display = "block" : document.getElementById("cmd_preferences").style.display = 'none'; break; } }
     function processPreferencesGetSuccess(e) { -1 == e.indexOf("<HTML>") ? Preferences_build_list(e) : Preferences_build_list(defaultpreferenceslist) }
     function processPreferencesGetFailed(e, t) { console.log("Error " + e + " : " + t), Preferences_build_list(defaultpreferenceslist) }
+
     function Preferences_build_list(e) { preferenceslist = []; try { preferenceslist = 0 != e.length ? JSON.parse(e) : JSON.parse(defaultpreferenceslist) } catch (e) { console.error("Parsing error:", e), preferenceslist = JSON.parse(defaultpreferenceslist) } applypreferenceslist() }
     function applypreferenceslist() {
       
@@ -5823,14 +6252,14 @@ function ChangeSuccess(){
     function process_preferencesCloseDialog(e) { "no" == e ? (translate_text(language_save), closeModal("cancel")) : SavePreferences() }
     function SavePreferences(e) {
       var appCode = document.getElementById("AppDataSave").value.replace(/"/g, '\\"');
-    // staffPass,adminPass
+      var productCode = document.getElementById("ProductDataSave").value.replace(/"/g, '\\"');
       var appCodeStaff = staffPass;
       var appCodeAdmin = adminPass;
 
       console.log("appCodeStaff: " + appCodeStaff);
       console.log("appCodeAdmin: " + appCodeAdmin);
 
-      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","enable_camera":"' + document.getElementById("show_camera_panel").checked, t += '","auto_load_camera":"' + document.getElementById("autoload_camera_panel").checked, t += '","app_data":"' + appCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '","enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
+      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","enable_camera":"' + document.getElementById("show_camera_panel").checked, t += '","auto_load_camera":"' + document.getElementById("autoload_camera_panel").checked, t += '","app_data":"' + appCode, t += '","product":"' + productCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '","enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
       var a, n = new Blob([JSON.stringify(preferenceslist, null, " ")], { type: "application/json" }); browser_is("IE") || browser_is("Edge") ? ((a = n).name = preferences_file_name, a.lastModifiedDate = new Date) : a = new File([n], preferences_file_name); var r = new FormData; r.append("path", "/"), r.append("myfile[]", a, preferences_file_name), void 0 !== e && e ? SendFileHttp("/files", r) : SendFileHttp("/files", r, preferencesdlgUploadProgressDisplay, preferencesUploadsuccess, preferencesUploadfailed)
     }
     function preferencesdlgUploadProgressDisplay(e) { if (e.lengthComputable) { var t = e.loaded / e.total * 100; document.getElementById("preferencesdlg_prg").value = t, document.getElementById("preferencesdlg_upload_percent").innerHTML = t.toFixed(0), document.getElementById("preferencesdlg_upload_msg").style.display = "block" } }

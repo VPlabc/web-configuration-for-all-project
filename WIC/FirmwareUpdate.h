@@ -6,7 +6,7 @@
 class UpdateFW
 {
 public:
-const String FirmwareVer={"14.9.9.1"};
+const String FirmwareVer={FW_VERSION};
  void repeatedCall();
  void ShowMess(String txt);
  void FirmwareUpdate();

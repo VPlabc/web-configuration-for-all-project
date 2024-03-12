@@ -48,7 +48,7 @@ WiFiClient            wifiClient;
   // int LEDStatus = IOT_DEVICE.LEDButton
   // #endif//Moto_UI
 
-#define   PRGM_VERSION         "14.9.9.1"
+// #define   PRGM_VERSION         "14.9.9.1"
 /* this info will be read by the python script */
 String hosts = "https://raw.githubusercontent.com/";
 String URL_fw_Bin = "VPlabc/web-configuration-for-all-project/main/.pioenvs/esp32cam/firmware.bin";

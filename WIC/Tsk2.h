@@ -1,33 +1,52 @@
-#include "config.h"
+
 #ifdef PLC_MASTER_UI
-#include "PLC_IoT/PLC_Master.h"
-PLC_MASTER PLC_prog;
-#endif//PLC_MASTER_UI
 #include <ModbusRTU.h>
 #include "Modbus_RTU.h"
 Modbus_Prog mb_task2;
 ModbusRTU mbTks;
+byte role = 0;
+byte bbuf;
+#endif// PLC_MASTER_UI
+
+#include "WIC.h"
+WIC wicTask2;
 //Task2 :
 void Task2code( void * pvParameters ) {
-  LOG("Task2 running on core ");
+  LOG("Loop Server running on core ");
   LOGLN(xPortGetCoreID());
-// byte role = 0;
-// byte bbuf;
-// enum {slave,master};
 
+enum {slave,master};
+
+   bool Tskonece2 = true;
+   bool Tskonece1 = true;
   for (;;) {
-//  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {role = bbuf;}
-// if(role == slave ){
-
-// }
-   
 #ifdef PLC_MASTER_UI
-// PLC_prog.loop();
-// mb_prog.loop();
-#endif//PLC_MASTER_UI
+ if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {role = bbuf;}
+ if(role == slave ){
+
+}
+ #endif//PLC_MASSTER_UI
+
+  //  #ifdef LOOKLINE_UI
+   if(wicTask2.GetSetup()){
+      if (Tskonece1){Tskonece1 = false;if(looklineDebug)ESPCOM::println(F("Wifi Server Working..."), PRINTER_PIPE);}
+            web_interface->web_server.handleClient();
+            socket_server->loop();
+      if (WiFi.getMode() != WIFI_OFF){
+  #ifdef CAPTIVE_PORTAL_FEATURE
+        if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
+        {
+            dnsServer.processNextRequest();
+            if (Tskonece2){Tskonece2 = false;if(looklineDebug)ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);}
+        }
+  #endif//CAPTIVE_PORTAL_FEATURE
+    }
+   }
+  //  #endif//LOOKLINE_UI
+
   // LOG("Task1 running on core ");
   // LOGLN(xPortGetCoreID());
-    // delay(200);
+    delay(200);
 
   }//End loop
 }

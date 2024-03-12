@@ -13,52 +13,45 @@ LOOKLINE_PROG Lookline_modbus;
 #endif//LOOKLINE_UI
 
 // #define ESP32_C3
-#define esp32s2
-// #define esp32dev
 
 #if defined(ESP32_C3)
 #define Modbus_Serial Serial1
-#elif defined(ESP32dev)
+#elif defined(ESP32)
 #define ModbusSerial Serial2
-#elif defined(ESP8266)
+#else
+
 #include <SoftwareSerial.h>
  SoftwareSerial serial_ESP1(5,4);
 #define Modbus_Serial serial_ESP1
-#endif//ESP8266
-#if defined(esp32s2)
-// #include <HardwareSerial.h> 
-const int printerBaudrate = 9600;  // or 19200 usually
-// HardwareSerial MySerial0(0);
-// HardwareSerial MySerial1(1);
 #endif//ESP32
+
 
 // #define DEBUG
 const long interval_ = 3000;
 unsigned long previousMillis_ = 0;
 bool Done = false;
 
-// word regs_Master[ModbuS.HOLDING_REGS_SIZE*2];
 
 void debugs();
-#define dataSize 30
+#define dataSize 10
 
-static const int16_t offsetM0 = 2048;//
-static const int16_t offsetD0 = 4096;//
+const int16_t offsetM0 = 2048;//
+const int16_t offsetD0 = 4096;//
 
-static const int16_t Write_Coil = offsetM0+0;
-static const int16_t Read_Coil = offsetM0+100;
-static const int16_t RegWrite = offsetD0+2500;//Register Write
-static const int16_t RegRead = offsetD0+2000;//Register Read
+const int16_t Write_Coil = offsetM0+0;
+const int16_t Read_Coil = offsetM0+100;
+const int16_t RegWrite = offsetD0+2500;//Register Write
+const int16_t RegRead = offsetD0+2000;//Register Read
 
- bool state0 = 0;
- bool state1 = 1;
- bool state2 = 0;
- int count_mb = 0;
-static const long intervalupdate = 10000;
- unsigned long previousMillisupdate = 0;
- byte once = true;
-static const long interval_update = 3000;
-static unsigned long previousMillis_update = 0;
+bool state0 = 0;
+bool state1 = 1;
+bool state2 = 0;
+int count_mb = 0;
+const long intervalupdate = 10000;
+unsigned long previousMillisupdate = 0;
+byte once = true;
+const long interval_update = 3000;
+unsigned long previousMillis_update = 0;
 #define baudrate 9600//19200
 // #define Enthernet
 // #define WifiConnect
@@ -132,7 +125,7 @@ ModbusIP Mb;
 #define     ETH_RST        -1
 
 // MgsModbus Mb;
- int inByte = 0; // incoming serial byte
+int inByte = 0; // incoming serial byte
 
 // Ethernet settings (depending on MAC and Local network)
 byte mac[] = {0x90, 0xA2, 0xDA, 0x0E, 0x94, 0xB5 };
@@ -213,61 +206,46 @@ enum{Slave, Master};
 
 
 /// @brief /// Register address
- bool role = Master;
+bool ModbusRole = Master;
 
 
 void debugs();
 
 
 
-void Modbus_Prog::modbus_setup(bool role) { 
-
+void Modbus_Prog::modbus_setup(bool ModbusRole) { 
+#ifdef PLC_MASSTER_UI
   #ifndef MCP_USE
   pinMode(BTN_SET,    INPUT_PULLUP);
   #endif//MCP_USE
   pinMode(BootButton, INPUT_PULLUP);
   // Serial.begin(115200);
-  
+ #endif//PLC_MASTER_PROG 
 #ifdef SerialPort
   LOGLN("_________________________________________ MODBUS RTU ________________________________________");
-#if defined(ESP32dev)
+#ifdef PLC_MASTER_UI
 Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2,false);
-#endif//ESP32
-#if defined(esp32s2)
-      // And configure MySerial1 on pins RX=D9, TX=D10
-    // MySerial1.begin(printerBaudrate, SERIAL_8N1, rxPin1, txPin1);
-    // MySerial1.println("MySerial1");
-    // Configure MySerial0 on pins TX=6 and RX=7 (-1, -1 means use the default)
-    // MySerial0.begin(printerBaudrate, SERIAL_8N1, rxPin, txPin);
-    // MySerial0.println("MySerial0");
-#endif//ESP32s2
+#else
+Serial2.begin(9600, SERIAL_8N1, 16, 17,false);
+ #endif//PLC_MASTER_PROG 
 initupdate();
-  if(role == Master){
+  if(ModbusRole == Master){
   Modbus_Master.setTimeoutTimeMs(100);
-  #if defined(ESP32dev)
   Modbus_Master.begin(&Serial2);
-  #endif//esp32dev
-  #if defined(esp32s2)
-  // Modbus_Master.begin(&MySerial0);
-  #endif//esp32s2
   }
-  if(role ==Slave){
-  #if defined(ESP32dev)
+  if(ModbusRole ==Slave){
     mb.begin(&Serial2);
-  #endif//esp32dev
-  #if defined(esp32s2)
-    // mb.begin(&MySerial0);
-  #endif//esp32s2
     mb.slave(SLAVE_ID);
     mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
 #ifdef Ethernet_W5500
     Mb.addHreg(RegWrite, 0, dataSize);
     Mb.addHreg(RegRead, 0, dataSize);
-#endif// Ethernet_W5500
+#endif//Ethernet_W5500
     // mb.addCoil(Read_Coil ,0, 30);
     // mb.addCoil(Write_Coil,0, 30);
   }
+  // LOGLN("________________________________________________________________________________________");
 #endif//SerialPort
 #ifdef WifiConnect
   // mb.config("Hoang Vuong", "91919191");
@@ -304,8 +282,7 @@ initupdate();
  // serial setup
   // Serial.begin(9600);
   LOGLN("_________________________________________ ETHERNET ________________________________________");
-  SPI.begin(SCLK, MISO, MOSI,-1);
-
+    SPI.begin(SCLK, MISO, MOSI,-1);
     ethernetReset(ETH_RST);
     Ethernet.init(SCS);
     byte ip_buf[4];
@@ -343,10 +320,11 @@ initupdate();
   LOG("My IP address: ");
   LOGLN(Ethernet.localIP());
   LOGLN();
+  LOGLN("_________________________________________________________________________________________");
 
 
 #endif//ETHER_W5500
-// if(role == 0){
+// if(ModbusRole == 0){
     // read 5 registers starting at address 0
 //Modbus Setup
 
@@ -354,26 +332,27 @@ initupdate();
 
 
 
- bool MB_Update_Once = true;
- bool MB_Update_Once1 = true;
- bool Reg_Update_Once = true;
- bool Reg_Update_Once1 = true;
+bool MB_Update_Once = true;
+bool MB_Update_Once1 = true;
+bool Reg_Update_Once = true;
+bool Reg_Update_Once1 = true;
 
-  uint16_t regs_WRITE[30];
-  uint16_t regs_READ[30];
+ uint16_t regs_WRITE[30];
+ uint16_t regs_READ[30];
 
 // Function to return an array of 30 elements
 uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}
 uint16_t* Modbus_Prog::getOutputRegs() {return holdingRegisters;}
 
-static bool MB_Update_Data = false;
-static uint16_t MB_Update_Address = 0;
-static uint16_t MB_Update_Value = 0;
+bool MB_Update_Data = false;
+uint16_t MB_Update_Address = 0;
+uint16_t MB_Update_Value = 0;
 
 void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
 void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
 
-void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();
+LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
 
 void Modbus_Prog::connectModbus(bool update){ MB_connect = update;}
 void Modbus_Prog::setModbusupdateState(bool state){ MB_Update_Data = state;}
@@ -383,18 +362,22 @@ uint16_t Modbus_Prog::getModbusupdateData(){return MB_Update_Value;}
 uint16_t Modbus_Prog::getModbusupdateAddr(){ return MB_Update_Address;}
 
 void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
-  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) + " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite));
-  // Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
+  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) 
+  //+ " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite)
+  );
+  Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
+
 }
-
-void Modbus_Prog::modbus_loop(bool role) {
+byte bien = 0;
+void Modbus_Prog::modbus_loop(bool ModbusRole) {
   // #ifdef MASTER_MODBUS
-  if(role == Master && MB_connect == true){
-    // Modbus_Master.readCoilsRegister(SLAVE_ID  , Read_Coil, dataSize ,coils,dataSize);//Read Coil
-    delay(5);
-    Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead ,holdingRegisters ,dataSize);//Read holdingRegisters
-
-    delay(5);
+  if(ModbusRole == Master && MB_connect == true){
+    for(byte bien = 0 ; bien < 10; bien++){
+    Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead+(bien*10) ,ReadRegTemporary ,dataSize);//Read holdingRegisters
+    for(byte p = 0; p < 10; p++){holdingRegisters[p+(bien*10)] = ReadRegTemporary[p];}
+    delay(1);
+    // bien++;if(bien>10)bien = 0;
+    }
   #ifdef Ethernet_W5500
       Mb.task();
       for(int i = 0 ; i < dataSize ; i++){
@@ -430,7 +413,7 @@ void Modbus_Prog::modbus_loop(bool role) {
 
             #ifdef LOOKLINE_UI
             Lookline_modbus.lookline_modbus_get(ModbuS.regs_WRITE);
-        if(Lookline_modbus.Get_role() == GATEWAY){
+        if(Lookline_modbus.Get_ModbusRole() == GATEWAY){
             Lookline_modbus.lookline_modbus_get(ModbuS.regs_WRITE);
         }
       #endif// LOOKLINE_UI
@@ -443,23 +426,11 @@ void Modbus_Prog::modbus_loop(bool role) {
     // debugs();
   // #endif//MASTER
   #ifdef SerialPort
-  // if (Modbus_Serial.available()) {
-  //   int inByte = Modbus_Serial.read();
-  //   Serial.write(inByte);
-  // }
-
-  // // read from port 0, send to port 1:
-  // if (Serial.available()) {
-  //   int inByte = Serial.read();
-  //   Modbus_Serial.write(inByte);
-  // }
-  // discreteInputs[0] = digitalRead(BootButton);
-  // inputRegisters[0] = digitalRead(BootButton);
-  if(role == Master && MB_connect == true){
-    Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
-    for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
-  // inputRegisters = ;
-    Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegWrite , inputRegisters, dataSize);//Write REG
+  if(ModbusRole == Master && MB_connect == true){
+    // Modbus_Master.writeCoilsRegister(SLAVE_ID , Write_Coil , dataSize, discreteInputs, dataSize);//Write Coil 
+  //   for (int i = 0; i < dataSize; i++){inputRegisters[i] = regs_WRITE[i];}
+  // // inputRegisters = ;
+  //   Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegWrite , inputRegisters, dataSize);//Write REG
       // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOGLN(" ");}
     #if defined(Enthernet) || defined(WifiConnect) 
       //Call once inside loop() - all magic here
@@ -473,7 +444,7 @@ void Modbus_Prog::modbus_loop(bool role) {
       }
     #endif// defined(Enthernet) || defined(WifiConnect) 
   }
-  if(role == Slave ){
+  if(ModbusRole == Slave ){
 
       mb.task();
       
@@ -506,8 +477,8 @@ void Modbus_Prog::modbus_loop(bool role) {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
     // for (int i = 0; i < dataSize; i++){inputRegisters[i] = random(0,100);}
-    // if(role == Slave){LOGLN("slave");}
-    // if(role == Master){LOGLN("master");}
+    // if(ModbusRole == Slave){LOGLN("slave");}
+    // if(ModbusRole == Master){LOGLN("master");}
     //   LOG("holdingRegisters: ");
     //   // Your code here to print to serial every 2 seconds
     //   LOG(holdingRegisters[0]);
@@ -558,7 +529,7 @@ holdingRegs[ModbuS.HOLDING_REGS_SIZE*2] = NodeSlave.modbus_update(holdingRegs);
 
     // (int BoardID,int NetID,bool RunStop,bool OnOff,int Plan,
     // int PlanSet, int Result,int ResultSet,int PlanLimit,
-    // int Pcs,int TimeInc,int ComMode,int Type,int Role,
+    // int Pcs,int TimeInc,int ComMode,int Type,int ModbusRole,
     // int OnWifi,int DelayCounter);
 // #ifdef DEBUG
 //   unsigned long currentMillis_1 = millis();

@@ -4,10 +4,6 @@
 #ifdef PLC_MASTER_UI
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#ifdef MQTT_USE
-#include <WiFiClientSecure.h>
-#include <WebSocketsClient.h>
-#endif//
 #ifdef DEBUG_FLAG
 #define debug(x) Serial.print(x)
 #define debugln(x) Serial.println(x)
@@ -27,16 +23,15 @@ public:
 
 #define LED_ON(pin)    digitalWrite(pin, HIGH)
 #define LED_OFF(pin)   digitalWrite(pin, LOW)
-#ifdef MQTTSSL
-void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
-#endif// MQTTSSL
-void update();
 void modbusSet(uint16_t addr, uint16_t value);
 void GetIdList(int idlist[]);
 void connectWeb(byte connected);
 void SetLoRaValue();
 void setup();
 void loop();
+void readfile();
+void UpdateFW(bool UDFW);
+
 };
 extern PLC_MASTER PLC_master;
 #endif//PLC_MASTER_UI

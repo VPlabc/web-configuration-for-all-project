@@ -56,7 +56,7 @@ void SetPin(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t SHCP , uint8_t 
     taskStatus_LED = Status_LED;
     taskTimeSent = TimeSent;
     pinMode(Status_LED, OUTPUT);
-    if(taskComMode == LoRa)ESPCOM::print("LoRa Chanel:" + String(taskChanel)  + " | ", PRINTER_PIPE);
+    if(taskComMode == LoRa)if(LooklineDebug)ESPCOM::print("LoRa Chanel:" + String(taskChanel)  + " | ", PRINTER_PIPE);
     CONFIG::read_byte(EP_EEPROM_ROLE, &taskRole);
     CONFIG::read_byte(EP_EEPROM_COM_MODE, &taskComMode);
     CONFIG::read_byte(EP_WIFI_MODE, &taskWiFiMode);
@@ -164,326 +164,326 @@ void TaskDisplay(byte mode)
     //displayOT();
     break;
   //////////////////////////////////////////////////// TEST DISPLAY
-  case Test:
-    Lookline_PROG.counter1++;
-    if (Lookline_PROG.counter1 > TIMES)
-    {
-      Lookline_PROG.counter1 = 0;
-      Lookline_PROG.counterOUT++;
-    }
-    if (Lookline_PROG.counterOUT > 30)
-    {
-      Lookline_PROG.counterOUT = 0;
-      DispMode = 0;
-    }
-    if (Lookline_PROG.numCode < 10)
-    {
-      TestDisplay(Lookline_PROG.numCode);
-    }
-    break;
-  //////////////////////////////////////////////////// SETING DISPLAY
-  case Setting_:
-    //if(Lookline_PROG.SetupPro)
+  // case Test:
+  //   Lookline_PROG.counter1++;
+  //   if (Lookline_PROG.counter1 > TIMES)
+  //   {
+  //     Lookline_PROG.counter1 = 0;
+  //     Lookline_PROG.counterOUT++;
+  //   }
+  //   if (Lookline_PROG.counterOUT > 30)
+  //   {
+  //     Lookline_PROG.counterOUT = 0;
+  //     DispMode = 0;
+  //   }
+  //   if (Lookline_PROG.numCode < 10)
+  //   {
+  //     TestDisplay(Lookline_PROG.numCode);
+  //   }
+  //   break;
+  // //////////////////////////////////////////////////// SETING DISPLAY
+  // case Setting_:
+  //   //if(Lookline_PROG.SetupPro)
 
-    digitalWrite(taskPin.STCP, LOW);
-    Lookline_PROG.counter1++;
-    if (Lookline_PROG.counter1 > TIMES)
-    {
-      Lookline_PROG.counter1 = 0;
-      Lookline_PROG.counterOUT++;
-    }
-    if (Lookline_PROG.counterOUT > 30)
-    {
-      Lookline_PROG.counterOUT = 0;
-      DispMode = 0;
-    }
-    if (Lookline_PROG.numCode < 10)
-    {
-      if (Lookline_PROG.SetupStep == 0)
-      { //nothing
-        Lookline_PROG.ValueSet0 = Lookline_PROG.numCode;
-      }
-      if (Lookline_PROG.SetupStep == 1)
-      { //nothing
-        Lookline_PROG.ValueSet1 = Lookline_PROG.numCode;
-      }
-      if (Lookline_PROG.SetupStep == 2)
-      { //nothing
-        Lookline_PROG.ValueSet2 = Lookline_PROG.numCode;
-      }
-      if (Lookline_PROG.SetupStep == 3)
-      { //nothing
-        Lookline_PROG.ValueSet3 = Lookline_PROG.numCode;
-      }
+  //   digitalWrite(taskPin.STCP, LOW);
+  //   Lookline_PROG.counter1++;
+  //   if (Lookline_PROG.counter1 > TIMES)
+  //   {
+  //     Lookline_PROG.counter1 = 0;
+  //     Lookline_PROG.counterOUT++;
+  //   }
+  //   if (Lookline_PROG.counterOUT > 30)
+  //   {
+  //     Lookline_PROG.counterOUT = 0;
+  //     DispMode = 0;
+  //   }
+  //   if (Lookline_PROG.numCode < 10)
+  //   {
+  //     if (Lookline_PROG.SetupStep == 0)
+  //     { //nothing
+  //       Lookline_PROG.ValueSet0 = Lookline_PROG.numCode;
+  //     }
+  //     if (Lookline_PROG.SetupStep == 1)
+  //     { //nothing
+  //       Lookline_PROG.ValueSet1 = Lookline_PROG.numCode;
+  //     }
+  //     if (Lookline_PROG.SetupStep == 2)
+  //     { //nothing
+  //       Lookline_PROG.ValueSet2 = Lookline_PROG.numCode;
+  //     }
+  //     if (Lookline_PROG.SetupStep == 3)
+  //     { //nothing
+  //       Lookline_PROG.ValueSet3 = Lookline_PROG.numCode;
+  //     }
 
-      Lookline_PROG.numCode = 10;
-      Lookline_PROG.SetupStep++;
-      if (Lookline_PROG.SetupStep > 3)
-        Lookline_PROG.SetupStep = 0;
-    }
+  //     Lookline_PROG.numCode = 10;
+  //     Lookline_PROG.SetupStep++;
+  //     if (Lookline_PROG.SetupStep > 3)
+  //       Lookline_PROG.SetupStep = 0;
+  //   }
 
-    if (Lookline_PROG.SetupPro == 4)
-    {
-      if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('P'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
-      }
-      if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('r'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        PrintSeg(ConvertToLed7Segment('r'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
-      }
-      if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('o'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
-      }
-      if (Lookline_PROG.SetupStep == 3 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
-      }
-    }
-    if (Lookline_PROG.SetupPro != 4)
-    {
-      if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('P'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        if (Lookline_PROG.DotIn == 3 && Lookline_PROG.SetupPro == 6)
-        {
-          PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment(Lookline_PROG.ValueSet0) | SEGMENT_H, ConvertToLed7Segment('-'));
-        }
-        else
-        {
-          PrintSeg(ConvertToLed7Segment('P'), Seg[Lookline_PROG.ValueSet0], ConvertToLed7Segment('-'));
-        }
-      }
-      if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('r'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        if (Lookline_PROG.DotIn == 2 && Lookline_PROG.SetupPro == 6)
-        {
-          PrintSeg(ConvertToLed7Segment('r'), ConvertToLed7Segment(Lookline_PROG.ValueSet1) | SEGMENT_H, ConvertToLed7Segment('-'));
-        }
-        else
-        {
-          PrintSeg(ConvertToLed7Segment('r'), Seg[Lookline_PROG.ValueSet1], ConvertToLed7Segment('-'));
-        }
-      }
-      if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment('o'), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        if (Lookline_PROG.DotIn == 1 && Lookline_PROG.SetupPro == 6)
-        {
-          PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment(Lookline_PROG.ValueSet2) | SEGMENT_H, ConvertToLed7Segment('-'));
-        }
-        else
-        {
-          PrintSeg(ConvertToLed7Segment('o'), Seg[Lookline_PROG.ValueSet2], ConvertToLed7Segment('-'));
-        }
-      }
-      if (Lookline_PROG.SetupStep == 3 && Lookline_PROG.counter1 > TIMES / 2)
-      {
-        PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[10], ConvertToLed7Segment('-'));
-      }
-      else
-      {
-        if (Lookline_PROG.DotIn == 0 && Lookline_PROG.SetupPro == 6)
-        {
-          PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), ConvertToLed7Segment(Lookline_PROG.ValueSet3) | SEGMENT_H, ConvertToLed7Segment('-'));
-        }
-        else
-        {
-          PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[Lookline_PROG.ValueSet3], ConvertToLed7Segment('-'));
-        }
-      }
-    } //if(Lookline_PROG.SetupPro == 4){
+  //   if (Lookline_PROG.SetupPro == 4)
+  //   {
+  //     if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('P'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
+  //     }
+  //     if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('r'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('r'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
+  //     }
+  //     if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('o'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
+  //     }
+  //     if (Lookline_PROG.SetupStep == 3 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), ConvertToLed7Segment('-'), ConvertToLed7Segment('-'));
+  //     }
+  //   }
+  //   if (Lookline_PROG.SetupPro != 4)
+  //   {
+  //     if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('P'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       if (Lookline_PROG.DotIn == 3 && Lookline_PROG.SetupPro == 6)
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment(Lookline_PROG.ValueSet0) | SEGMENT_H, ConvertToLed7Segment('-'));
+  //       }
+  //       else
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('P'), Seg[Lookline_PROG.ValueSet0], ConvertToLed7Segment('-'));
+  //       }
+  //     }
+  //     if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('r'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       if (Lookline_PROG.DotIn == 2 && Lookline_PROG.SetupPro == 6)
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('r'), ConvertToLed7Segment(Lookline_PROG.ValueSet1) | SEGMENT_H, ConvertToLed7Segment('-'));
+  //       }
+  //       else
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('r'), Seg[Lookline_PROG.ValueSet1], ConvertToLed7Segment('-'));
+  //       }
+  //     }
+  //     if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment('o'), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       if (Lookline_PROG.DotIn == 1 && Lookline_PROG.SetupPro == 6)
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment(Lookline_PROG.ValueSet2) | SEGMENT_H, ConvertToLed7Segment('-'));
+  //       }
+  //       else
+  //       {
+  //         PrintSeg(ConvertToLed7Segment('o'), Seg[Lookline_PROG.ValueSet2], ConvertToLed7Segment('-'));
+  //       }
+  //     }
+  //     if (Lookline_PROG.SetupStep == 3 && Lookline_PROG.counter1 > TIMES / 2)
+  //     {
+  //       PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[10], ConvertToLed7Segment('-'));
+  //     }
+  //     else
+  //     {
+  //       if (Lookline_PROG.DotIn == 0 && Lookline_PROG.SetupPro == 6)
+  //       {
+  //         PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), ConvertToLed7Segment(Lookline_PROG.ValueSet3) | SEGMENT_H, ConvertToLed7Segment('-'));
+  //       }
+  //       else
+  //       {
+  //         PrintSeg(ConvertToLed7Segment(Lookline_PROG.SetupPro % 10), Seg[Lookline_PROG.ValueSet3], ConvertToLed7Segment('-'));
+  //       }
+  //     }
+  //   } //if(Lookline_PROG.SetupPro == 4){
 
-    /*
-    if(Lookline_PROG.SetupPro == 10){
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('e'));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('M'));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('i'));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('t'));
-    }
-    else{
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment(Lookline_PROG.SetupPro%10));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('o'));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('r'));
-    shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('P'));
-    }
-    if(Lookline_PROG.SetupPro == 4)
-    {
-      if(Lookline_PROG.SetupStep == 3 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
-      if(Lookline_PROG.SetupStep == 2 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
-      if(Lookline_PROG.SetupStep == 1 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
-      if(Lookline_PROG.SetupStep == 0 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
-    }
-    else
-    {
-      if(Lookline_PROG.SetupStep == 3 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 4){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet3) | SEGMENT_H));}}//else
-      if(Lookline_PROG.SetupStep == 2 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 1){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet2) | SEGMENT_H));}}//else
-      if(Lookline_PROG.SetupStep == 1 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet1) | SEGMENT_H));}}//else
-      if(Lookline_PROG.SetupStep == 0 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
-      else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 3){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet0) | SEGMENT_H));}}//else
+  //   /*
+  //   if(Lookline_PROG.SetupPro == 10){
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('e'));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('M'));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('i'));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('t'));
+  //   }
+  //   else{
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment(Lookline_PROG.SetupPro%10));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('o'));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('r'));
+  //   shiftOut(Lookline_PROG.DATA1, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('P'));
+  //   }
+  //   if(Lookline_PROG.SetupPro == 4)
+  //   {
+  //     if(Lookline_PROG.SetupStep == 3 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
+  //     if(Lookline_PROG.SetupStep == 2 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
+  //     if(Lookline_PROG.SetupStep == 1 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
+  //     if(Lookline_PROG.SetupStep == 0 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, ConvertToLed7Segment('-'));}
+  //   }
+  //   else
+  //   {
+  //     if(Lookline_PROG.SetupStep == 3 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 4){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet3) | SEGMENT_H));}}//else
+  //     if(Lookline_PROG.SetupStep == 2 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 1){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet2) | SEGMENT_H));}}//else
+  //     if(Lookline_PROG.SetupStep == 1 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet1) | SEGMENT_H));}}//else
+  //     if(Lookline_PROG.SetupStep == 0 &&Lookline_PROG.counter1 > TIMES/2){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, Seg[10]);}
+  //     else{if(Lookline_PROG.SetupPro == 6 & Lookline_PROG.DotIn == 3){shiftOut(Lookline_PROG.DATA2, Lookline_PROG.SHCP, LSBFIRST, (ConvertToLed7Segment(Lookline_PROG.ValueSet0) | SEGMENT_H));}}//else
       
-    }
-    */
-    latch();
-    break;
-  /////////////////////////////////////////////////// SET ID DISPLAY
-  case ConFi:
+  //   }
+  //   */
+  //   latch();
+  //   break;
+  // /////////////////////////////////////////////////// SET ID DISPLAY
+  // case ConFi:
 
-    digitalWrite(taskPin.STCP, LOW);
-  if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){
-    PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('C'), ConvertToLed7Segment('F'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('i'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('N'), Seg[10], Seg[10]);
+  //   digitalWrite(taskPin.STCP, LOW);
+  // if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){
+  //   PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('C'), ConvertToLed7Segment('F'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('i'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('N'), Seg[10], Seg[10]);
 
-  }//if(taskModuleType == ModuleV140){
+  // }//if(taskModuleType == ModuleV140){
 
-  if(taskModuleType == ModuleV141){
-    PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('N'), ConvertToLed7Segment('i'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('F'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('C'), Seg[10], Seg[10]);
-  }//if(taskModuleType == ModuleV141){  
-    latch();
-    break;
-  /////////////////////////////////////////////////// SET ID DISPLAY
-  case CLEAR:
+  // if(taskModuleType == ModuleV141){
+  //   PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('N'), ConvertToLed7Segment('i'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('o'), ConvertToLed7Segment('F'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('C'), Seg[10], Seg[10]);
+  // }//if(taskModuleType == ModuleV141){  
+  //   latch();
+  //   break;
+  // /////////////////////////////////////////////////// SET ID DISPLAY
+  // case CLEAR:
 
-    digitalWrite(taskPin.STCP, LOW);
-  if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){   
-    PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('C'), ConvertToLed7Segment('r'), Seg[Lookline_PROG.ValueSet2]);
-      PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('i'), Seg[Lookline_PROG.ValueSet1]);
-      PrintSeg(ConvertToLed7Segment('E'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
-      PrintSeg(ConvertToLed7Segment('A'), Seg[10], Seg[10]);
-  }///if(taskModuleType == ModuleV140){
-  if(taskModuleType == ModuleV141){
-    PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('r'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('E'), ConvertToLed7Segment('-'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('L'), Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('C'), Seg[10], Seg[10]);
-  }//if(taskModuleType == ModuleV141){ 
-    latch();
-    break;  
-    /////////////////////////////////////////////////// UPDATE
-  case UPDATE:
+  //   digitalWrite(taskPin.STCP, LOW);
+  // if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){   
+  //   PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('C'), ConvertToLed7Segment('r'), Seg[Lookline_PROG.ValueSet2]);
+  //     PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('i'), Seg[Lookline_PROG.ValueSet1]);
+  //     PrintSeg(ConvertToLed7Segment('E'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
+  //     PrintSeg(ConvertToLed7Segment('A'), Seg[10], Seg[10]);
+  // }///if(taskModuleType == ModuleV140){
+  // if(taskModuleType == ModuleV141){
+  //   PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('r'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('E'), ConvertToLed7Segment('-'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('L'), Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('C'), Seg[10], Seg[10]);
+  // }//if(taskModuleType == ModuleV141){ 
+  //   latch();
+  //   break;  
+  //   /////////////////////////////////////////////////// UPDATE
+  // case UPDATE:
 
-    digitalWrite(taskPin.STCP, LOW);
-  if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){   
-    //   PrintSeg(ConvertToLed7Segment('U'), ConvertToLed7Segment('T'), Seg[Lookline_PROG.ValueSet2]);
-    //   PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment('E'), Seg[Lookline_PROG.ValueSet1]);
-    //   PrintSeg(ConvertToLed7Segment('D'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
-    //   PrintSeg(ConvertToLed7Segment('A'), Seg[10], Seg[10]);
-    // PrintSeg(Seg[10], Seg[10], Seg[10]);
-  }///if(taskModuleType == ModuleV140){
-      PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('E'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('D'), ConvertToLed7Segment('T'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('P'), Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('U'), Seg[10], Seg[10]);
-  if(taskModuleType == ModuleV141){
-    PrintSeg(Seg[10], Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('E'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('D'), ConvertToLed7Segment('T'), Seg[10]);
-      PrintSeg(ConvertToLed7Segment('P'), Seg[10], Seg[10]);
-      PrintSeg(ConvertToLed7Segment('U'), Seg[10], Seg[10]);
-  }//if(taskModuleType == ModuleV141){ 
-    latch();
-    break;
-    ////////////////////////////////////////////////////////////////////////////////////////////
-  case Online:
+  //   digitalWrite(taskPin.STCP, LOW);
+  // if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){   
+  //   //   PrintSeg(ConvertToLed7Segment('U'), ConvertToLed7Segment('T'), Seg[Lookline_PROG.ValueSet2]);
+  //   //   PrintSeg(ConvertToLed7Segment('P'), ConvertToLed7Segment('E'), Seg[Lookline_PROG.ValueSet1]);
+  //   //   PrintSeg(ConvertToLed7Segment('D'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
+  //   //   PrintSeg(ConvertToLed7Segment('A'), Seg[10], Seg[10]);
+  //   // PrintSeg(Seg[10], Seg[10], Seg[10]);
+  // }///if(taskModuleType == ModuleV140){
+  //     PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('E'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('D'), ConvertToLed7Segment('T'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('P'), Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('U'), Seg[10], Seg[10]);
+  // if(taskModuleType == ModuleV141){
+  //   PrintSeg(Seg[10], Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('A'), ConvertToLed7Segment('E'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('D'), ConvertToLed7Segment('T'), Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('P'), Seg[10], Seg[10]);
+  //     PrintSeg(ConvertToLed7Segment('U'), Seg[10], Seg[10]);
+  // }//if(taskModuleType == ModuleV141){ 
+  //   latch();
+  //   break;
+  //   ////////////////////////////////////////////////////////////////////////////////////////////
+  // case Online:
  
-  if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){  
-    PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[10]);
-    if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[Lookline_PROG.ValueSet2]);
-    }
-    if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[Lookline_PROG.ValueSet1]);
-    }
-    if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
-    }
-  }///if(taskModuleType == ModuleV140){
-  if(taskModuleType == ModuleV141){
-    PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[10]);
-    if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('i'), ConvertToLed7Segment('e'), Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[Lookline_PROG.ValueSet2]);
-    }
-    if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[Lookline_PROG.ValueSet1]);
-    }
-    if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
-    {
-      PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[10]);
-    }
-    else
-    {
-      PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
-    }
-  }//if(taskModuleType == ModuleV141){ 
-    latch();
-    break;
+  // if(taskModuleType == ModuleV140 || taskModuleType == ModuleV130){  
+  //   PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[10]);
+  //   if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[Lookline_PROG.ValueSet2]);
+  //   }
+  //   if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[Lookline_PROG.ValueSet1]);
+  //   }
+  //   if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
+  //   }
+  // }///if(taskModuleType == ModuleV140){
+  // if(taskModuleType == ModuleV141){
+  //   PrintSeg(ConvertToLed7Segment('i'), Seg[10], Seg[10]);
+  //   if (Lookline_PROG.SetupStep == 0 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('i'), ConvertToLed7Segment('e'), Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('L'), ConvertToLed7Segment('e'), Seg[Lookline_PROG.ValueSet2]);
+  //   }
+  //   if (Lookline_PROG.SetupStep == 1 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('n'), ConvertToLed7Segment('N'), Seg[Lookline_PROG.ValueSet1]);
+  //   }
+  //   if (Lookline_PROG.SetupStep == 2 && Lookline_PROG.counter1 > TIMES / 2)
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[10]);
+  //   }
+  //   else
+  //   {
+  //     PrintSeg(ConvertToLed7Segment('O'), Seg[10], Seg[Lookline_PROG.ValueSet0]);
+  //   }
+  // }//if(taskModuleType == ModuleV141){ 
+  //   latch();
+  //   break;
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   case SLEEP:
     PrintSeg(Seg[10], Seg[10], Seg[10]);
@@ -765,7 +765,9 @@ void TaskInPut()
   //*/
 #ifndef Develop
 #ifndef Gateway
-
+    
+  static byte buff = 5;//defaule
+  if(buff == 5){CONFIG::read_byte (EP_EEPROM_MODULE_TYPE, &buff );}
 
 if(taskRole == NODE || taskRole == REPEARTER){
   ///*
@@ -789,27 +791,30 @@ if(taskRole == NODE || taskRole == REPEARTER){
       while(analogRead(X0) <= minValue || analogRead(X4) <= minValue){delay(10);
       // if(LogOnce){LogOnce = false;LOGLN("X0:" + String(analogRead(X0)) + "|X4:" + String(analogRead(X4)));}
           counter2Pin++;counterBoot++;
-          // if(Lookline_PROG.GetDebug())LOGLN("boot:" + String(counterBoot));
         if(counterBoot > 10000){//5S
-          CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
-          CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
-          delay(1000);
-          ESP.restart();
+          if(buff == AutoDetect){
+            if(Lookline_PROG.GetDebug())LOGLN("boot:" + String(counterBoot));
+            CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
+            CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
+            delay(1000);
+            ESP.restart();
+          }
         }
         if(counter2Pin > 500 && Lookline_PROG.GetRun()  == false){
-
-          DispMode = ConFi;//Confi 
-          LOGLN("Config");
-          TaskDisplay(DispMode);
-          if(ComMode != MESH){
-          CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);}
-          else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);}
-          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
-          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
-          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
-          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
-          digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
-          ESP.restart();
+          if(buff == AutoDetect){
+            DispMode = ConFi;//Confi 
+            LOGLN("Config");
+            TaskDisplay(DispMode);
+            if(ComMode != MESH){
+            CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);}
+            else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);}
+            digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+            digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+            digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+            digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+            digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);delay(100);
+            ESP.restart();
+          }
         }
 
         if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun()  == true){//3S
@@ -824,8 +829,8 @@ if(taskRole == NODE || taskRole == REPEARTER){
           // Lookline_PROG.SetConfig(0);
           // WriteValue();
 #ifdef DEBUG_
-          LOGLN("Stop");
-          delay(500);
+          if(buff =! AutoDetect){LOGLN("Stop");
+          delay(500);}
 #endif //#if DEBUG_
         }
         else{
@@ -834,8 +839,8 @@ if(taskRole == NODE || taskRole == REPEARTER){
           // totalInterruptCounter = 0;
           // WriteValue();
 #ifdef DEBUG_
-          LOGLN("Run");
-          delay(500);
+          if(buff =! AutoDetect){LOGLN("Run");
+          delay(500);}
 #endif //#if DEBUG_
         }
           // if(Lookline_PROG.Mode == 1){Lookline_PROG.Mode = 0;WriteRebootValue();LOG("Cancel");delay(1000);ESP.restart();}

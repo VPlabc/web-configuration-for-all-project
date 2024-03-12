@@ -47,7 +47,6 @@ bool mqttWsConnected = false;
 bool mqttConnected = false;
 #endif//
 
-
 #ifdef SHT
 #include <SHT3x.h>
 SHT3x Sensor;
@@ -67,9 +66,6 @@ WifiRF wifirf;
 #include <ClickButton.h>
 ClickButton button(BootButton, LOW, CLICKBTN_PULLUP);
 
-#ifdef MQTTSSL
-WebSocketsClient webSocket;
-#endif//MQTTSSL
 //   #include <SimpleModbusSlave.h>
 //   SimpleModbusSlave NodeSlave;
 
@@ -78,50 +74,18 @@ WebSocketsClient webSocket;
 ///////////////////////// Modbus Role //////////////////////////
 enum {slave,master};
 //////////////// registers of your slave ///////////////////
-// enum 
-// {     
-//   BOARDID,
-//   NETID,
-//   RUNSTOP,
-//   ONOFF,
-//   _PLAN,
-//   PLANSET,
-//   _RESULT,
-//   RESULTSET,
-//   MAXPLAN,
-//   PCS,
-//   TIMEINC,
-//   DELAYCOUNTER,
-//   ROLE,
-//   _RSSI,  
-//   COMMODE,
-//   TYPE,
-//   ONWIFI,
-//   CMD,   
-//   Plan1,   
-//   Plan2,
-//   Plan3,
-//   Plan4,
-//   Plan5,
-//   Plan6,
-//   Plan7,
-//   Plan8,
-//   Plan9,
-//   Plan10,
-//   Plan11,
-//   Plan12,
-//   HOLDING_REGS_SIZE = 60// leave this one
-// };
 
 
+unsigned long EVENT_INTERVAL_MS1 = 3000;
+unsigned long REFRESH_INTERVAL_MS = 60000;
 #ifdef MASTER_MODBUS
-byte ModbusRole = master;
+byte MBRole = master;
 #else
-static byte ModbusRole = slave;
+byte MBRole = slave;
 #endif//MASTER_MODBUS
-static byte connectWebSocket = 2;
-static byte IDList[255];
-static int16_t Register[4][60];
+byte connectWebSocket = 0;
+byte IDList[255];
+int16_t Register[4][200];
 
 // int16_t SlaveParameter[HOLDING_REGS_SIZE];
 // int16_t HOLDING_REGS_CoilData[HOLDING_REGS_SIZE];//1-9999
@@ -129,106 +93,21 @@ static int16_t Register[4][60];
 // int16_t HOLDING_REGS_AnalogInData[HOLDING_REGS_SIZE];//30001-39999
 // int16_t HOLDING_REGS_AnalogOutData[HOLDING_REGS_SIZE];//40001-49999
 
-   byte Lora_CH = 0;
-   byte BoardIDs = 0;
-  static uint8_t M0 = 0;
-  static uint8_t M1 = 0;
-  static byte ComMode = LoRa;
+  byte Lora_CH = 0;
+  byte BoardIDs = 0;
+  uint8_t M0 = 0;
+  uint8_t M1 = 0;
+  byte ComMode = LoRa;
 
 bool WriteUpdate = 0;//bao cho ct biet la web co write xuong
 uint16_t WriteUpAddr = 0;//dia chi khi web write
-#ifdef MQTT_USE
-void MQTT_Init();
-#endif//MQTT_USE
+
+
+void PLC_MASTER::SetLoRaValue(){
+CONFIG::SetLoRaValue();
+}
+        byte bbuff = 0;
 void sendInfo();
-byte bbuf = 0;
-#ifdef MQTT_USE
-void PLC_MASTER::update(){MQTT_Init();}
-#endif//MQTT
-void PLC_MASTER::SetLoRaValue(){CONFIG::SetLoRaValue();}
-
-void hexdump(const void *mem, uint32_t len, uint8_t cols = 16) {
-	const uint8_t* src = (const uint8_t*) mem;
-	Serial.printf("\n[HEXDUMP] Address: 0x%08X len: 0x%X (%d)", (ptrdiff_t)src, len, len);
-	for(uint32_t i = 0; i < len; i++) {
-		if(i % cols == 0) {
-			Serial.printf("\n[0x%08X] 0x%08X: ", (ptrdiff_t)src, i);
-		}
-		Serial.printf("%02X ", *src);
-		src++;
-	}
-	Serial.printf("\n");
-}
-#ifdef MQTTSSL
-void PLC_MASTER::webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-    switch(type) {
-        case WStype_DISCONNECTED:
-            Serial.printf("[WSc] Disconnected!\n");mqttWsConnected = false; 
-            break;
-        case WStype_CONNECTED:
-            {
-                Serial.printf("[WSc] Connected to url: %s\n",  payload);
-			    // send message to server when Connected
-				      webSocket.sendTXT("Connected");mqttWsConnected = true;
-            }
-            break;
-        case WStype_TEXT:
-            Serial.printf("[WSc] get text: %s\n", payload);
-			// send message to server
-			// webSocket.sendTXT("message here");
-            break;
-        case WStype_BIN:
-            Serial.printf("[WSc] get binary length: %u\n", length);
-            hexdump(payload, length);
-            // send data to server
-            // webSocket.sendBIN(payload, length);
-            break;
-		case WStype_ERROR:			
-		case WStype_FRAGMENT_TEXT_START:
-		case WStype_FRAGMENT_BIN_START:
-		case WStype_FRAGMENT:
-		case WStype_FRAGMENT_FIN:
-			break;
-    }
-}
-#endif
-
-#ifdef MQTT_USE
-bool PLCDebug = 1;
-  String str_;
-  char PLCmqttUserName[MAX_MQTT_USER_LENGTH + 1];
-  char PLCmqttUserPassword[MAX_MQTT_PASS_LENGTH + 1];
-  char PLCmqttbroker[MAX_MQTT_BROKER_LENGTH + 1];
-  int PLCmqttPort;
-void MQTT_Init(){
-  if(CONFIG::read_string (EP_MQTT_BROKER, PLCmqttbroker, MAX_MQTT_BROKER_LENGTH)){
-    if(PLCDebug )LOGLN("mqtt broker:" + String(PLCmqttbroker));
-  }
-  if(CONFIG::read_string (EP_MQTT_USER, PLCmqttUserName, MAX_MQTT_USER_LENGTH)){
-    if(String(PLCmqttUserName) == "_"){str_.toCharArray(PLCmqttUserName, str_.length());}
-    if(PLCDebug )LOGLN("mqtt user:" + String(PLCmqttUserName));
-  }
-  if(CONFIG::read_string (EP_MQTT_PASS, PLCmqttUserPassword, MAX_MQTT_PASS_LENGTH)){
-    if(String(PLCmqttUserPassword) == "_"){str_.toCharArray(PLCmqttUserPassword, str_.length());}
-    if(PLCDebug )LOGLN("mqtt pass:" + String(PLCmqttUserPassword));
-  }   
-  if(CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &PLCmqttPort, INTEGER_LENGTH) ){
-    if(PLCDebug )LOGLN("mqtt port:" + String(PLCmqttPort));
-  } 
-  #ifdef MQTTSSL
-    // server address, port and URL
-      webSocket.beginSSL(PLCmqttbroker, PLCmqttPort, "/", "mqtt" , "ws");
-      // event handler
-      webSocket.onEvent([&](WStype_t t, uint8_t * p, size_t l) {PLC_MASTER_PROG.webSocketEvent(t, p, l);});
-      // use HTTP Basic Authorization this is optional remove if not needed
-      webSocket.setAuthorization(PLCmqttUserName, PLCmqttUserPassword);
-      // try ever 5000 again if connection has failed
-      webSocket.setReconnectInterval(5000);
-  #endif
-}
-#endif//MQTT_USER
-
-
 
 void PLC_MASTER::setup(){
 //   Serial.begin(115200);
@@ -248,28 +127,20 @@ void PLC_MASTER::setup(){
 
 
     #ifdef USE_LORA
-  LOGLN("_________________________________________ LORA RF ________________________________________");
+  LOGLN("LORA RF ________________________________________");
 
-    // M0 = SW_1; M1 = SW_2;
-    M0 = IO2_HEADER; M1 = IO1_HEADER;
+    M0 = SW_1; M1 = SW_2;
+    // M0 = IO2_HEADER; M1 = IO1_HEADER;
   if(ComMode == LoRa){CONFIG::SetPinForLoRa(M0, M1, 16, 17);}
     SetLoRaValue();
-  // String para[4];
-  // Lora_Config_update(para);
-  // Str_Lora_CH = para[0];
-  // Air_Rate = para[1];
-  // Baud_Rate = para[2];
-  // Lora_PWR = para[3];
   
   #endif//  #ifdef USE_LORA
   #ifdef ModbusCom
-  LOGLN("_________________________________________ MODBUS ________________________________________");
-  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {} else {ModbusRole = bbuf;}
-    if(ModbusRole > 254){ModbusRole = 1;}
-    if(ModbusRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
-    if(ModbusRole == slave){LOG("Modbus Slave ");}
-    PLCModbusCom.modbus_setup(ModbusRole);
-
+  LOGLN("MODBUS ________________________________________");
+  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuff ) ) {MBRole = 1;} else {MBRole = bbuff;}
+    PLCModbusCom.modbus_setup(MBRole);
+    if(MBRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
+    if(MBRole == slave){LOG("Modbus Slave ");}
     LOGLN("Start!!");
 #endif//ModbusCom 
 #ifdef SDCARD_FEATURE
@@ -278,7 +149,7 @@ void PLC_MASTER::setup(){
 //     if (!SD.begin(csName[j])){LOGLN("SD Card not found |pin:" + String(csName[j]));}else{LOGLN("SD Card found |pin:" + String(csName[j]));}
 //     delay(1000);
 // }
-  LOGLN("_________________________________________ SD CARD ________________________________________");
+  LOGLN("SD CARD ________________________________________");
   SPI.begin(SCLK, MISO, MOSI);
   if (!SD.begin(SDCard_CS)){
     LOGLN("Card Mount Failed");
@@ -305,28 +176,52 @@ void PLC_MASTER::setup(){
     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
     Serial.printf("SD Card Size: %lluMB\n", cardSize);
   }
-#ifdef MQTT_USE
-  LOGLN("_________________________________________ MQTT ________________________________________");
 
-  MQTT_Init();
-#endif//MQTT_USE
+
+
 #endif//#ifdef SDCARD_FEATURE
   ///////////////////////////////
 
 #ifdef SHT
-  LOGLN("_________________________________________ SHT Init ________________________________________");
+  LOGLN("SHT Init ________________________________________");
   Sensor.Begin();
 #endif//#ifdef SHT
-  LOGLN("____________________________________________________________________________________________");
-  LOGLN("Setup PLC done");///////
 #ifdef MQTT_USE
 mqttPLC.setup();
 #endif//MQTT_USE
-}
+  LOGLN("______________________________________________________");
+  LOGLN("Setup PLC done");///////
+
+}  
+void PLC_MASTER::readfile(){
+    Serial.println("Read file");
+  }
+
+
+bool WebSendata = false;  
+bool UpdateFirmware = false;
+
+void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;static bool once=true;if(once){once = false;LOGLN("disable for update fw")}}
+
 bool onceInfo = true;
-float temperature;
-float humidity;
 void PLC_MASTER::loop(){// LOG("Loop");
+//Refresh wifi
+if(UpdateFirmware==false){
+  
+  if(connectWebSocket == 0){
+    static unsigned long lastRefresh1 = millis();
+    if (((millis() - lastRefresh1) > REFRESH_INTERVAL_MS )){lastRefresh1 = millis();
+      WiFi.disconnect();WiFi.mode(WIFI_OFF);
+      wifi_config.Setup(true, LED_STATUS, 1);LOGLN("Refresh Wifi");
+    }
+    static unsigned long previousMillis = 0;
+    if (millis() - previousMillis >= 100 ) {digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));previousMillis = millis();}
+  }
+  if(connectWebSocket == 1){
+    static unsigned long previousMillis = 0;
+    if (millis() - previousMillis >= 300 ) {digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));previousMillis = millis();}
+  }
+/////
 #ifdef MQTT_USE
   #ifdef MQTTSSL
      if(WiFi.status() == WL_CONNECTED)webSocket.loop();
@@ -335,20 +230,21 @@ void PLC_MASTER::loop(){// LOG("Loop");
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
-  if(connectWebSocket == 1)PLCModbusCom.modbus_loop(ModbusRole);
+  //  if(connectWebSocket == 1 && WebSendata == 0){
+    PLCModbusCom.modbus_loop(MBRole);//}
    
   if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
     PLCModbusCom.setModbusupdateState(0);
     LOGLN( PLCModbusCom.getModbusupdateData());
     PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
   }
+#ifdef SHT
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
 static const unsigned long EVENT_INTERVAL_MS = 1000;
 // static const unsigned long EVENT_INTERVAL_MSs = 1000;
 if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
   lastEventTime = millis();
-  #ifdef SHT
 #ifdef MQTT_USE
 mqttConnected = mqttPLC.connect_state();
 if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSocket == 2)){
@@ -389,20 +285,17 @@ if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSock
 
   }
   #endif//MQTT_USE
-#endif//#ifdef SHT
 }
+#endif//#ifdef SHT
+
 static unsigned long lastEventTime1 = millis();
-// static unsigned long lastEventTimess = millis();
-static const unsigned long EVENT_INTERVAL_MS1 = 1000;
-// static const unsigned long EVENT_INTERVAL_MSs = 1000;
-if ((millis() - lastEventTime1) > EVENT_INTERVAL_MS1) {
-  lastEventTime1 = millis();
+if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = millis();
   #if defined(MQTTSSL) && defined(MQTT_USE)
   if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
   #endif
+for(int i = 0 ; i < 100 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
 
-for(int i = 0 ; i < 30 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
-for(int i = 30 ; i < 60 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-30]; }
+for(int i = 100 ; i < 200 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-100]; }
 String json = "{";
 //-------------------------
 json += "\"Data\":0";
@@ -456,9 +349,11 @@ json += "}";
 }
 json += "]}";
 // LOG(json);LOG(json);
-    if(connectWebSocket == 1){socket_server->broadcastTXT(json);sendInfo();}
+    if(connectWebSocket == 1){WebSendata = 1;socket_server->broadcastTXT(json);sendInfo();WebSendata = 0;}
 }
 // PLCModbusCom.modbus_read_update(HOLDING_REGS_AnalogOutData);
+
+ }//UpdateFirmware
 }
 
 // void PLC_MASTER::modbusSet(uint16_t addr, uint16_t value){PLCModbusCom.inputRegisters[addr] = value;LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
@@ -476,6 +371,11 @@ void sendInfo() {
   } else if (WiFi.getMode() == WIFI_AP) {info_data["ip_address"] = WiFi.softAPIP().toString();}
   // info_data["ip_address"] = WiFi.localIP().toString();
   info_data["mac_address"] = WiFi.macAddress();
+  char sbuf[MAX_SSID_LENGTH + 1];
+  CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH);
+  String rc(sbuf);byte ID;
+  CONFIG::read_buffer (EP_EEPROM_ID,(byte *) &ID, INTEGER_LENGTH);
+  info_data["WifiName"] = rc + " [" + String(ID) + "]";
   info_data["version"] = FRMW_VERSION;
   int baudRate = 0;
   if (!CONFIG::read_buffer (EP_BAUD_RATE,  (byte *) &baudRate, INTEGER_LENGTH)) {LOG ("Error read baudrate\r\n") }
@@ -496,8 +396,6 @@ void PLC_MASTER::GetIdList(int idlist[]){
   //   IDList[i] = idlist[i];
   // }
 }
-
-
 #endif//PLC_MASSTER_UI
 
 

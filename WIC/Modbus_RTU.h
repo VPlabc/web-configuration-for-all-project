@@ -8,16 +8,13 @@
 #ifdef MASTER_MODBUS
 #endif//MASTER_MODBUS
 
-////////////////////////////////////////////////////////////
-//   extern void handleRoot();
-
 class Modbus_Prog
 {
 public:
 bool MB_connect = false;
 DFRobot_RTU Modbus_Master;
 ModbusRTU mb;
-
+//////////////// registers of your slave ///////////////////
 //////////////////// Port information ///////////////////
 // #define baudrate 9600
 #define timeouts 300
@@ -34,10 +31,13 @@ ModbusRTU mb;
 
 
 
-uint8_t coils[30];
-uint8_t discreteInputs[30];
-uint16_t holdingRegisters[30];
-uint16_t inputRegisters[30];// data tu web gui ve public
+// uint8_t coils[30];
+// uint8_t discreteInputs[30];
+//////////////////////// các thanh ghi Data cho 4 máy
+uint16_t holdingRegisters[100];//0-30 PLC Data /30-34 total Plan / 34-74 product name 
+uint16_t inputRegisters[100];// data tu web gui ve public 0-30 PLC Data /30-34 total Plan / 34-74 product name 
+uint16_t ReadRegTemporary[10];//thanh ghi Read tạm thời
+uint16_t WriteRegTemporary[10];//thanh ghi Write tạm thời
 
 // The data from the PLC will be stored
 // in the regs array
