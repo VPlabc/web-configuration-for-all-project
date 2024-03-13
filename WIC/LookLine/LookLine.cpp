@@ -100,8 +100,8 @@ extern  int NodeID =0;
   int Counterstatus = 10000;//GatewayTimeout status
   byte countSer;
   bool done;
-  bool start = false;
-  byte config = 0;
+  bool start = false;//Start = 1 đag kết nối Wifi với đt | Start = 0 điện thoại đã ngắt kết nối
+  byte config = 0; // config = 1 đag kết nối với điện thoại 
   int IDSent = 0;
   char buffer[250];
   bool LookLineOnce = true;
@@ -217,9 +217,8 @@ void MeshLookLineRecive(const uint8_t *macAddr, const uint8_t *data, int dataLen
   // only allow a maximum of 250 characters in the message + a null terminating byte
   
   int msgLen = min(ESP_NOW_MAX_DATA_LEN, dataLen);
-  strncpy(buffer, (const char *)data, msgLen);
+  memcpy(&DataLookline, data, sizeof(DataLookline));
   // make sure we are null terminated
-  buffer[msgLen] = 0;
   // format the mac address
   char macStr[18];
   formatMacAddress(macAddr, macStr, 18);
@@ -227,13 +226,16 @@ void MeshLookLineRecive(const uint8_t *macAddr, const uint8_t *data, int dataLen
   // LOGLN("Received message from:" + String(macStr));
   // what are our instructions
     done = true;
-    String ids = "";
-      ids += buffer[0];
-      ids += buffer[1];
-      ids += buffer[2];
-      ids += buffer[3];
-      NodeID = ids.toInt();
-      if(LooklineDebug)LOG("Mesh revice | ID:");LOGLN(NodeID);
+    String net_id = "";String node_id = "";
+      net_id += String((DataLookline.networkID / 1000) % 10);
+      net_id += String((DataLookline.networkID / 100) % 10);
+      net_id += String((DataLookline.networkID / 10) % 10);
+      net_id += String((DataLookline.networkID / 1) % 10);
+      node_id += String((DataLookline.nodeID / 1000) % 10);
+      node_id += String((DataLookline.nodeID / 100) % 10);
+      node_id += String((DataLookline.nodeID / 10) % 10);
+      node_id += String((DataLookline.nodeID / 1) % 10);
+      if(LooklineDebug)LOGLN("Mesh revice | ID:" + node_id + " | network: " + net_id);
       // Data_Proccess(buffer);
   if(sizeof(DataLookline) == msgLen && role == GATEWAY){
     memcpy(&DataLookline, data, sizeof(DataLookline));
@@ -262,8 +264,8 @@ void MeshLookLineRecive(const uint8_t *macAddr, const uint8_t *data, int dataLen
  
       // LOGLN("Mesh recived " + sentData);
 
-    if(DataLookline.networkID == BoardIDs){if(LooklineDebug) LOGLN("Right network");
-      PC_Seri.println(sentData);
+    if(DataLookline.networkID == BoardIDs){
+      PC_Seri.println(sentData);if(LooklineDebug) LOGLN("Right network");
       saveLooklineData(DataLookline.RSSI,DataLookline.nodeID,DataLookline.networkID,DataLookline.state,DataLookline.PLAN,DataLookline.RESULT,DataLookline.type,DataLookline.Com,DataLookline.WiFi);
       
       if(role == GATEWAY){     
@@ -387,7 +389,7 @@ bool SetupPortal(){
 
 
 bool MeshOff = false;
-
+bool addPeer = true;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshLookLineSetup()
@@ -427,19 +429,21 @@ void MeshLookLineSetup()
   }
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnLookLineDataSent);
-  // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK){
-    if(LooklineDebug)LOGLN("Failed to add peer");
-    return;
+  if(addPeer){addPeer=false;
+    esp_now_register_send_cb(OnLookLineDataSent);
+    // Register peer
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0;  
+    peerInfo.encrypt = false;
+    // Add peer        
+    if (esp_now_add_peer(&peerInfo) != ESP_OK){
+      if(LooklineDebug)LOGLN("Failed to add peer");
+      return;
+    }
+    else{
+      if(LooklineDebug)LOGLN("add peer OK");
+    } 
   }
-  else{
-    if(LooklineDebug)LOGLN("add peer OK");
-  } 
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(MeshLookLineRecive);
   esp_wifi_set_promiscuous(true);
@@ -471,8 +475,8 @@ void LoRaLooklineSetup()
     // if(SetupPortal() == false){LOGLN("SetupPortal failed");}
     
     byte wifiMode = 0;
-    CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
-    if (wifiMode == 1 && config == 0)//2 station mode // 1 AP mode
+    CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);//2 station mode // 1 AP mode
+    if (wifiMode == 1 && config == 0)
     {
       WiFi.disconnect();
       WiFi.mode(WIFI_OFF);
@@ -858,7 +862,8 @@ ComMode = MESH;
         if(role == NODE || role == REPEARTER){//LoRaLooklineSetup();
         config = 3;}
         // CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);ComMode = LoRa;
-        
+        // start = 1;
+        // MeshLookLineSetup();
 }
 
 
@@ -990,13 +995,13 @@ if (((millis() - lastEventTime) > 3000 )) {lastEventTime = millis();
 }                        
 }//Intro
 static unsigned long previousMillis = 0;//taskStatus_LED
-if (millis() - previousMillis >= 300 && config == 3 && role == GATEWAY) {previousMillis = millis();digitalWrite(Startus_LED, !digitalRead(Startus_LED));}
+if (millis() - previousMillis >= 300 && config == 0 && role == GATEWAY) {previousMillis = millis();digitalWrite(Startus_LED, !digitalRead(Startus_LED));}
 if ((millis() - previousMillis == 5000 && millis() - previousMillis < 5001) && config == 3 && role != GATEWAY) {digitalWrite(Startus_LED, !digitalRead(Startus_LED));}
 if (millis() - previousMillis >= 5300 && config == 3 && role != GATEWAY) {previousMillis = millis();digitalWrite(Startus_LED, !digitalRead(Startus_LED));}
 
 static unsigned long OnMeshAutoMillis = 0;//sau 60s se tu dong chuyen sang mesh mode neu ko ket noi wifi
-if (millis() - OnMeshAutoMillis == 60000 && start == 0 && config == 3) {MeshLookLineSetup();digitalWrite(Startus_LED, LOW);if(LooklineDebug)LOGLN("Mesh setup");}
-if (millis() - OnMeshAutoMillis == 63000 && start == 0 && config == 3) { OnMeshAutoMillis = millis();LoRaLooklineSetup();digitalWrite(Startus_LED, LOW);if(LooklineDebug)LOGLN("Wifi setup");}
+if (millis() - OnMeshAutoMillis == 30000 && start == 0 && config == 3) {MeshLookLineSetup();digitalWrite(Startus_LED, LOW);if(LooklineDebug)LOGLN("Mesh setup");}
+if (millis() - OnMeshAutoMillis == 33000 && start == 0 && config == 3) { OnMeshAutoMillis = millis();LoRaLooklineSetup();digitalWrite(Startus_LED, LOW);if(LooklineDebug)LOGLN("Wifi setup");}
 }
 
 
@@ -1136,7 +1141,7 @@ void LOOKLINE_PROG::TimerPlanInc()
         counter2 = 0;
         //digitalWrite(Signal_LED, digitalRead(Signal_LED) ^ 1);
         PLAN = PLAN + PLanSet;//MODBUS_Write();
-        LOGLN("inc Plan: " + String(PLAN));
+        // LOGLN("inc Plan: " + String(PLAN));
         if (PLAN > PlanLimit){PLAN = PlanLimit; }
         caculaOT(); if(Intro<=0)SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);//SerDisplay();
         if(PLAN % 10 == 9){
@@ -1162,7 +1167,7 @@ void LOOKLINE_PROG::TimerPlanInc()
       caculaOT(); if(Intro<=0)SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);SerDisplay();
       if(start == 1)config = 2;
       if(config == 1)Lookline_PROG.SetStart(0);
-      if(config == 2 || config == 1){
+      if(config > 0){
         DataLookline.nodeID = BoardIDs;
         DataLookline.networkID = NetIDs;
         DataLookline.PLAN = PLAN;
@@ -1664,7 +1669,7 @@ void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,in
 
   new_Lookline_found = false;
   String msg = "Save Lookline " + String(saveID);
-  ESPCOM::println(msg, PRINTER_PIPE);
+   if(LooklineDebug)ESPCOM::println(msg, PRINTER_PIPE);
   for (int i = 0; i < Looklines_saved; i++) {
     if (Looklines[i].nodeID == saveID){//LOGLN(saveID);
       Looklines[i].Nodecounter = 0;
@@ -1686,7 +1691,7 @@ void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,in
 
   if ( new_Lookline_found == false ) {
       msg = "New Lookline " + String(saveID);
-      ESPCOM::println(msg, PRINTER_PIPE);
+       if(LooklineDebug)ESPCOM::println(msg, PRINTER_PIPE);
       Looklines[Looklines_saved].Nodecounter = 0;
       Looklines[Looklines_saved].nodeID = saveID;
       Looklines[Looklines_saved].networkID = saveNetID;

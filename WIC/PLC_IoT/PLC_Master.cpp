@@ -85,7 +85,11 @@ byte MBRole = slave;
 #endif//MASTER_MODBUS
 byte connectWebSocket = 0;
 byte IDList[255];
+<<<<<<< HEAD
 int16_t Register[4][200];
+=======
+int16_t Register[4][60];
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
 
 // int16_t SlaveParameter[HOLDING_REGS_SIZE];
 // int16_t HOLDING_REGS_CoilData[HOLDING_REGS_SIZE];//1-9999
@@ -106,7 +110,11 @@ uint16_t WriteUpAddr = 0;//dia chi khi web write
 void PLC_MASTER::SetLoRaValue(){
 CONFIG::SetLoRaValue();
 }
+<<<<<<< HEAD
         byte bbuff = 0;
+=======
+        byte bbuf = 0;
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
 void sendInfo();
 
 void PLC_MASTER::setup(){
@@ -137,7 +145,11 @@ void PLC_MASTER::setup(){
   #endif//  #ifdef USE_LORA
   #ifdef ModbusCom
   LOGLN("MODBUS ________________________________________");
+<<<<<<< HEAD
   if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuff ) ) {MBRole = 1;} else {MBRole = bbuff;}
+=======
+  if (!CONFIG::read_byte (EP_EEPROM_ROLE, &bbuf ) ) {MBRole = 1;} else {MBRole = bbuf;}
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
     PLCModbusCom.modbus_setup(MBRole);
     if(MBRole == master){LOG("Modbus Master ");PLCModbusCom.connectModbus(1);}
     if(MBRole == slave){LOG("Modbus Slave ");}
@@ -198,15 +210,22 @@ void PLC_MASTER::readfile(){
   }
 
 
+<<<<<<< HEAD
 bool WebSendata = false;  
 bool UpdateFirmware = false;
 
 void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;static bool once=true;if(once){once = false;LOGLN("disable for update fw")}}
+=======
+
+bool UpdateFirmware = false;
+void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;LOGLN("disable for update fw")}
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
 
 bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
 //Refresh wifi
 if(UpdateFirmware==false){
+<<<<<<< HEAD
   
   if(connectWebSocket == 0){
     static unsigned long lastRefresh1 = millis();
@@ -221,6 +240,15 @@ if(UpdateFirmware==false){
     static unsigned long previousMillis = 0;
     if (millis() - previousMillis >= 300 ) {digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));previousMillis = millis();}
   }
+=======
+static unsigned long lastRefresh1 = millis();
+if (((millis() - lastRefresh1) > REFRESH_INTERVAL_MS )){lastRefresh1 = millis();
+   if(connectWebSocket == 0){
+    WiFi.disconnect();WiFi.mode(WIFI_OFF);
+    wifi_config.Setup(true, LED_STATUS, 1);
+   }
+}
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
 /////
 #ifdef MQTT_USE
   #ifdef MQTTSSL
@@ -230,8 +258,12 @@ if(UpdateFirmware==false){
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
+<<<<<<< HEAD
   //  if(connectWebSocket == 1 && WebSendata == 0){
     PLCModbusCom.modbus_loop(MBRole);//}
+=======
+   if(connectWebSocket == 1){PLCModbusCom.modbus_loop(MBRole);}
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
    
   if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
     PLCModbusCom.setModbusupdateState(0);
@@ -293,9 +325,14 @@ if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = milli
   #if defined(MQTTSSL) && defined(MQTT_USE)
   if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
   #endif
+<<<<<<< HEAD
 for(int i = 0 ; i < 100 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
 
 for(int i = 100 ; i < 200 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-100]; }
+=======
+for(int i = 0 ; i < 30 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
+for(int i = 30 ; i < 60 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-30]; }
+>>>>>>> a88c1d55353a3048f7496b22be2c925bec6f267f
 String json = "{";
 //-------------------------
 json += "\"Data\":0";
