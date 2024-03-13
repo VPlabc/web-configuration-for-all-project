@@ -337,8 +337,8 @@ bool MB_Update_Once1 = true;
 bool Reg_Update_Once = true;
 bool Reg_Update_Once1 = true;
 
- uint16_t regs_WRITE[30];
- uint16_t regs_READ[30];
+ uint16_t regs_WRITE[100];
+ uint16_t regs_READ[100];
 
 // Function to return an array of 30 elements
 uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}

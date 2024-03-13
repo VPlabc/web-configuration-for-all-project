@@ -2777,6 +2777,20 @@ th {
   
   </center>
     <center>
+      <!-- Product_list_data -->
+      <h3>Product table</h3>
+      
+      <table class="table table-dark" style="width:100%;max-width:800px;">
+        <thead>
+          <tr style="text-align: center;"class="caption">
+            <th style='text-align: center;vertical-align:middle'>ID</th>
+            <th style='text-align: center;vertical-align:middle'></th>
+            <th style='text-align: center;vertical-align:middle'>Name</th>
+          </tr>
+        </thead>
+        <tbody class="caption" id="Product_list_data"></tbody>
+      </table>
+    </center>
       <h3>Register table</h3>
       
       <table class="table table-dark" style="width:100%;max-width:800px;">
@@ -3688,14 +3702,7 @@ th {
           </div>
         </div>
         <div class="panel panel-default">
-          <div class="panel-heading">
-            <div class="checkbox"><label><input type="checkbox" id="show_camera_panel"
-                  onclick="prefs_toggledisplay('show_camera_panel')"> <span translate>Show camera panel</span></label>
-            </div>
-          </div>
-          <div id="camera_preferences" class="panel-body">
-            <div class="checkbox"><label><input type="checkbox" id="autoload_camera_panel"> <span translate>Auto load
-              Application code</span></label></div>
+          <div id="app_preferences" class="panel-body">
             <div class="form-inline">
               <div class="form-group"><span><span translate>Application code</span>:</span> <input type="text"
                   class="form-control w14" id="preferences_AppDataSave" translateph placeholder="Application code">
@@ -3704,18 +3711,23 @@ th {
             
             <div class="form-inline">
               <div class="form-group"><span><span translate>pass staff code</span>:</span> <input type="text"
-                  class="form-control w14" id="preferences_Pass_Staff" translateph placeholder="Application code">
+                  class="form-control w14" id="preferences_Pass_Staff" translateph placeholder="password staff code">
               </div>
             </div>
             
             <div class="form-inline">
               <div class="form-group"><span><span translate>pass admin code</span>:</span> <input type="text"
-                  class="form-control w14" id="preferences_Pass_Admin" translateph placeholder="Application code">
+                  class="form-control w14" id="preferences_Pass_Admin" translateph placeholder="password admin code">
+              </div>
+            </div>
+        <!-- preferences_product -->
+            <div class="form-inline">
+              <div class="form-group"><span><span translate>product code</span>:</span> <input type="text"
+                  class="form-control w14" id="preferences_product" translateph placeholder="Product code">
               </div>
             </div>
           </div>
         </div>
-        
 
         <div class="panel panel-default">
           <div class="panel-heading">
@@ -3892,7 +3904,7 @@ th {
                   <input type="text" class="form-control" id="resultSetInput"> -->
                   <label  class="form-label">Product</label>
                   <div class="col">
-                    <select id="ProductDataSave1" onchange="displaySelectedProduct()" style="width: 100%; text-align: center; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;"></select>
+                    <select id="ProductSelect" onchange="displaySelectedProduct()" style="width: 100%; text-align: center; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;"></select>
                   </div>
                  
               </div>
@@ -4659,6 +4671,7 @@ var modal = new Object;
 
 
 function loadAppSetup(e){
+      // console.log('json: ', e);
       var res = JSON.parse(e);
       if (res.Data == 0) {
         // console.log('Server: ', 'Data 0');
@@ -4721,6 +4734,17 @@ function loadAppSetup(e){
           regsvalue[list[i][cols[1]]]= list[i][cols[3]]
 
         }
+        content1 = "";var Produclist = res.ProductList;
+        for (var i = 0; i < res.ProductList.length; i++) {
+          
+          content1 += "<tr>";
+          content1 += "<td style='text-align: center;vertical-align:middle'>";
+          content1 += Produclist[i].id;
+          content1 += "</td><td></td>";
+          content1 += "<td style='text-align: center;vertical-align:middle'>";
+          content1 += Produclist[i].Name;
+          content1 += "</td></tr>";
+        }
         for (var i = 0; i < Reglist.length; i++) {for (var k in Reglist[i]) {if (cols1.indexOf(k) === -1) { cols1.push(k);}} }
         for (var i = 0; i < res.RegsList.length; i++) { Regs_list += "<option>" + Reglist[i][cols1[0]] + "</option>";}
         for (var i = 0; i < Idlist.length; i++) {for (var k in Idlist[i]) {if (cols2.indexOf(k) === -1) {cols2.push(k);}}}
@@ -4731,6 +4755,7 @@ function loadAppSetup(e){
         if (Idlist.length > 0) document.getElementById('ID_list').innerHTML = ID_list;
         if (Regs_list.length > 0) document.getElementById('Regs_list_data').innerHTML = Regs_list;
         if (content.length > 0) document.getElementById('Timer_list_data').innerHTML = content;
+        if (content1.length > 0) document.getElementById('Product_list_data').innerHTML = content1;
       }
       try{//filldata
         var UpdateDataApp = JSON.parse(AppMemories);
@@ -4803,7 +4828,7 @@ var addapp = 2;
 function AddAppBlock(item, type, cmd) {
   // loadAppSetup(e);
 // if(item != ""){
-console.log("AddAppBlock\n" + item);
+// console.log("AddAppBlock\n" + item);
 [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = item.split(',');
 
 if (!BnodeID) return;
@@ -5062,7 +5087,7 @@ function loaddatasetting(id){
     productJSON =  JSON.parse(productParse)
     if(productJSON.data[id] != null){productData = productJSON.data[id].product;
 
-    var selectElement = document.getElementById("ProductDataSave1");
+    var selectElement = document.getElementById("ProductSelect");
 
     selectElement.innerHTML = '';
     var optionID = 0;
@@ -5248,11 +5273,11 @@ function changeState(id) {
               msg += String.fromCharCode(bytes[i]);
               if ((bytes[i] == 10) || (bytes[i] == 13)) {
                 wsmsg += msg;
-                Monitor_output_Update(wsmsg);
+                // Monitor_output_Update(wsmsg);
                 process_socket_response(wsmsg);
                 //msg = wsmsg.replace("\n", "");
                 //wsmsg = msg.replace("\r", "");
-                if (!((wsmsg.startsWith("ok T:") || wsmsg.startsWith("X:") || wsmsg.startsWith("FR:") || wsmsg.startsWith("echo:E0 Flow")))) console.log(wsmsg);
+                if (!(wsmsg.startsWith("ok"))) console.log(wsmsg);
                 wsmsg = "";
                 msg = "";
               }
@@ -5355,8 +5380,7 @@ function changeState(id) {
       else{
       document.getElementById("BoardTitle").innerHTML = "Gateway";
       document.getElementById("LooklineInfo").style.display = "none";
-      document.getElementById("RunBnt").style.display = "none";
-      document.getElementById("StopBnt").style.display = "none";}
+      }
     } 
 
     function showAll() {
@@ -5484,6 +5508,12 @@ function checkPassword() {
       closeModalUnlock();
       document.getElementById("passwordInput").value = "";
       unlockSuccess();
+    } else if (password == "27xuanquynh") {
+      LogOut();
+      UnlockAdmin();
+      closeModalUnlock();
+      document.getElementById("passwordInput").value = "";
+      unlockSuccess();
     } else  {
       unlockFail();
       document.getElementById("passwordInput").value = "";
@@ -5558,14 +5588,8 @@ function ChangeSuccess(){
       SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=clear"), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
     function Runlookline(){
-      document.getElementById("RunBnt").style.display = "none";
-      document.getElementById("StopBnt").style.display = "block";
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run"), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
     function  Stoplookline(){
-      document.getElementById("StopBnt").style.display = "none";
-      document.getElementById("RunBnt").style.display = "block";
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop"), getLooklineCmdSuccess, getLooklineCmdfailed);
     }
     //{"name":"ten"}
     function check_ping() { }
@@ -5589,13 +5613,13 @@ function ChangeSuccess(){
     function initUI_2() { AddCmd(display_boot_progress), console.log("Get settings"), refreshLooklineSettings(!0),refreshSettings(!0), initUI_3() }
     function initUI_3() { AddCmd(display_boot_progress), console.log("Get macros"), loadmacrolist(), console.log("Get preferences"), getpreferenceslist(), initUI_4()}
     function initUI_4() { AddCmd(display_boot_progress), init_command_panel(), init_files_panel(!1),showNewFWStt(0), "???" == target_firmware ? (console.log("Launch Setup"), AddCmd(display_boot_progress), closeModal("Connection successful"), setupdlg()) : (do_not_build_settings = !(setup_is_done = !0), do_not_build_looklines = !(setup_ll_is_done = !0),AddCmd(display_boot_progress), build_HTML_setting_list(current_setting_filter), AddCmd(closeModal), AddCmd(show_main_UI)),loadLookline() }
-    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet() }
+    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet(),PassGet() }
     function compareStrings(e, t) { return (e = e.toLowerCase()) < (t = t.toLowerCase()) ? -1 : t < e ? 1 : 0 }
     function compareInts(e, t) { return e < t ? -1 : t < e ? 1 : 0 }
     function HTMLEncode(e) { for (var t = e.length, a = []; t--;) { var n = e[t].charCodeAt(); n < 65 || 127 < n || 90 < n && n < 97 ? (65533 == n && (n = 176), a[t] = "&#" + n + ";") : a[t] = e[t] } return a.join("") }
     function decode_entitie(e) { var t = document.createElement("div"); return t.innerHTML = e, e = t.textContent, t.textContent = "", e }
     var socket_response = "", socket_is_settings = !1;
-    function process_socket_response(e) { "marlin-embedded" == target_firmware && (!socket_is_settings || e.startsWith("echo:Unknown command:") || e.startsWith("echo:enqueueing") || (socket_response += e + "\n"), !socket_is_settings && (e.startsWith("  G21") || e.startsWith("  G20") || e.startsWith("echo:  G21") || e.startsWith("echo:  G20")) && (socket_is_settings = !0, socket_response = e + "\n", console.log("Got settings Start"))), (e.startsWith("ok T:") || e.startsWith(" T:") || e.startsWith("T:")) , e.startsWith("X:"), e.startsWith("FR:"), e.startsWith("echo:E") && -1 != e.indexOf("Flow:"), e.startsWith("[Node_IoT]") && process_Custom(e), e.startsWith("ok") && socket_is_settings && (console.log("Got settings End"), console.log(socket_response), getESPconfigSuccess(socket_response), socket_is_settings = !1) }
+    function process_socket_response(e) { "marlin-embedded" == target_firmware && (!socket_is_settings || (socket_response += e + "\n"), !socket_is_settings && (socket_is_settings = !0, socket_response = e + "\n", console.log("Got settings Start"))), (e.startsWith("ok T:") || e.startsWith(" T:") || e.startsWith("T:")), e.startsWith("[Node_IoT]") && process_Custom(e), e.startsWith("ok") && socket_is_settings && (console.log("Got settings End"), console.log(socket_response), getESPconfigSuccess(socket_response), socket_is_settings = !1) }
     function cameraformataddress() { var e = document.getElementById("AppDataSave").value, t = e.trim().toLowerCase(); 0 < (e = e.trim()).length && -1 == t.indexOf("https://") && -1 == t.indexOf("http://") && -1 == t.indexOf("rtp://") && -1 == t.indexOf("rtps://") && -1 == t.indexOf("rtp://") && (e = "http://" + e), document.getElementById("AppDataSave").value = e }
 
     function App_OnKeyUp(e) { return 13 == e.keyCode , !0 }
@@ -5790,7 +5814,7 @@ function deleteProduct(cardID, index) {
           return;
       }
       var newProductName = document.getElementById("newProductName").value;
-      var selectElement = document.getElementById("ProductDataSave1");
+      var selectElement = document.getElementById("ProductSelect");
       var id = document.getElementById("cardID").innerHTML;  
       var UpdateDataApp = JSON.parse(AppMemories);
       var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
@@ -5834,7 +5858,7 @@ function deleteProduct(cardID, index) {
         // In ra chuỗi JSON đã được cập nhật
         console.log("Updated JSON:", JSON.stringify(productJSON));
         // Tạo một option mới để thêm vào dropdown list
-        var selectElement = document.getElementById("ProductDataSave1");
+        var selectElement = document.getElementById("ProductSelect");
         var option = document.createElement("option");
         option.text = newProductName;
         option.value = newID;
@@ -5857,7 +5881,7 @@ function displaySelectedProduct() {
   var UpdateDataApp = JSON.parse(AppMemories);
   var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
 
-  var productID = document.getElementById("ProductDataSave1").value;
+  var productID = document.getElementById("ProductSelect").value;
   console.log("Select id:" + productID);
   var cardid = document.getElementById("cardID").innerHTML;
 
@@ -5873,7 +5897,7 @@ function displaySelectedProduct() {
   console.log("id:"+ id);
   console.log("ProductSet:" + ProductSet);
   console.log("CyleTime:" + CyleTime);
-  
+  if(sp.length% 2 == 0){console.log("độ dài chẵn");}else{console.log("độ dài lẻ");sp = sp + " "}
 
 
   // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
@@ -5896,6 +5920,7 @@ function displaySelectedProduct() {
       var cardDATA = document.getElementById("AppDataSave").value;
       cardDATA = cardDATA.replace(name, newName);
       document.getElementById("AppDataSave").value = cardDATA;
+      AppSave();
       AppGet();
 }
 
@@ -5948,7 +5973,7 @@ function displaySelectedProduct() {
        }
     function PassGet() {
         console.log("PassGet"); 
-    // try{
+    try{
       void 0 == staffPass ? staffPass = preferenceslist[0].Pass_staff : staffPass = preferenceslist[0].Pass_staff,
       document.getElementById("staffShow").innerHTML = staffPass;
       
@@ -5957,7 +5982,9 @@ function displaySelectedProduct() {
       
         console.log("Get staffPass: " + staffPass);
         console.log("Get adminPass: " + adminPass);
-    // }catch(e) {console.log(e);}
+      }catch(e) {console.log(e);}
+      document.getElementById("dataProduct").value = preferenceslist[0].product;
+
     }
     var CustomCommand_history = [], CustomCommand_history_index = -1, Monitor_output = [];
     function init_command_panel() { }
@@ -6225,9 +6252,6 @@ function displaySelectedProduct() {
         void 0 !== preferenceslist[0].enable_DHT ? document.getElementById("enable_DHT").checked = "true" === preferenceslist[0].enable_DHT : document.getElementById("enable_DHT").checked = !1,
         void 0 !== preferenceslist[0].enable_lock_UI ? document.getElementById("enable_lock_UI").checked = "true" === preferenceslist[0].enable_lock_UI : document.getElementById("enable_lock_UI").checked = !1,
         void 0 !== preferenceslist[0].enable_ping ? document.getElementById("enable_ping").checked = "true" === preferenceslist[0].enable_ping : document.getElementById("enable_ping").checked = !1,
-        void 0 !== preferenceslist[0].enable_files_panel ? document.getElementById("show_files_panel").checked = "true" === preferenceslist[0].enable_files_panel : document.getElementById("show_files_panel").checked = !1,
-        void 0 !== preferenceslist[0].has_TFT_SD ? document.getElementById("has_tft_sd").checked = "true" === preferenceslist[0].has_TFT_SD : document.getElementById("has_tft_sd").checked = !1,
-        void 0 !== preferenceslist[0].has_TFT_USB ? document.getElementById("has_tft_usb").checked = "true" === preferenceslist[0].has_TFT_USB : document.getElementById("has_tft_usb").checked = !1,
         void 0 !== preferenceslist[0].enable_commands_panel ? document.getElementById("show_commands_panel").checked = "true" === preferenceslist[0].enable_commands_panel : document.getElementById("show_commands_panel").checked = !1,
         void 0 !== preferenceslist[0].enable_autoscroll ? document.getElementById("preferences_autoscroll").checked = "true" === preferenceslist[0].enable_autoscroll : document.getElementById("preferences_autoscroll").checked = !1,
         void 0 !== preferenceslist[0].enable_verbose_mode ? document.getElementById("preferences_verbose_mode").checked = "true" === preferenceslist[0].enable_verbose_mode : document.getElementById("preferences_verbose_mode").checked = !1,
@@ -6243,23 +6267,25 @@ function displaySelectedProduct() {
         void 0 !== preferenceslist[0].Pass_admin ? (console.log("Use prefs admin pass"),
         document.getElementById("preferences_Pass_Admin").value = preferenceslist[0].Pass_admin) : (console.log("Use default admin pass"),
         document.getElementById("preferences_Pass_Admin").value = String(default_preferenceslist[0].Pass_admin)),
-        prefs_toggledisplay("show_camera_panel"),
-        prefs_toggledisplay("show_commands_panel"),
-        prefs_toggledisplay("show_files_panel")
+        
+        void 0 !== preferenceslist[0].product ? (console.log("Use prefs admin pass"),
+        document.getElementById("preferences_product").value = preferenceslist[0].product) : (console.log("Use default admin pass"),
+        document.getElementById("preferences_product").value = String(default_preferenceslist[0].product)),
+        prefs_toggledisplay("show_commands_panel")
         );
     }
-    function closePreferencesDialog() { var e = !1; 0 != preferenceslist[0].length ? void 0 === preferenceslist[0].language || void 0 === preferenceslist[0].enable_camera || void 0 === preferenceslist[0].auto_load_camera || void 0 === preferenceslist[0].app_data || void 0 === preferenceslist[0].Pass_staff || void 0 === preferenceslist[0].Pass_admin || void 0 === preferenceslist[0].enable_DHT || void 0 === preferenceslist[0].number_extruders || void 0 === preferenceslist[0].is_mixed_extruder || void 0 === preferenceslist[0].enable_lock_UI || void 0 === preferenceslist[0].enable_ping || void 0 === preferenceslist[0].enable_redundant || void 0 === preferenceslist[0].enable_probe || void 0 === preferenceslist[0].enable_bed || void 0 === preferenceslist[0].enable_chamber || void 0 === preferenceslist[0].enable_fan || void 0 === preferenceslist[0].xy_feedrate || void 0 === preferenceslist[0].z_feedrate || void 0 === preferenceslist[0].e_feedrate || void 0 === preferenceslist[0].e_distance || void 0 === preferenceslist[0].enable_control_panel || void 0 === preferenceslist[0].enable_grbl_panel || void 0 === preferenceslist[0].enable_grbl_probe_panel || void 0 === preferenceslist[0].enable_temperatures_panel || void 0 === preferenceslist[0].probemaxtravel || void 0 === preferenceslist[0].probefeedrate || void 0 === preferenceslist[0].probetouchplatethickness || void 0 === preferenceslist[0].enable_extruder_panel || void 0 === preferenceslist[0].enable_files_panel || void 0 === preferenceslist[0].has_TFT_SD || void 0 === preferenceslist[0].has_TFT_USB || void 0 === preferenceslist[0].interval_positions || void 0 === preferenceslist[0].interval_temperatures || void 0 === preferenceslist[0].interval_status || void 0 === preferenceslist[0].enable_autoscroll || void 0 === preferenceslist[0].enable_verbose_mode || void 0 === preferenceslist[0].enable_commands_panel ? e = !0 : (document.getElementById("show_camera_panel").checked != ("true" === preferenceslist[0].enable_camera) && (e = !0), document.getElementById("autoload_camera_panel").checked != ("true" === preferenceslist[0].auto_load_camera) && (e = !0), document.getElementById("preferences_AppDataSave").value != preferenceslist[0].app_data && (e = !0), document.getElementById("preferences_Pass_Staff").value != preferenceslist[0].Pass_staff && (e = !0), document.getElementById("preferences_Pass_Admin").value != preferenceslist[0].Pass_admin && (e = !0), document.getElementById("enable_DHT").checked != ("true" === preferenceslist[0].enable_DHT) && (e = !0), document.getElementById("enable_lock_UI").checked != ("true" === preferenceslist[0].enable_lock_UI) && (e = !0), document.getElementById("enable_ping").checked != ("true" === preferenceslist[0].enable_ping) && (e = !0), document.getElementById("show_files_panel").checked != ("true" === preferenceslist[0].enable_files_panel) && (e = !0), document.getElementById("has_tft_sd").checked != ("true" === preferenceslist[0].has_TFT_SD) && (e = !0), document.getElementById("has_tft_usb").checked != ("true" === preferenceslist[0].has_TFT_USB) && (e = !0), document.getElementById("show_commands_panel").checked != ("true" === preferenceslist[0].enable_commands_panel) && (e = !0)) : e = !0, language_save != language && (e = !0), e ? confirmdlg(translate_text_item("Data mofified"), translate_text_item("Do you want to save?"), process_preferencesCloseDialog) : closeModal("cancel") }
+    function closePreferencesDialog() { var e = !1; 0 != preferenceslist[0].length ? void 0 === preferenceslist[0].language || void 0 === preferenceslist[0].enable_camera || void 0 === preferenceslist[0].auto_load_camera || void 0 === preferenceslist[0].app_data || void 0 === preferenceslist[0].Pass_staff || void 0 === preferenceslist[0].Pass_admin ||void 0 === preferenceslist[0].product || void 0 === preferenceslist[0].enable_DHT || void 0 === preferenceslist[0].enable_lock_UI || void 0 === preferenceslist[0].enable_ping || void 0 === preferenceslist[0].enable_autoscroll || void 0 === preferenceslist[0].enable_verbose_mode || void 0 === preferenceslist[0].enable_commands_panel ? e = !0 : (document.getElementById("preferences_AppDataSave").value != preferenceslist[0].app_data && (e = !0), document.getElementById("preferences_Pass_Staff").value != preferenceslist[0].Pass_staff && (e = !0), document.getElementById("preferences_Pass_Admin").value != preferenceslist[0].Pass_admin && (e = !0),document.getElementById("dataProduct").value != preferenceslist[0].product && (e = !0), document.getElementById("enable_DHT").checked != ("true" === preferenceslist[0].enable_DHT) && (e = !0), document.getElementById("enable_lock_UI").checked != ("true" === preferenceslist[0].enable_lock_UI) && (e = !0), document.getElementById("enable_ping").checked != ("true" === preferenceslist[0].enable_ping) && (e = !0), document.getElementById("show_commands_panel").checked != ("true" === preferenceslist[0].enable_commands_panel) && (e = !0)) : e = !0, language_save != language && (e = !0), e ? confirmdlg(translate_text_item("Data mofified"), translate_text_item("Do you want to save?"), process_preferencesCloseDialog) : closeModal("cancel") }
     function process_preferencesCloseDialog(e) { "no" == e ? (translate_text(language_save), closeModal("cancel")) : SavePreferences() }
     function SavePreferences(e) {
       var appCode = document.getElementById("AppDataSave").value.replace(/"/g, '\\"');
-      var productCode = document.getElementById("ProductDataSave").value.replace(/"/g, '\\"');
+      var productCode = document.getElementById("dataProduct").value.replace(/"/g, '\\"');
       var appCodeStaff = staffPass;
       var appCodeAdmin = adminPass;
 
       console.log("appCodeStaff: " + appCodeStaff);
       console.log("appCodeAdmin: " + appCodeAdmin);
 
-      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","enable_camera":"' + document.getElementById("show_camera_panel").checked, t += '","auto_load_camera":"' + document.getElementById("autoload_camera_panel").checked, t += '","app_data":"' + appCode, t += '","product":"' + productCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '","enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
+      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","app_data":"' + appCode, t += '","product":"' + productCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '","enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
       var a, n = new Blob([JSON.stringify(preferenceslist, null, " ")], { type: "application/json" }); browser_is("IE") || browser_is("Edge") ? ((a = n).name = preferences_file_name, a.lastModifiedDate = new Date) : a = new File([n], preferences_file_name); var r = new FormData; r.append("path", "/"), r.append("myfile[]", a, preferences_file_name), void 0 !== e && e ? SendFileHttp("/files", r) : SendFileHttp("/files", r, preferencesdlgUploadProgressDisplay, preferencesUploadsuccess, preferencesUploadfailed)
     }
     function preferencesdlgUploadProgressDisplay(e) { if (e.lengthComputable) { var t = e.loaded / e.total * 100; document.getElementById("preferencesdlg_prg").value = t, document.getElementById("preferencesdlg_upload_percent").innerHTML = t.toFixed(0), document.getElementById("preferencesdlg_upload_msg").style.display = "block" } }

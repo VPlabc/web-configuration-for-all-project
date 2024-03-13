@@ -77,6 +77,7 @@ WIC cmdWic;
 #include "LookLine/LookLine.h"
 LOOKLINE_PROG LooklineCMD;
 #endif//ValveLOOKLINE_UI_UI
+#include "DataTransfer/data_transfer.h"
 String COMMAND::buffer_serial;
 String COMMAND::buffer_tcp;
 byte auth_val = 0;
@@ -90,15 +91,7 @@ extern uint8_t Checksum(const char * line, uint16_t lineSize);
 extern bool sendLine2Serial (String &  line, int32_t linenb, int32_t* newlinenb);
 
 
-    unsigned int EncodeInt(byte byte1, byte byte2)
-    {
-        int ret = 0;
-        ret = byte1;
-        ret = ret << 8;
-        ret = ret | byte2;
-        return ret;
-    }
-
+//  uint32_t millivolt = word1 << 16 | word2;
 void setAuth(byte Auth){
     LOCK = Auth;
 }
@@ -3425,13 +3418,12 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
         if (parameter == "product") {IDparameter = get_param (cmd_params, "id=", false);String Valueparameter = get_param (cmd_params, "value=", false);
             LOG("id:" + IDparameter + " | "); LOGLN("value:" + Valueparameter);
             // LOGLN("String length:" + String(Valueparameter.length()));
-            uint16_t ProdOffset = 4096+2042;
-            int RegPos = (uint16_t)IDparameter.toInt() + ProdOffset;
+            uint16_t ProdOffset = 43;
+            int RegPos = (uint16_t)IDparameter.toInt()*10 + ProdOffset;uint16_t DataCover;
             for(byte i = 0 ; i <= Valueparameter.length()/2; i++){
-                if(Valueparameter[i*2+1]==NULL){Valueparameter[i*2+1] = '|';}
-                if(Valueparameter[i*2]==NULL){Valueparameter[i*2] = '|';}
-                static int DataCover = EncodeInt(Valueparameter[i*2],Valueparameter[i*2+1]);
-                cmd_modbus.modbusSet(RegPos+i, DataCover);
+                DataTransfer dataTrans;
+                DataCover = dataTrans.EncodeWord(Valueparameter[i*2+1],Valueparameter[i*2]);
+                cmd_modbus.modbusSet((uint16_t)RegPos+i, (uint16_t)DataCover);
             }
             LOGLN(Valueparameter);
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}
