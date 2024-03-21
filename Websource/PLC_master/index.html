@@ -3910,20 +3910,14 @@
 
         <div style="margin-top: 10px;"> 
           <label for="doiten" class="form-label">Add Product</label>
-        <div class="row">
-          <div class="col-sm-10" id="option_product" style="display: block;">
-              <div class="d-flex">
-                  <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
-                  <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
-              </div>
+          <div style="display: flex; align-items: center;"> 
+            <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
+            <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
+            <!-- Button mở danh sách xóa sản phẩm -->
+            <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
           </div>
-          <div class="col-sm-2">
-              <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
-          </div>
-      </div>
-      
-      
 
+          <!-- Bảng danh sách sản phẩm và nút xóa -->
           <div id="deleteProductList" style="display: none; margin-top: 20px;">
             <table id="productTable" class="custom-table">
               <thead>
@@ -5223,24 +5217,15 @@ function loaddatasetting(id) {
 
     var optionID = 0;
     productData.forEach(function(product) {
-      var option = document.createElement("option");
-      option.text = product;
-      option.value = optionID;
-      optionID = optionID + 1;
-      selectElement.appendChild(option);
+        var option = document.createElement("option");
+        option.text = product;
+        option.value = optionID; 
+        optionID = optionID + 1;
+        selectElement.appendChild(option);
+        console.log("id:" + option.id)
     });
-
-    // Chọn giá trị phù hợp nếu có
-    var productNameElement = document.getElementById("productName_" + id);
-    if (productNameElement) {
-      var productName = productNameElement.innerHTML;
-      var selectedIndex = Array.from(selectElement.options).findIndex(option => option.text === productName);
-      if (selectedIndex !== -1) {
-        selectElement.selectedIndex = selectedIndex;
-      }
-    }
   }
-  document.getElementById("ProductDataSaveSelect").value = regsvalue[r4];
+  displaySelectedProduct();
 }
 
 // lỗi getWifiSignalStrength

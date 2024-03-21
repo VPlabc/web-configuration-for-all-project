@@ -266,8 +266,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #endif//ESP_OLED_FEATURE
             CONFIG::InitDirectSD();
             CONFIG::InitPins();
-            #ifdef MCP_USE
-            CONFIG::Init_MCP(0);
+            #ifdef MCP_USE CONFIG::Init_MCP(0); 
             #endif//MCP_USE
 #ifdef RECOVERY_FEATURE
             delay(recoverydelayms);
@@ -352,6 +351,7 @@ CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
 #endif// lookline_ui
 #ifdef PLC_MASTER_UI
 CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
+// RunMode =1;
 // RunMode =1;
 if(RunMode == 2){
 #endif//PLC_MASTER_UI

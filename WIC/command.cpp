@@ -2638,18 +2638,29 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_DATA_PORT), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
-            ESPCOM::println (F (","), output, espresponse);
-            //8-wifi mode
-            ESPCOM::print (F ("{\"F\":\"wifi\",\"P\":\""), output, espresponse);
-            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_WIFI_MODE), output, espresponse);
+            // ESPCOM::println (F (","), output, espresponse);
+            // //8-wifi mode
+            // ESPCOM::print (F ("{\"F\":\"wifi\",\"P\":\""), output, espresponse);
+            // ESPCOM::print ( (const char *) CONFIG::intTostr (EP_WIFI_MODE), output, espresponse);
+            // ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            // if (!CONFIG::read_byte (EP_WIFI_MODE, &bbuf ) ) {
+            //     ESPCOM::print ("???", output, espresponse);
+            // } else {
+            //     ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            // }
+            // ESPCOM::print (F ("\",\"H\":\"Wifi mode\",\"O\":[{\"AP\":\"1\"},{\"STA\":\"2\"}]}"), output, espresponse);
+
+            //DEBUG
+            ESPCOM::print (F (",{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_DEBUG), output, espresponse);
             ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
-            if (!CONFIG::read_byte (EP_WIFI_MODE, &bbuf ) ) {
+            if (!CONFIG::read_byte (EP_EEPROM_DEBUG, &bbuf ) ) {
                 ESPCOM::print ("???", output, espresponse);
             } else {
                 ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
             }
-            ESPCOM::print (F ("\",\"H\":\"Wifi mode\",\"O\":[{\"AP\":\"1\"},{\"STA\":\"2\"}]}"), output, espresponse);
-
+            ESPCOM::print (F ("\",\"H\":\"Device debug\",\"O\":[{\"Debug\":\"1\"},{\"NoDebug\":\"0\"}]}"), output, espresponse);
+            // ESPCOM::println (F (","), output, espresponse);
 
             #ifdef Moto_UI
             ESPCOM::println (F (","), output, espresponse);
@@ -3517,11 +3528,14 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             LOG("id:" + IDparameter + " | "); LOGLN("value:" + Valueparameter);
             // LOGLN("String length:" + String(Valueparameter.length()));
             uint16_t ProdOffset = 43;
-            int RegPos = (uint16_t)IDparameter.toInt()*10 + ProdOffset;uint16_t DataCover;
-            for(byte i = 0 ; i <= Valueparameter.length()/2; i++){
+            int RegPos = (uint16_t)IDparameter.toInt()*20 + ProdOffset;uint16_t DataCover;
+            
+            for(byte i = 0 ; i < 20; i++){
+                if(i <= Valueparameter.length()/2){
                 DataTransfer dataTrans;
                 DataCover = dataTrans.EncodeWord(Valueparameter[i*2+1],Valueparameter[i*2]);
                 cmd_modbus.modbusSet((uint16_t)RegPos+i, (uint16_t)DataCover);
+                }else{cmd_modbus.modbusSet((uint16_t)RegPos+i, 0);}
             }
             LOGLN(Valueparameter);
             ESPCOM::println (OK_CMD_MSG, output, espresponse);}

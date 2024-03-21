@@ -95,16 +95,17 @@ enum {slave,master};
 
 
 unsigned long EVENT_INTERVAL_MS1 = 3000;
-unsigned long REFRESH_INTERVAL_MS = 60000;
+unsigned long REFRESH_INTERVAL_MS = 600000;
 #ifdef MASTER_MODBUS
 byte MBRole = master;
 #else
 byte MBRole = slave;
 #endif//MASTER_MODBUS
+byte CharterQuality = 40; 
 byte connectWebSocket = 0;
 byte IDList[255];
 uint16_t Register[4][200];
-byte ProductName[4][20];
+byte ProductName[4][40];
 // int16_t SlaveParameter[HOLDING_REGS_SIZE];
 // int16_t HOLDING_REGS_CoilData[HOLDING_REGS_SIZE];//1-9999
 // int16_t HOLDING_REGS_InPutData[HOLDING_REGS_SIZE];//10001-19999
@@ -231,7 +232,7 @@ void PLC_MASTER::readfile(){
 
 bool WebSendata = false;  
 bool UpdateFirmware = false;
-
+unsigned long lastRefresh1 = millis();
 void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;static bool once=true;if(once){once = false;LOGLN("disable for update fw")}}
 
 bool onceInfo = true;
@@ -266,15 +267,11 @@ if(UpdateFirmware==false){
   //  if(connectWebSocket == 1 && WebSendata == 0){
     PLCModbusCom.modbus_loop(MBRole);//}
    
-  if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
-    PLCModbusCom.setModbusupdateState(0);
-    LOGLN( PLCModbusCom.getModbusupdateData());
-    PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
-  }
-
-  #ifdef MeshNetwork
-Mesh_loop();
-#endif//#ifdef MeshNetwork
+  // if(PLCModbusCom.getModbusupdateState() == 1){// da co data tu web gui ve
+  //   PLCModbusCom.setModbusupdateState(0);
+  //   // LOGLN( PLCModbusCom.getModbusupdateData());
+  //   PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
+  // }
 #ifdef SHT
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
@@ -334,18 +331,18 @@ if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = milli
     // LOGLN("Data Log: " + String(ctime(&Times)) + " | " + String(Nows));
   #if defined(MQTTSSL) && defined(MQTT_USE)
   if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
-  #endif
-for(int i = 0 ; i < 100 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
-for(int i = 100 ; i < 200 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-100]; }
+  #endif///////////////////////////// ID Slave ////////// Type ////////////// Address ////////////// Data  //////////////////////
+for(int i = 0 ; i < 120 ; i++) {Register[0][i] = 1;Register[2][i] = 2;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
+// for(int i = 100 ; i < 200 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-100]; }
 RespondChar decod;byte charterOffset = 43;
 
 for(int j = 0 ; j < 4 ; j++) {
-  for(int i = charterOffset ; i < charterOffset+10 ; i++) {
-    decod = plcDataTrans.DecodeWord(PLCModbusCom.holdingRegisters[i+j*10]);
-    // LOG(decod.char1);LOGLN(decod.char2);
-    ProductName[j][i-(charterOffset*2)] = decod.char1;
-    ProductName[j][i-((charterOffset*2)+1)] = decod.char2;
+  for(int i = 0 ; i < CharterQuality/2 ; i++) {
+    decod = plcDataTrans.DecodeWord(PLCModbusCom.holdingRegisters[(charterOffset+i)+(j*(CharterQuality/2))]);
+    if(decod.char1!=0){ProductName[j][i*2] = decod.char1;}
+    if(decod.char2!=0){ProductName[j][i*2+1] = decod.char2;}
   }
+  // LOGLN();
 }
 
 String json = "{";
@@ -361,7 +358,7 @@ json += Register[2][0];
 json += ",\"RegValue\":";
 json += Register[3][0];
 json += "}";
-for(int i = 1 ; i < 200 ; i++){
+for(int i = 1 ; i < 120 ; i++){
 json += ",{\"RegID\":";
 json += Register[0][i];
 json += ",\"RegAddr\":";
@@ -403,20 +400,17 @@ json += "}";
 json += "],\"ProductList\":[";//  "state":
 json += "{\"id\":";
 json += 0 + charterOffset;
-json += ",\"Name\":\"|";
-  for(int k = 0 ; k < 20 ; k++){//18191
-  if(ProductName[0][k]!=0)json += (char)ProductName[0][k];
-  }
+json += ",\"Name\":\" ";
+  for(int k = 0 ; k < CharterQuality ; k++){if(ProductName[0][k]!=0){json += (char)ProductName[0][k];}else{json += ' ';}}
 json += "\"}";
 for(int i = 1 ; i < 4 ; i++){//18191
 json += ",{\"id\":";
-json += i + charterOffset;
-json += ",\"Name\":\"|";
-for(int k = 0 ; k < 20 ; k++){//18191
-if(ProductName[i][k]!=0)json += (char)ProductName[i][k];
-}
+json += (i*CharterQuality/2) + charterOffset;
+json += ",\"Name\":\" ";
+for(int k = 0 ; k < CharterQuality ; k++){if(ProductName[i][k]!=0){json += (char)ProductName[i][k];}else{json += ' ';}}
 json += "\"}";
 }
+
 json += "]}";
 // LOG(json);
     if(connectWebSocket == 1){WebSendata = 1;socket_server->broadcastTXT(json);sendInfo();WebSendata = 0;}
@@ -458,7 +452,8 @@ void sendInfo() {
 void PLC_MASTER::connectWeb(byte connected){
   LOGLN("Connected: "+String(connected));
   connectWebSocket = connected;
-  PLCModbusCom.connectModbus(connected);
+  PLCModbusCom.connectModbus(connected-2);
+  lastRefresh1 = millis();
 }
 
 void PLC_MASTER::GetIdList(int idlist[]){
