@@ -3851,7 +3851,7 @@ th {
         <div style="margin-top: 10px;"> 
           <label for="doiten" class="form-label">Add Product</label>
           <div style="display: flex; align-items: center;"> 
-            <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
+            <input id="newProductName" type="text" class="form-control" maxlength="40" placeholder="New name" style="margin-right: 10px;">
             <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
             <!-- Button mở danh sách xóa sản phẩm -->
             <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
@@ -5100,7 +5100,7 @@ function loaddatasetting(id){
         console.log("id:" + option.id)
     });
   }
-  displaySelectedProduct();
+  // displaySelectedProduct();
 }
 // lỗi getWifiSignalStrength
 function getWifiSignalStrength(wifiData) {
@@ -5285,11 +5285,11 @@ function changeState(id) {
             wsmsg += msg;
           } else {
               if(e.data[0] == "{"){
-              loadAppSetup(e.data);
+              try {loadAppSetup(e.data); } catch(a) {console.log("[jsonObject] error" + e.data);return}  
               try {
               var jsonObject = JSON.parse(e.data)        
-              } catch(e) {
-                  console.log("[jsonObject] error" + e)
+              } catch(a) {
+                  console.log("[jsonObject] error" + e.data)
                   return
               }  
               var data_type = jsonObject.type
@@ -5869,7 +5869,7 @@ function deleteProduct(cardID, index) {
       }
       SaveDataProduct();
       loaddatasetting(id);
-      displayDeleteProductList();
+      // displayDeleteProductList();
 }
 
 function SaveDataProduct(){

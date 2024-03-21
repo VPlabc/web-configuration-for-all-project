@@ -266,8 +266,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #endif//ESP_OLED_FEATURE
             CONFIG::InitDirectSD();
             CONFIG::InitPins();
-            #ifdef MCP_USE
-            CONFIG::Init_MCP(0);
+            #ifdef MCP_USE CONFIG::Init_MCP(0); 
             #endif//MCP_USE
 #ifdef RECOVERY_FEATURE
             delay(recoverydelayms);
@@ -352,7 +351,7 @@ CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
 #endif// lookline_ui
 #ifdef PLC_MASTER_UI
 CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
-RunMode =1;
+// RunMode =1;
 if(RunMode == 2){
 #endif//PLC_MASTER_UI
             // setup wifi according settings
@@ -373,7 +372,7 @@ if(RunMode == 2){
         }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif// lookline_ui
         #ifdef PLC_MASTER_UI
-        wifi_config.Setup(false, LED_STATUS, 1);}else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        if(wifi_config.Setup(false, LED_STATUS, 1)){if(looklineDebug)ESPCOM::println(F("Connect Wifi Success!!"), PRINTER_PIPE);}}else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif//PLC_MASTER_UI
             delay(100);
             // setup servers

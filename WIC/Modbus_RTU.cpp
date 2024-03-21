@@ -35,11 +35,11 @@ bool Done = false;
 void debugs();
 #define dataSize 10
 
-const int16_t offsetM0 = 2048;//
+// const int16_t offsetM0 = 2048;//
 const int16_t offsetD0 = 4096;//
 
-const int16_t Write_Coil = offsetM0+0;
-const int16_t Read_Coil = offsetM0+100;
+// const int16_t Write_Coil = offsetM0+0;
+// const int16_t Read_Coil = offsetM0+100;
 const int16_t RegWrite = offsetD0+2500;//Register Write
 const int16_t RegRead = offsetD0+2000;//Register Read
 
@@ -50,7 +50,7 @@ int count_mb = 0;
 const long intervalupdate = 10000;
 unsigned long previousMillisupdate = 0;
 byte once = true;
-const long interval_update = 3000;
+const long interval_update = 3;
 unsigned long previousMillis_update = 0;
 #define baudrate 9600//19200
 // #define Enthernet
@@ -116,64 +116,7 @@ packetPointer packet2 = &packets[PACKET2];
 #endif//Modbus_Serial
 
 
-#ifdef Ethernet_W5500
-#include <SPI.h>
-#include <Ethernet.h> // lib_deps = arduino-libraries/Ethernet@^2.0.0
-#include <ModbusIP_ESP32.h>
 
-ModbusIP Mb;
-#define     ETH_RST        -1
-
-// MgsModbus Mb;
-int inByte = 0; // incoming serial byte
-
-// Ethernet settings (depending on MAC and Local network)
-byte mac[] = {0x90, 0xA2, 0xDA, 0x0E, 0x94, 0xB5 };
-
-void ethernetReset(const uint8_t resetPin)
-{
-    pinMode(resetPin, OUTPUT);
-    digitalWrite(resetPin, HIGH);
-    delay(250);
-    digitalWrite(resetPin, LOW);
-    delay(50);
-    digitalWrite(resetPin, HIGH);
-    delay(350);
-}
-#endif//Ethernet_W5500
-#ifdef Enthernet
-#include <Modbus.h>
-#include <ModbusIP_ESP32.h>
-#define DEBUG_ETHERNET_WEBSERVER_PORT       Serial
-
-// Debug Level from 0 to 4
-#define _ETHERNET_WEBSERVER_LOGLEVEL_       3
-
-#include <WebServer_WT32_ETH01.h>
-
-
-// Select the IP address according to your local network
-IPAddress myIP(192, 168, 1, 232);
-IPAddress myGW(192, 168, 1, 1);
-IPAddress mySN(255, 255, 255, 0);
-
-// Google DNS Server IP
-IPAddress myDNS(8, 8, 8, 8);
-
-//ModbusIP object
-ModbusIP mb;
-#endif//Enthernet
-#if defined(Ethernet) || defined(WifiConnect) 
-
-#include <Modbus.h>
-#include <ModbusIP_ESP32.h>
-//Modbus Registers Offsets (0-9999)
-// const int Write_Coil = 100;
-// const int Read_Coil = 200;
-// const int RegWrite = 300;
-// //Used Pins
-// const int ledPin = 2; //GPIO0
-#endif//Ethernet
 
 
 
@@ -247,83 +190,8 @@ initupdate();
   }
   // LOGLN("________________________________________________________________________________________");
 #endif//SerialPort
-#ifdef WifiConnect
-  // mb.config("Hoang Vuong", "91919191");
-
-  // while (WiFi.status() != WL_CONNECTED) {
-  //   delay(500);
-  //   LOG(".");
-  // }
-  LOGLN("");
-  LOGLN("WiFi connected");
-  LOGLN("Modbus IP address: ");
-  LOGLN(WiFi.localIP());
-#endif//Wificonnect
-#ifdef Enthernet
-// To be called before ETH.begin()
-  WT32_ETH01_onEvent();
-
-  //bool begin(uint8_t phy_addr=ETH_PHY_ADDR, int power=ETH_PHY_POWER, int mdc=ETH_PHY_MDC, int mdio=ETH_PHY_MDIO,
-  //           eth_phy_type_t type=ETH_PHY_TYPE, eth_clock_mode_t clk_mode=ETH_CLK_MODE);
-  //ETH.begin(ETH_PHY_ADDR, ETH_PHY_POWER, ETH_PHY_MDC, ETH_PHY_MDIO, ETH_PHY_TYPE, ETH_CLK_MODE);
-  ETH.begin(ETH_PHY_ADDR, ETH_PHY_POWER);
-
-  // Static IP, leave without this line to get IP via DHCP
-  //bool config(IPAddress local_ip, IPAddress gateway, IPAddress subnet, IPAddress dns1 = 0, IPAddress dns2 = 0);
-  // ETH.config(myIP, myGW, mySN, myDNS);
-
-  WT32_ETH01_waitForConnect();
-
-  LOGLN("");
-  LOGLN("enthernet connected");
-  LOGLN(ETH.localIP());
-#endif//Eth
-#ifdef Ethernet_W5500
- // serial setup
-  // Serial.begin(9600);
-  LOGLN("_________________________________________ ETHERNET ________________________________________");
-    SPI.begin(SCLK, MISO, MOSI,-1);
-    ethernetReset(ETH_RST);
-    Ethernet.init(SCS);
-    byte ip_buf[4];
-    //LOG ("Static mode\r\n")
-    //get the IP
-    LOG ("IP value:")
-    if (!CONFIG::read_buffer (EP_MODBUS_IP_VALUE, ip_buf, IP_LENGTH) ) {
-        LOG ("Error\r\n");
-    }
-    IPAddress local_ip (ip_buf[0], ip_buf[1], ip_buf[2], ip_buf[3]);
-    LOG (local_ip.toString() )
-    LOG ("\r\nGW value:")
-    // get the gateway
-    if (!CONFIG::read_buffer (EP_MODBUS_GATEWAY_VALUE, ip_buf, IP_LENGTH) ) {
-        LOG ("Error\r\n");
-    }
-    IPAddress gateway (ip_buf[0], ip_buf[1], ip_buf[2], ip_buf[3]);
-    LOG (gateway.toString() )
-    LOG ("\r\nMask value:")
-    //get the mask
-    if (!CONFIG::read_buffer (EP_MODBUS_MASK_VALUE, ip_buf, IP_LENGTH) ) {
-        LOG ("Error Mask value\r\n");
-    }
-    IPAddress subnet (ip_buf[0], ip_buf[1], ip_buf[2], ip_buf[3]);
-    LOG (subnet.toString() )
-    LOG ("\r\n")
-    //apply according active wifi mode
-    LOG ("Set IP\r\n")
-
-  // initialize the ethernet device
-  Ethernet.begin(mac, local_ip, gateway, subnet);   // start etehrnet interface
-  LOGLN("Ethernet interface started"); 
-
-  // print your local IP address:
-  LOG("My IP address: ");
-  LOGLN(Ethernet.localIP());
-  LOGLN();
-  LOGLN("_________________________________________________________________________________________");
 
 
-#endif//ETHER_W5500
 // if(ModbusRole == 0){
     // read 5 registers starting at address 0
 //Modbus Setup
@@ -337,64 +205,70 @@ bool MB_Update_Once1 = true;
 bool Reg_Update_Once = true;
 bool Reg_Update_Once1 = true;
 
- uint16_t regs_WRITE[100];
- uint16_t regs_READ[100];
+//  uint16_t regs_WRITE[100];
+//  uint16_t regs_READ[100];
 
 // Function to return an array of 30 elements
-uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}
+// uint16_t* Modbus_Prog::getInputRegs() {return inputRegisters;}
 uint16_t* Modbus_Prog::getOutputRegs() {return holdingRegisters;}
 
 bool MB_Update_Data = false;
 uint16_t MB_Update_Address = 0;
 uint16_t MB_Update_Value = 0;
 
-void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
+// void Modbus_Prog::update(){ Reg_Update_Once1 = true;}
 void Modbus_Prog::initupdate(){Reg_Update_Once = true;}
 
-void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){regs_WRITE[addr] = value;inputRegisters[addr] = value;MB_Update_Value = value;MB_Update_Address = addr;MB_Update_Data = 1;update();
+byte reviceCounter = 0;uint16_t MBData[50];
+void Modbus_Prog::modbusSet(uint16_t addr, uint16_t value){MB_Update_Value = value;MB_Update_Address = addr;
+reviceCounter++;if(reviceCounter >= 1){MBData[(reviceCounter-1)*2] = addr;MBData[(reviceCounter-1)*2+1] = value;}previousMillis_update = millis();
 LOGLN("Modbus addr:"+String(addr)+" value:"+String(value));}
+
 
 void Modbus_Prog::connectModbus(bool update){ MB_connect = update;}
 void Modbus_Prog::setModbusupdateState(bool state){ MB_Update_Data = state;}
-
+byte charRecive = 0;uint16_t DataChar[4][100];
 bool Modbus_Prog::getModbusupdateState(){ return MB_Update_Data;}
 uint16_t Modbus_Prog::getModbusupdateData(){return MB_Update_Value;}
 uint16_t Modbus_Prog::getModbusupdateAddr(){ return MB_Update_Address;}
+uint16_t addrPLC = 0; uint16_t valuePLC = 0;  
 
-void Modbus_Prog::Write_PLC(uint16_t addrPLC, uint16_t valuePLC){
-  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC) 
-  //+ " |PLC addres Read:" + String(RegRead) + " |PLC addres Write:" + String(RegWrite)
-  );
+void Modbus_Prog::modbusWriteBuffer(uint16_t addrOffset, uint16_t *value){charRecive++;
+if(charRecive >= 1){DataChar[charRecive-1][0] = addrOffset;
+for(byte i = 1 ; i < 21; i++){ DataChar[charRecive-1][i] = value[i-1];}
+}
+
+}
+
+void Modbus_Prog::Write_PLC(){
+  reviceCounter--;
+  addrPLC = MBData[reviceCounter*2];valuePLC = MBData[reviceCounter*2+1];
+  LOGLN("modbus Address: " + String(addrPLC) + " | modbus value: " + String(valuePLC));
   Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead +addrPLC, valuePLC);
-
 }
 byte bien = 0;
 void Modbus_Prog::modbus_loop(bool ModbusRole) {
   // #ifdef MASTER_MODBUS
-  if(ModbusRole == Master && MB_connect == true){
-    for(byte bien = 0 ; bien < 10; bien++){
+  if(ModbusRole == Master && MB_connect == true && (charRecive == 0 && reviceCounter == 0)){
+    byte RegAmount = sizeof(holdingRegisters);
+    for(byte bien = 0 ; bien < RegAmount/10; bien++){
     Modbus_Master.readHoldingRegister(SLAVE_ID  , RegRead+(bien*10) ,ReadRegTemporary ,dataSize);//Read holdingRegisters
-    for(byte p = 0; p < 10; p++){holdingRegisters[p+(bien*10)] = ReadRegTemporary[p];}
-    delay(1);
+    for(byte p = 0; p < 10; p++){holdingRegisters[p+(bien*10)] = ReadRegTemporary[p];}//ghi data 10 thanh ghi vào buffer
+    // delay(10);
     // bien++;if(bien>10)bien = 0;
     }
-  #ifdef Ethernet_W5500
-      Mb.task();
-      for(int i = 0 ; i < dataSize ; i++){
-        // coils[i] = mb.Coil(Write_Coil+i);//Read Coil
-        holdingRegisters[i] = Mb.Hreg(RegWrite+i);
-        // mb.Coil(Read_Coil +i, discreteInputs[i]);//Write Coil
-        Mb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
-        // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOG(" ");}LOGLN("");
-      }
-  #endif//Ethernet_W5500
+
   }//ktgamesRPB
       if (millis() - previousMillis_update >= interval_update)
       {
         previousMillis_update = millis();   
+          if(charRecive > 0){charRecive--;Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegRead + DataChar[charRecive][0] ,  DataChar[charRecive], 20);
+          LOGLN("Address: " + String(DataChar[charRecive][0]));
+          }//Write REG
+
         // modbusUpdateOnce = true;
         //////////////////////////////////////////////////////////////// 
-
+        if(reviceCounter > 0){ Write_PLC(); }
         #ifdef MASTER_MODBUS
         for(int j = 0 ; j < HOLDING_REGS_SIZE ; j++){
           if(ModbuS.regs_last_READ[j] != ModbuS.regs_READ[j]){
@@ -432,17 +306,7 @@ void Modbus_Prog::modbus_loop(bool ModbusRole) {
   // // inputRegisters = ;
   //   Modbus_Master.writeHoldingRegister(SLAVE_ID  , RegWrite , inputRegisters, dataSize);//Write REG
       // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOGLN(" ");}
-    #if defined(Enthernet) || defined(WifiConnect) 
-      //Call once inside loop() - all magic here
-      IPmb.task();
-      for(int i = 0 ; i < dataSize ; i++){
-        // coils[i] = mb.Coil(Write_Coil+i);//Read Coil
-        holdingRegisters[i] = IPmb.Hreg(RegWrite+i);
-        // mb.Coil(Read_Coil +i, discreteInputs[i]);//Write Coil
-        IPmb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
-        // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOG(" ");}LOGLN("");
-      }
-    #endif// defined(Enthernet) || defined(WifiConnect) 
+   
   }
   if(ModbusRole == Slave ){
 
@@ -453,58 +317,16 @@ void Modbus_Prog::modbus_loop(bool ModbusRole) {
       // coils[i] = mb.Coil(Write_Coil+i);//Read Coil
       holdingRegisters[i] = mb.Hreg(RegWrite+i);
       // mb.Coil(Read_Coil +i, discreteInputs[i]);//Write Coil
-      mb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
+      // mb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
       // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOG(" ");}LOGLN("");
     }
   }else{MB_Update_Once1 = true;}
-  #if defined(Enthernet) || defined(WifiConnect) 
-   //Call once inside loop() - all magic here
-   IPmb.task();
-  for(int i = 0 ; i < dataSize ; i++){
-    // coils[i] = mb.Coil(Write_Coil+i);//Read Coil
-    holdingRegisters[i] = IPmb.Hreg(RegWrite+i);
-    // mb.Coil(Read_Coil +i, discreteInputs[i]);//Write Coil
-    IPmb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
-    // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOG(" ");}LOGLN("");
-  }
-#endif// defined(Enthernet) || defined(WifiConnect) 
+
    //Attach ledPin to Write_Coil register
   //  digitalWrite(ledPins, coils[0]);
 
-  static unsigned long previousMillis = 0;
-  const long interval = 1000;
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    // for (int i = 0; i < dataSize; i++){inputRegisters[i] = random(0,100);}
-    // if(ModbusRole == Slave){LOGLN("slave");}
-    // if(ModbusRole == Master){LOGLN("master");}
-    //   LOG("holdingRegisters: ");
-    //   // Your code here to print to serial every 2 seconds
-    //   LOG(holdingRegisters[0]);
-    //   LOG(" ");
-    //   LOGLN(holdingRegisters[1]);
-    //   // Inserted code
-    //   LOG("coils: ");
-    //   for (int i = 0; i < 2; i++) {
-    //     LOG(coils[i]);
-    //     if (i < 1) {
-    //       LOG(" ");
-    //     }
-    //   }
-    //   LOGLN();
-    //   LOG("inputRegisters: ");
-    //   LOG(inputRegisters[0]);
-    //   LOG(" ");
-    //   LOGLN(inputRegisters[1]);
-    //   LOG("discreteInputs: ");
-    //   LOG(discreteInputs[0]);
-    //   LOG(" ");
-    //   LOGLN(discreteInputs[1]);
-    //   LOGLN("================================================");
-  }
-#endif//SerialPort
 
+#endif//SerialPort
 #ifdef Modbus_Serial
 #ifdef Master
 // packets[TOTAL_ERRORS] = modbus_update(packets);

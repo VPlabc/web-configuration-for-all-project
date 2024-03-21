@@ -34,10 +34,10 @@ ModbusRTU mb;
 // uint8_t coils[30];
 // uint8_t discreteInputs[30];
 //////////////////////// các thanh ghi Data cho 4 máy
-uint16_t holdingRegisters[100];//0-30 PLC Data /30-34 total Plan / 34-74 product name 
-uint16_t inputRegisters[100];// data tu web gui ve public 0-30 PLC Data /30-34 total Plan / 34-74 product name 
+uint16_t holdingRegisters[120];//0-30 PLC Data /30-34 total Plan / 34-74 product name 
+// uint16_t inputRegisters[20];// data tu web gui ve public 0-30 PLC Data /30-34 total Plan / 34-74 product name 
 uint16_t ReadRegTemporary[10];//thanh ghi Read tạm thời
-uint16_t WriteRegTemporary[10];//thanh ghi Write tạm thời
+// uint16_t WriteRegTemporary[10];//thanh ghi Write tạm thời
 
 // The data from the PLC will be stored
 // in the regs array
@@ -48,12 +48,13 @@ uint16_t* getOutputRegs();
 void update();
 void initupdate();
 void modbusSet(uint16_t addr, uint16_t value);
+void modbusWriteBuffer(uint16_t addrOffset, uint16_t *value);
 void connectModbus(bool update);
 bool getStart();
 void modbus_setup(bool role) ;
 void modbus_loop(bool role) ;
 void debugs();
-void Write_PLC(uint16_t addrPLC, uint16_t valuePLC);
+void Write_PLC();
 void setModbusupdateState(bool state);
 bool getModbusupdateState();
 uint16_t getModbusupdateData();

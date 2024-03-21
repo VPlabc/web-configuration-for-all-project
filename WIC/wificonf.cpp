@@ -211,7 +211,7 @@ void  WIFI_CONFIG::Safe_Setup()
         String AP_NAME = String(sbuf) + "(" + String(ID) + ")|*Ver:" + FW_VERSION;
         #endif//LOOKLINE_UI
         #ifdef PLC_MASTER_UI
-        String AP_NAME = "Node_BOX(" + String(ID) + ")|Ver:" + FW_VERSION;
+        String AP_NAME = "Node_BOX_(" + String(ID) + ")|Ver:" + FW_VERSION;
         #endif//PLC_MASTER_UI
         WiFi.softAP (AP_NAME.c_str(), pwds.c_str());
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
@@ -331,7 +331,7 @@ void onWiFiEvent(WiFiEvent_t event)
         // ESPCOM::println (F ("New client"), PRINTER_PIPE);
         // LOGLN("New client");
         #ifdef PLC_MASTER_UI
-        PLC_wifi.connectWeb(0);
+        PLC_wifi.connectWeb(2);
         #endif//PLC_MASTER_UI
         #ifdef LOOKLINE_UI
         // cmdLookline_PROG.SetStart(1);
@@ -407,6 +407,7 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
     //this is AP mode
     if (bmode == AP_MODE) {
         //LOG ("\nSet AP mode\r\n")
+        ESPCOM::println(F("Set AP mode"), PRINTER_PIPE);
         if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
             return false;
         }
@@ -467,6 +468,13 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
             //apply according active wifi mode
             //LOG ("Set IP\r\n")
             WiFi.softAPConfig ( local_ip,  gateway,  subnet);
+            delay (100);
+        }
+        else{
+            IPAddress local_ip1 (DEFAULT_IP_VALUE[0], DEFAULT_IP_VALUE[1], DEFAULT_IP_VALUE[2], DEFAULT_IP_VALUE[3]);
+            IPAddress gateway1 (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
+            IPAddress subnet1 (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
+            WiFi.config ( local_ip1,  gateway1,  subnet1, gateway1);
             delay (100);
         }
         //LOG ("Disable STA\r\n")
@@ -726,7 +734,8 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
 #ifdef ESP_OLED_FEATURE
             OLED_DISPLAY::setCursor(0, 28);
 #endif//ESP_OLED_FEATURE
-            if(debug)ESPCOM::println (F ("Not Connected!"), PRINTER_PIPE);
+            ESPCOM::println (F ("Not Connected!"), PRINTER_PIPE);
+        
 #endif
 #endif
             return false;
@@ -812,10 +821,16 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
     if (force_ap) {
         digitalWrite(LED_Pin, !invert);
     } else if ((WiFi.getMode() == WIFI_STA) && (WiFi.status() == WL_CONNECTED)) {
+        
+            IPAddress local_ip1 (DEFAULT_IP_VALUE[0], DEFAULT_IP_VALUE[1], DEFAULT_IP_VALUE[2], DEFAULT_IP_VALUE[3]);
+            IPAddress gateway1 (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
+            IPAddress subnet1 (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
+            WiFi.config ( local_ip1,  gateway1,  subnet1, gateway1);
+            delay (100);
         if(debug)ESPCOM::print("Connected " + currentIP.toString() + "\n\n", SERIAL_PIPE);
         digitalWrite(LED_Pin, invert);
     } else if ((WiFi.getMode() == WIFI_AP_STA) && (WiFi.status() == WL_CONNECTED)) {
-        if(debug)ESPCOM::print("Connected(AP) " + currentIP.toString() + "\n\n", SERIAL_PIPE);
+        if(debug)ESPCOM::print("Connected(with AP) " + currentIP.toString() + "\n\n", SERIAL_PIPE);
         digitalWrite(LED_Pin, invert);
     }
     ESPCOM::flush (DEFAULT_PRINTER_PIPE);
