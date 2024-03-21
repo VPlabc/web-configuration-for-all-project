@@ -17,6 +17,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+#define TIMESTAMP_FEATURE
 #include "config.h"
 #include "command.h"
 #include "wificonf.h"
@@ -26,17 +27,19 @@ UpdateFW UDFWCmd;
 #ifndef FS_NO_GLOBALS
 #define FS_NO_GLOBALS
 #endif
+#ifdef TIMESTAMP_FEATURE
+#include <time.h>
+#endif
 #include <FS.h>
 #if defined(ARDUINO_ARCH_ESP32)
 #include "SPIFFS.h"
 #define MAX_GPIO 37
 int ChannelAttached2Pin[16]= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+
 #else
 #define MAX_GPIO 16
 #endif
-#ifdef TIMESTAMP_FEATURE
-#include <time.h>
-#endif
+
 #ifdef ESP_OLED_FEATURE
 #include "esp_oled.h"
 #endif
@@ -2109,6 +2112,17 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
 #endif//LOOKLINE_UI
 #endif//Moto_UI
         }
+        //DEBUG
+            ESPCOM::print (F (",{\"F\":\"printer\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_EEPROM_DEBUG), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_EEPROM_DEBUG, &bbuf ) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Device debug\",\"O\":[{\"Debug\":\"1\"},{\"NoDebug\":\"0\"}]}"), output, espresponse);
+            // ESPCOM::println (F (","), output, espresponse);
         //end JSON
         ESPCOM::println (F ("\n]}"), output, espresponse);
         // cmdWic.Set_Init_UI();
@@ -2945,7 +2959,91 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_ID), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
-            ESPCOM::println (F (","), output, espresponse);    
+            ESPCOM::println (F (","), output, espresponse);  
+            
+            //26-Time zone
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_TIMEZONE), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_TIMEZONE, &bbuf ) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr ( (int8_t) bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Time Zone\",\"O\":["), output, espresponse);
+            for (int i = -12; i <= 12 ; i++) {
+                ESPCOM::print (F ("{\""), output, espresponse);
+                ESPCOM::print ( (const char *) CONFIG::intTostr (i), output, espresponse);
+                ESPCOM::print (F ("\":\""), output, espresponse);
+                ESPCOM::print ( (const char *) CONFIG::intTostr (i), output, espresponse);
+                ESPCOM::print (F ("\"}"), output, espresponse);
+                if (i < 12) {
+                    ESPCOM::print (F (","), output, espresponse);
+                }
+            }
+            ESPCOM::print (F ("]}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+
+            //27- DST
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_TIME_ISDST), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"B\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_byte (EP_TIME_ISDST, &bbuf ) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (bbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"Day Saving Time\",\"O\":[{\"No\":\"0\"},{\"Yes\":\"1\"}]}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+
+            //28- Time Server1
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_TIME_SERVER1), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_TIME_SERVER1, sbuf, MAX_DATA_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"Time Server 1\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+
+            //29- Time Server2
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_TIME_SERVER2), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_TIME_SERVER2, sbuf, MAX_DATA_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"Time Server 2\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+
+            //30- Time Server3
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_TIME_SERVER3), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_TIME_SERVER3, sbuf, MAX_DATA_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"Time Server 3\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_DATA_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);  
+
+            ESPCOM::println (F (","), output, espresponse);
 #ifdef USE_LORA
             //2- Set CHANEL
             ESPCOM::print (F ("{\"F\":\"rf\",\"P\":\""), output, espresponse);

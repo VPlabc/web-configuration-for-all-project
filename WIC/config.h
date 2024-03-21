@@ -32,6 +32,7 @@
 // #define LOOKLINE_UI
 #define PLC_MASTER_UI
 //  #define Basic_UI
+// #define GATEWAY_UI
 
 
 
@@ -120,7 +121,7 @@
 #define WS_DATA_FEATURE
 
 //TIMESTAMP_FEATURE: Time stamp feature on direct SD  files
-//#define TIMESTAMP_FEATURE
+#define TIMESTAMP_FEATURE
 #endif //USE_AS_UPDATER_ONLY
 //Extra features /////////////////////////////////////////////////////////////////////////
 
@@ -132,6 +133,12 @@
 
 //USE_LORA: use lora module
 // #define USE_LORA
+#ifdef GATEWAY_UI
+#define MQTT_USE
+#define SDCARD_FEATURE
+#define TIMESTAMP_FEATURE
+
+#endif//GATEWAY_UI
 
 #ifdef AUTOITGW_UI
 #define MQTT_USE
@@ -319,7 +326,7 @@
 //Sanity check
 #ifdef SDCARD_FEATURE
 #ifdef TIMESTAMP_FEATURE
-#undef TIMESTAMP_FEATURE
+// #undef TIMESTAMP_FEATURE
 #endif
 #endif
 
@@ -751,6 +758,9 @@ typedef enum {
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
 #define NodeIoT
+#define TIMESTAMP_FEATURE
+#define MQTT_USE
+
 // #define MCP_USE
 // #define USE_LORA
 // #define SDCARD_FEATURE
@@ -791,8 +801,9 @@ typedef enum {
 #define EP_MODBUS_GATEWAY_VALUE 1375//4  bytes xxx.xxx.xxx.xxx
 #define EP_MODBUS_PORT          1379//4  bytes = int
 #define EP_EEPROM_WIFI_MODE     1383// 1 bytes
+#define EP_MQTT_PORT            1384// 4 bytes
 
-#define LAST_EEPROM_ADDRESS 1384
+#define LAST_EEPROM_ADDRESS 1388
 // #define Ethernet_W5500
 
 // #define WifiConnect

@@ -4883,7 +4883,7 @@ function loadAppSetup(e){
             myLineChart.update();
           }
           if (stateID[BappID] == 0) {
-            SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+r_d[number[r_d[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+            // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+r_d[number[r_d[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
           }
           if (stateID[BappID] == 1) {
             document.getElementById("RunButton"+BappID).innerHTML = "Stop";

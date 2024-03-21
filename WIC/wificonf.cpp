@@ -89,7 +89,7 @@ extern "C" {
 PLC_MASTER PLC_wifi;
 #endif//PLC_MASTER_UI
 bool WiFiOnce1 = true; //
-bool debug = false;
+bool debug = true;
 #include "WIC.h"
 WIC wic;
 #if defined(TIMESTAMP_FEATURE)

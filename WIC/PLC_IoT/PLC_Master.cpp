@@ -1,5 +1,7 @@
 // #22012024 UPDATE NEW
 // #define SHT
+#define MeshNetwork
+#define DataLog
 
 #include "config.h"
 #ifdef PLC_MASTER_UI
@@ -34,6 +36,20 @@ Modbus_Prog PLCModbusCom;
 DNSServer LooklinednsServer;
 const byte DNS_PORT = 53;
 #endif
+
+#include "SDFunction.h"
+SDFunction sdFunction;
+#include "RealTimeClock.h"
+
+#ifdef DataLog
+#include "DataLog.h"
+#endif//DataLog
+
+#ifdef MeshNetwork
+// #include "MeshWifi.h"
+#include "Mesh.h"
+#endif
+
 #ifdef MQTT_USE
 #include "MQTTcom.h"
 MQTTCOM mqttPLC;
@@ -191,6 +207,19 @@ void PLC_MASTER::setup(){
 #ifdef MQTT_USE
 mqttPLC.setup();
 #endif//MQTT_USE
+#ifdef TIMESTAMP_FEATURE
+  LOGLN("Time Init ________________________________________");
+// SetupTime();
+updateTime();
+  LOGLN("File Init ________________________________________");
+  if(!SD.begin(SDCard_CS)){LOG ("Card Mount Failed\n");return; }
+  String FileName = "DataLog_20_03_24.csv";
+  if(!SD.exists(FileName)){writeFile(SD, FileName, "Creat file");LOGLN("File Created ");}
+
+#endif////////////////
+#ifdef MeshNetwork
+Mesh_setup();
+#endif//#ifdef MeshNetwork
   LOGLN("______________________________________________________");
   LOGLN("Setup PLC done");///////
 
@@ -211,11 +240,13 @@ void PLC_MASTER::loop(){// LOG("Loop");
 if(UpdateFirmware==false){
   
   if(connectWebSocket == 0){
+    #ifndef MeshNetwork
     static unsigned long lastRefresh1 = millis();
-    if (((millis() - lastRefresh1) > REFRESH_INTERVAL_MS )){lastRefresh1 = millis();
+    if (((millis() - lastRefresh1) > REFRESH_INTERVAL_MS ) && WiFi.status() != WL_CONNECTED){lastRefresh1 = millis();
       WiFi.disconnect();WiFi.mode(WIFI_OFF);
       wifi_config.Setup(true, LED_STATUS, 1);LOGLN("Refresh Wifi");
     }
+    #endif//MeshNetwork
     static unsigned long previousMillis = 0;
     if (millis() - previousMillis >= 100 ) {digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));previousMillis = millis();}
   }
@@ -240,6 +271,10 @@ if(UpdateFirmware==false){
     LOGLN( PLCModbusCom.getModbusupdateData());
     PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
   }
+
+  #ifdef MeshNetwork
+Mesh_loop();
+#endif//#ifdef MeshNetwork
 #ifdef SHT
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
@@ -292,6 +327,11 @@ if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSock
 
 static unsigned long lastEventTime1 = millis();
 if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = millis();
+
+    time_t Nows = timeClient.getEpochTime();
+    timeClient.update();
+    time_t Times = time(nullptr);
+    // LOGLN("Data Log: " + String(ctime(&Times)) + " | " + String(Nows));
   #if defined(MQTTSSL) && defined(MQTT_USE)
   if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
   #endif

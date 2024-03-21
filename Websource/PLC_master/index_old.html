@@ -1452,7 +1452,7 @@
     .card2 {
             border-radius: 25px;
             width: auto;
-            height: fit-content;
+            height: 14rem;
             /* margin: 200px auto; */
             color: #ffff;
             overflow: hidden;
@@ -1562,21 +1562,21 @@
     }
 
 /* CSS để hiển thị kẻ bảng */
-.custom-table {
+table {
   border-collapse: collapse;
   width: 100%;
 }
 
-.custom-table, .custom-table th, .custom-table td {
+table, th, td {
   border: 1px solid black;
 }
 
-.custom-table th, .custom-table td {
+th, td {
   padding: 8px;
   text-align: center;
 }
 
-.custom-table th {
+th {
   background-color: #f2f2f2;
 }
 
@@ -2748,7 +2748,7 @@
       <tbody id="application_list_data"  style="width:100%"></tbody>
     </table>
   </div>
-  <!-- <center><br>
+  <center><br>
     <form class="form-inline">
       <div class="form-group">
         <div class="input-group" style="width:100%">
@@ -2775,7 +2775,7 @@
           </svg></span></button>
     </form><br>
   
-  </center> -->
+  </center>
     <center>
       <!-- Product_list_data -->
       <h3>Product table</h3>
@@ -2791,7 +2791,6 @@
         <tbody class="caption" id="Product_list_data"></tbody>
       </table>
     </center>
-    <center>
       <h3>Register table</h3>
       
       <table class="table table-dark" style="width:100%;max-width:800px;">
@@ -2816,63 +2815,11 @@
 
       
   <div class='container py-3'>
-    <div class="d-flex align-items-center flex-shrink-0 p-3 border-vplab-light text-decoration-none border-bottom"><span class="fs-4 fw-semibold mt-3">MQTT config</span></div>
-    <div class='row justify-content-between'>
-      <center><br>
-        <form class="form-inline">
-          <div class="form-group">
-            <div class="input-group" style="width:100%">
-              <input type="text" class="form-control w50" id="AppDataSave"
-                onkeyup="App_OnKeyUp(event)" translateph placeholder="Application code">
-            </div>
-          </div>
-          <div style="padding-top: 10px;">
-            <button type="button" class="btn btn-info"
-            onclick="AppGet();"><span><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
-                <g transform="translate(50,1200) scale(1, -1)">
-                  <path fill="currentColor"
-                    d="M583 1182l378 -435q14 -15 9 -31t-26 -16h-244v-250q0 -20 -17 -35t-39 -15h-200q-20 0 -32 14.5t-12 35.5v250h-250q-20 0 -25.5 16.5t8.5 31.5l383 431q14 16 33.5 17t33.5 -14zM50 300h1000q21 0 35.5 -14.5t14.5 -35.5v-250h-1100v250q0 21 14.5 35.5t35.5 14.5z M900 200v-50h100v50h-100z">
-                  </path>
-                </g>
-              </svg></span></button> 
-              
-              <button type="button" class="btn btn-warning"
-            onclick="AppSave();"><span><svg width="1.3em" height="1.2em" viewBox="0 0 1300 1200">
-                <g transform="translate(50,1200) scale(1, -1)">
-                  <path fill="currentColor"
-                    d="M450 1200h200q21 0 35.5 -14.5t14.5 -35.5v-350h245q20 0 25 -11t-9 -26l-383 -426q-14 -15 -33.5 -15t-32.5 15l-379 426q-13 15 -8.5 26t25.5 11h250v350q0 21 14.5 35.5t35.5 14.5zM50 300h1000q21 0 35.5 -14.5t14.5 -35.5v-250h-1100v250q0 21 14.5 35.5t35.5 14.5z M900 200v-50h100v50h-100z">
-                  </path>
-                </g>
-              </svg></span></button>
-          </div>
-  
-        </form>
-        <br>
-      
-      </center>
-      <div class="input-group" style="width:100%">
-        <!-- <input type="text" class="form-control w50" id="dataProduct" translateph placeholder="Product json"> -->
-        <textarea  id="dataProduct" cols="30" rows="5" style="width: 100%; height: fit-content; border-radius: 0.25rem;"></textarea>
-      </div>
-      <center>
-
-      </center>
-      <div style="padding: 20px;">
-        <h3 style="color: white">Save Autostop</h3>
-        <div class="row" style="width: 80%;">
-          <div class="col-4" style="padding: 0 0 10px;">
-            <input type="text" id="pass_Save_AutoStop" class="form-control" placeholder="Please enter state save autostop">
-          </div>
-          <div class="col-1" style="text-align: center;">
-            <button type="button" class="btn btn-warning" data-bs-dismiss="modal" onclick="PassSave_AutoStop()"  >Save_AutoStop</button>
-          </div>
-        </div>
-      </div>
-  
-    </div>
-  <!-- <div class="d-flex align-items-center flex-shrink-0 p-3 border-vplab-light text-decoration-none border-bottom"><span class="fs-4 fw-semibold mt-3">MQTT config</span></div>
+  <div class="d-flex align-items-center flex-shrink-0 p-3 border-vplab-light text-decoration-none border-bottom"><span class="fs-4 fw-semibold mt-3">MQTT config</span></div>
   <div class='row justify-content-between'>
-
+  <!-- <div class='alert-danger'>Your flash size 4000 is configured incorrectly. It should be 4000.</div> -->
+  
+  <!-- <div class="card"> -->
   <div class="row g-3">
       <div class='col-md-6'>
       <label class='form-label caption'>host</label><input  id="host" type='text' name='host' class='form-control' value='Mqtt host'>
@@ -2898,13 +2845,13 @@
       <div class='row g-3'>
           <div class='col-md-6 '><label class='form-label caption'>Firmware link</label><input type='text' name='fwlink' class='form-control' value='00:00:00:00'></div>
           <div class='col-md-6 '><label class='form-label caption'>Node name</label><input type='text' name='chanel' class='form-control' value='' autocomplete='off'></div>
-          <div class='form-floating'><br/><button class='btn btn-primary btn-lg' type='submit'>Save</button><br /><br /><br /></div>
+          <!-- <div class='form-floating'><br/><button class='btn btn-primary btn-lg' type='submit'>Save</button><br /><br /><br /></div> -->
 
           <div class='col-md-6' ><label class='form-label caption'>Gateway address</label><input type='text' name='gatewayaddr' class='form-control' value='00:00:00:00'></div>
           <div class='col-md-3' ><label class='form-label caption'>Chanel</label><input type='text' name='chanel' class='form-control' value='' autocomplete='off'></div>
           <div class='col-md-3'><label class='form-label caption'>Node Role</label><input type='text' name='gatewayaddr' class='form-control' value='NODE'></div>
           <div class='form-floating'><br/><button class='btn btn-primary btn-lg' type='submit'>Save</button><br /><br /><br /></div>
-      </div> -->
+      </div>
           
       </div>
   </div>
@@ -2942,8 +2889,7 @@
           <div>
             <a type="text" id="adminShow"></a>
             <a type="text" id="staffShow"></a>
-            <a type="text" id="AutoStopShow"></a>
-          </div>                
+          </div>                 
           </div>
 
 </div>
@@ -3774,12 +3720,6 @@
                   class="form-control w14" id="preferences_Pass_Admin" translateph placeholder="password admin code">
               </div>
             </div>
-
-            <div class="form-inline">
-              <div class="form-group"><span><span translate>pass AutoStop code</span>:</span> <input type="text"
-                  class="form-control w14" id="preferences_Pass_AutoStop" translateph placeholder="password AutoStop code">
-              </div>
-            </div>
         <!-- preferences_product -->
             <div class="form-inline">
               <div class="form-group"><span><span translate>product code</span>:</span> <input type="text"
@@ -3895,10 +3835,10 @@
           <!-- Form inside the modal with input fields for each value -->
           <form>
 
-      <div class="row" id="name_product" style="display: none;">
-        <!-- <div class="input-group" style="width:100%">
+      <div class="row" id="name_product">
+        <div class="input-group" style="width:100%">
           <input type="text" class="form-control w50" id="dataProduct" translateph placeholder="Product json">
-        </div> -->
+        </div>
       
         <div style="margin-top: 10px;"> 
           <label for="doiten" class="form-label">Change name</label>
@@ -3910,22 +3850,16 @@
 
         <div style="margin-top: 10px;"> 
           <label for="doiten" class="form-label">Add Product</label>
-        <div class="row">
-          <div class="col-sm-10" id="option_product" style="display: block;">
-              <div class="d-flex">
-                  <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
-                  <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
-              </div>
+          <div style="display: flex; align-items: center;"> 
+            <input id="newProductName" type="text" class="form-control" maxlength="20" placeholder="New name" style="margin-right: 10px;">
+            <button onclick="addProduct()" type="button" class="btn btn-warning" style="margin-right: 10px;">Add</button> 
+            <!-- Button mở danh sách xóa sản phẩm -->
+            <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
           </div>
-          <div class="col-sm-2">
-              <button onclick="toggleDeleteProductList()" type="button" class="btn btn-warning">Option</button>
-          </div>
-      </div>
-      
-      
 
+          <!-- Bảng danh sách sản phẩm và nút xóa -->
           <div id="deleteProductList" style="display: none; margin-top: 20px;">
-            <table id="productTable" class="custom-table">
+            <table id="productTable">
               <thead>
                 <tr>
                   <th style="width: 50%;">List of products</th>
@@ -3936,14 +3870,12 @@
               <tbody id="productTableBody">
               </tbody>
             </table>
-            
 
             <div id="editForm" data-index="0" style="display: none;">
-              <input type="text"  id="editProductName" maxlength="20" placeholder="Product Name" style="width: 34%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
-              <input type="text"  id="editProductSet" placeholder="Plan/Result set" style="width: 20%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
-              <input type="text"  id="editCycleTime" placeholder="Cycle Time" style="width: 20%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <input type="text"  id="editProductName" maxlength="20" placeholder="Product Name" style="width: 36%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <input type="text"  id="editProductSet" placeholder="Plan/Result set" style="width: 25%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
+              <input type="text"  id="editCycleTime" placeholder="Cycle Time" style="width: 25%; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;">
               <button type="button" onclick="saveProduct()" type="button" class="btn btn-warning">Save</button>
-              <button type="button" onclick="closeEditForm()" type="button" class="btn btn-secondary">Close</button>
             </div>
 
           </div>
@@ -3952,44 +3884,41 @@
 
       </div>
       
-      <div id="blockInput" style="display: block; padding-top: 20px;">
-        <div class="row">
-          <div class="col -3">
-              <label for="planInput" class="form-label">Plan</label>
-              <input type="text" class="form-control" id="planInput">
+            <div class="row">
+                <div class="col -3">
+                    <label for="planInput" class="form-label">Plan</label>
+                    <input type="text" class="form-control" id="planInput">
+                </div>
+                <div class="col -3">
+                    <label for="resultInput" class="form-label">Result</label>
+                    <input type="text" class="form-control" id="resultInput" >
+                </div>
+            </div>
+            <div class="row">
+              <div class="col -3">
+                  <label for="planSetInput" class="form-label">Plan/Result set</label>
+                  <input type="text" class="form-control" id="planSetInput">
+              </div>
+              <div class="col -3">
+                  <!-- <label for="resultSetInput" class="form-label">Result set</label>
+                  <input type="text" class="form-control" id="resultSetInput"> -->
+                  <label  class="form-label">Product</label>
+                  <div class="col">
+                    <select id="ProductSelect" onchange="displaySelectedProduct()" style="width: 100%; text-align: center; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;"></select>
+                  </div>
+                 
+              </div>
           </div>
-          <div class="col -3">
-              <label for="resultInput" class="form-label">Result</label>
-              <input type="text" class="form-control" id="resultInput" >
-          </div>
-      </div>
-
-      <div class="row">
-        <div class="col -3">
-            <label for="planSetInput" class="form-label">Plan/Result set</label>
-            <input type="text" class="form-control" id="planSetInput">
-        </div>
-        <div class="col -3">
-            <!-- <label for="resultSetInput" class="form-label">Result set</label>
-            <input type="text" class="form-control" id="resultSetInput"> -->
-            <label  class="form-label">Product</label>
-            <div class="col">
-              <select id="ProductDataSaveSelect" onchange="displaySelectedProduct()" style="width: 100%; text-align: center; padding: 0.3rem 0.75rem; border-radius: 0.25rem; border: 1px solid #ced4da;"></select>
+          <div class="row">
+            <div class="col -3">
+                <label for="TimeIncInput" class="form-label">Cycle Time</label>
+                <input type="text" class="form-control" id="TimeIncInput">
+            </div>
+            <div class="col -3">
+                <label for="PCSInput" class="form-label">Total Plan</label>
+                <input type="text" class="form-control" id="PCSInput">
             </div>
         </div>
-    </div>
-
-    <div class="row">
-      <div class="col -3">
-          <label for="TimeIncInput" class="form-label">Cycle Time</label>
-          <input type="text" class="form-control" id="TimeIncInput">
-      </div>
-      <div class="col -3">
-          <label for="PCSInput" class="form-label">Total Plan</label>
-          <input type="text" class="form-control" id="PCSInput">
-      </div>
-  </div>
-      </div>
           </form>
         </div>
           <button type="button" class="btn btn-secondary" onclick="CloseModalCardSet('cancel')">Close</button>
@@ -4383,9 +4312,6 @@ D("google.charts.loader.VersionSpecific.setOnLoadCallback",function(a){if(!xc)th
     // const CONST = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp]
     var dataProduct;//global
     var productJSON;//global
-    var ProducNamelist = [];//global
-    
-    var onceAutoStop = [];
 
     var cd,id;
     $('#add_app').click(function(event){ AppChange(0);Reg_Adddlg('Add application', AppID);})
@@ -4745,7 +4671,7 @@ var modal = new Object;
 
 
 function loadAppSetup(e){
-
+      // console.log('json: ', e);
       var res = JSON.parse(e);
       if (res.Data == 0) {
         // console.log('Server: ', 'Data 0');
@@ -4810,12 +4736,7 @@ function loadAppSetup(e){
         }
         content1 = "";var Produclist = res.ProductList;
         for (var i = 0; i < res.ProductList.length; i++) {
-          ProducNamelist[i] = Produclist[i].Name;
-              // Lấy giá trị từ thẻ h3 tương ứng
-          var h3Element = document.getElementById("productName_" + i);
-          h3Element.innerHTML = Produclist[i].Name;
-
-          // console.log("Product name: " + ProducNamelist[i]);
+          
           content1 += "<tr>";
           content1 += "<td style='text-align: center;vertical-align:middle'>";
           content1 += Produclist[i].id;
@@ -4839,10 +4760,7 @@ function loadAppSetup(e){
       try{//filldata
         var UpdateDataApp = JSON.parse(AppMemories);
         if(cd < 8 && id == 0) {
-            
-            // console.log("chart load data");
             console.log("chart load data");
-            
             for(var p = 0 ; p < AppID; p++){
               // =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] 
               var r_d = [BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[p].app.split(',');
@@ -4878,7 +4796,7 @@ function loadAppSetup(e){
             myLineChart.data.datasets[0].data = DataCurrent;
             myLineChart.data.datasets[1].data = DataSet;
             myLineChart.data.labels = DataName;
-            myLineChart.data.datasets[0].labelonceAutoStop = DataName1;
+            myLineChart.data.datasets[0].label = DataName1;
             myLineChart.data.datasets[1].label = DataName2;
             myLineChart.update();
           }
@@ -4888,12 +4806,10 @@ function loadAppSetup(e){
           if (stateID[BappID] == 1) {
             document.getElementById("RunButton"+BappID).innerHTML = "Stop";
             document.getElementById("State0_"+BappID).innerHTML = "Run";
-            
           } 
           if (stateID[BappID] == 2){
             document.getElementById("RunButton"+BappID).innerHTML = "Run";
             document.getElementById("State0_"+BappID).innerHTML = "Stop";
-            
           }
         }
       }
@@ -4901,7 +4817,6 @@ function loadAppSetup(e){
         for(var p = 0 ; p < AppID; p++){
          [BappID, Bposs, Bapp, BnodeID] = UpdateDataApp.Application[p].app.split(',');
         for(var i = 0 ; i < number[Bapp]; i++){console.log("error:"+e +"|"+'regs'+i+'_'+BappID);}}}
-
 }
 
 function changeRegs(v, i){document.getElementById('regs'+(i-1)+'_'+AppID).innerHTML = regsvalue[v]}
@@ -5088,11 +5003,6 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
           // html += "</div>";
 
         }
-        if(cmd == dash){
-          
-          html += "</div><div class='card-body-row card-body01 row'>\
-          <div class='col text-muted'>Product_sp: </div>\
-        <h5 id=\"productName_"+ BappID + "\">Name</h5>";}
         if(cmd == dash){html += "<div class='button row'>\
         <div class='col-4 align-self-center align-items-center'><button style='width: 100%;' type='button' class='btn btn-warning' data-bs-toggle='modal'  onclick=\"CardSetup_dlg('Edit Parameter',"+BappID+")\">\
             Setting\
@@ -5153,96 +5063,45 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
   function closeModalPLC() {
         $('#myModal').modal('hide');
     }
-    var staffPass = "",adminPass = "",AutoStopPass = "";  
-    function autostop_one(id) {
-  // var id = document.getElementById("cardID").innerHTML;
-  var UpdateDataApp = JSON.parse(AppMemories);
-  var vals =  [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
-  var planStop = document.getElementById("regs0_" +id).innerText;
-  var resultStop = document.getElementById("regs1_" +id).innerText;
   
-  if(stateID[id] == 1){
-    onceAutoStop[id] = 0;
-    // console.log("state run " +id);
-    // console.log("aaaa1 " +planStop);
-    // console.log("aaaa2 " +resultStop);
-    if (onceAutoStop[id] == 0 && planStop - resultStop >= 100){
-    if(preferenceslist[0].AutoStop == 0 && resultStop == 0){
-      // changeState(id);
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      
-      // console.log("aaaa " +id);
-      onceAutoStop[id] = 1;
-    }
-    else if(preferenceslist[0].AutoStop == 1 ){
-      // changeState(id);
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      // console.log("bbbb " +id);
-      onceAutoStop[id] = 1;
-    }
-  }
-  } else if (stateID[id] == 2) {
-    onceAutoStop[id] = 1;
-    // console.log("state stop " +id);
-  }
-}
-// Hàm để lặp lại autostop_one(id) cho mỗi ID sau mỗi 5 giây
-function runEvery5Seconds() {
+function loaddatasetting(id){
+  console.log("loaddatasetting"); 
   var UpdateDataApp = JSON.parse(AppMemories);
-  UpdateDataApp.Application.forEach(function(item, index) {
-    var id = index; // Lấy chỉ số của mỗi phần tử làm ID
-    setInterval(function() {
-      autostop_one(id);
-    }, 4000);
-  });
-}
+  var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
+  document.getElementById("doiten").value=name;
+  document.getElementById("planInput").value=regsvalue[r1];
+  document.getElementById("resultInput").value=regsvalue[r2];
+  // document.getElementById("resultSetInput").value=regsvalue[r4];
+  document.getElementById("planSetInput").value=regsvalue[r3];
+  document.getElementById("TimeIncInput").value=regsvalue[r5];
+  document.getElementById("PCSInput").value=regsvalue[r6];
+  // console.log("r1:"+regsvalue[r1]); 
+  // console.log("r2:"+regsvalue[r2]); 
+  // console.log("r3:"+regsvalue[r3]); 
+  // console.log("r4:"+regsvalue[r4]); 
+  // console.log("r5:"+regsvalue[r5]); 
+  // console.log("r6:"+regsvalue[r6]); 
+  document.getElementById("dataProduct").value = preferenceslist[0].product;
+    var productData;
+    var productParse = document.getElementById("dataProduct").value;
+    productJSON =  JSON.parse(productParse)
+    if(productJSON.data[id] != null){productData = productJSON.data[id].product;
 
-function loaddatasetting(id) {
-  
-  console.log("loaddatasetting" +id);
-  var UpdateDataApp = JSON.parse(AppMemories);
-  var [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
-  document.getElementById("doiten").value = name;
-  document.getElementById("planInput").value = regsvalue[r1];
-  document.getElementById("resultInput").value = regsvalue[r2];
-  document.getElementById("planSetInput").value = regsvalue[r3];
-  document.getElementById("ProductDataSaveSelect").value = regsvalue[r4];
-  document.getElementById("TimeIncInput").value = regsvalue[r5];
-  document.getElementById("PCSInput").value = regsvalue[r6];
+    var selectElement = document.getElementById("ProductSelect");
 
-  var productData;
-  var productParse = document.getElementById("dataProduct").value;
-  productJSON = JSON.parse(productParse);
-  
-  if (productJSON.data[id] != null) {
-    productData = productJSON.data[id].product;
-    
-    // Đặt giá trị vào select
-    var selectElement = document.getElementById("ProductDataSaveSelect");
-    selectElement.innerHTML = ''; // Xóa tất cả các option cũ
-
+    selectElement.innerHTML = '';
     var optionID = 0;
     productData.forEach(function(product) {
-      var option = document.createElement("option");
-      option.text = product;
-      option.value = optionID;
-      optionID = optionID + 1;
-      selectElement.appendChild(option);
+        var option = document.createElement("option");
+        option.text = product;
+        option.value = optionID; 
+        optionID = optionID + 1;
+        selectElement.appendChild(option);
+        console.log("id:" + option.id)
     });
-
-    // Chọn giá trị phù hợp nếu có
-    var productNameElement = document.getElementById("productName_" + id);
-    if (productNameElement) {
-      var productName = productNameElement.innerHTML;
-      var selectedIndex = Array.from(selectElement.options).findIndex(option => option.text === productName);
-      if (selectedIndex !== -1) {
-        selectElement.selectedIndex = selectedIndex;
-      }
-    }
   }
-  document.getElementById("ProductDataSaveSelect").value = regsvalue[r4];
+  displaySelectedProduct();
 }
-
 // lỗi getWifiSignalStrength
 function getWifiSignalStrength(wifiData) {
     // Kiểm tra xem wifiData có tồn tại và có chứa thông số tín hiệu không
@@ -5392,7 +5251,7 @@ function changeState(id) {
     function alertdlg(e, t, a) { var n = setactiveModal("alertdlg.html", a); if (null != n) { var r = n.element.getElementsByClassName("modal-title")[0], o = n.element.getElementsByClassName("modal-text")[0]; r.innerHTML = e, o.innerHTML = t, showModal() } }
     var Node_IoT_authentication = !1, page_id = "", convertDHT2Fahrenheit = !1, ws_source, event_source, log_off = !1, async_webcommunication = !1, websocket_port = 0, websocket_ip = "", esp_hostname = "Node_IoT WebUI", EP_HOSTNAME, EP_STA_SSID, EP_STA_PASSWORD, EP_STA_IP_MODE, EP_STA_IP_VALUE, EP_STA_GW_VALUE, EP_STA_MK_VALUE, EP_WIFI_MODE, EP_AP_SSID, EP_AP_PASSWORD, EP_AP_IP_VALUE, EP_BAUD_RATE = 112, EP_AUTH_TYPE = 119, EP_TARGET_FW = 461, EP_IS_DIRECT_SD = 850, EP_PRIMARY_SD = 851, EP_SECONDARY_SD = 852, EP_DIRECT_SD_CHECK = 853, SETTINGS_AP_MODE = 1, SETTINGS_STA_MODE = 2, interval_ping = -1, last_ping = 0, enable_ping = !0, esp_error_message = "", esp_error_code = 0;
     function beep(e, t) { var a; void 0 !== window.AudioContext ? a = new window.AudioContext : void 0 !== window.webkitAudioContext() ? a = new window.webkitAudioContext : void 0 !== window.audioContext && (a = new window.audioContext); var n = a.createOscillator(), r = a.createGain(); n.connect(r), r.connect(a.destination), r.gain.value = 1, n.frequency.value = t, n.start(), setTimeout(function () { n.stop() }, e) }
-    function Init_events(e) { page_id = e.data, console.log("connection id = " + page_id), loadSensors()}
+    function Init_events(e) { page_id = e.data, console.log("connection id = " + page_id), loadSensors() }
     function ActiveID_events(e) { page_id != e.data && (Disable_interface(), console.log("I am disabled"), event_source.close()) }
     function DHT_events(e) { Handle_DHT(e.data) }
     function browser_is(e) { var t = navigator.userAgent; switch (e) { case "IE": if (-1 != t.indexOf("Trident/")) return !0; break; case "Edge": if (-1 != t.indexOf("Edge")) return !0; break; case "Chrome": if (-1 != t.indexOf("Chrome")) return !0; break; case "Firefox": if (-1 != t.indexOf("Firefox")) return !0; break; case "MacOSX": if (-1 != t.indexOf("Mac OS X")) return !0; break; default: return !1 }return !1 }
@@ -5426,11 +5285,11 @@ function changeState(id) {
             wsmsg += msg;
           } else {
               if(e.data[0] == "{"){
-              try {loadAppSetup(e.data); } catch(a) {console.log("[jsonObject] error" + e.data);return}  
+              loadAppSetup(e.data);
               try {
               var jsonObject = JSON.parse(e.data)        
-              } catch(a) {
-                  console.log("[jsonObject] error" + e.data)
+              } catch(e) {
+                  console.log("[jsonObject] error" + e)
                   return
               }  
               var data_type = jsonObject.type
@@ -5632,7 +5491,7 @@ function LogOut() {
   });
   changeTab("dashboard");
 }
-
+var staffPass = "",adminPass = "";
 var unlockValue = 0;//staff = 1| admin = 2
 function checkPassword() {
     var password = document.getElementById("passwordInput").value;
@@ -5754,7 +5613,7 @@ function ChangeSuccess(){
     function initUI_2() { AddCmd(display_boot_progress), console.log("Get settings"), refreshLooklineSettings(!0),refreshSettings(!0), initUI_3() }
     function initUI_3() { AddCmd(display_boot_progress), console.log("Get macros"), loadmacrolist(), console.log("Get preferences"), getpreferenceslist(), initUI_4()}
     function initUI_4() { AddCmd(display_boot_progress), init_command_panel(), init_files_panel(!1),showNewFWStt(0), "???" == target_firmware ? (console.log("Launch Setup"), AddCmd(display_boot_progress), closeModal("Connection successful"), setupdlg()) : (do_not_build_settings = !(setup_is_done = !0), do_not_build_looklines = !(setup_ll_is_done = !0),AddCmd(display_boot_progress), build_HTML_setting_list(current_setting_filter), AddCmd(closeModal), AddCmd(show_main_UI)),loadLookline() }
-    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet(),PassGet(),PassGet_AutoStop(), runEvery5Seconds() }
+    function show_main_UI() { document.getElementById("main_ui").style.display = "block",AppGet(),PassGet() }
     function compareStrings(e, t) { return (e = e.toLowerCase()) < (t = t.toLowerCase()) ? -1 : t < e ? 1 : 0 }
     function compareInts(e, t) { return e < t ? -1 : t < e ? 1 : 0 }
     function HTMLEncode(e) { for (var t = e.length, a = []; t--;) { var n = e[t].charCodeAt(); n < 65 || 127 < n || 90 < n && n < 97 ? (65533 == n && (n = 176), a[t] = "&#" + n + ";") : a[t] = e[t] } return a.join("") }
@@ -5768,18 +5627,12 @@ function ChangeSuccess(){
     function AppSave() { try{preferenceslist[0].app_data = document.getElementById("AppDataSave").value, SavePreferences(!0)}catch(e) {console.log(e);} }
 // nút hiện selet
 function toggleDeleteProductList() {
-  var option_product = document.getElementById("option_product");
-  var blockInput = document.getElementById("blockInput");
   var deleteProductList = document.getElementById("deleteProductList");
   if (deleteProductList.style.display === "none") {
     deleteProductList.style.display = "block";
-    option_product.style.display = "none";
-    blockInput.style.display = "none";
     displayDeleteProductList();
   } else {
     deleteProductList.style.display = "none";
-    option_product.style.display = "block";
-    blockInput.style.display = "block";
   }
 }
 // Hàm hiển thị danh sách sản phẩm để xóa
@@ -5819,7 +5672,7 @@ function displayDeleteProductList() {
     var deleteButtonCell = document.createElement("td");
     var deleteButton = document.createElement("button");
     deleteButton.textContent = "Delete";
-    deleteButton.className = "btn btn-secondary";
+    deleteButton.className = "btn btn-warning";
     deleteButton.type = "button";
     deleteButton.onclick = function() {
       deleteProduct(id, index); // Truyền id của card và index của sản phẩm vào hàm xóa sản phẩm
@@ -5849,21 +5702,13 @@ function editProduct(cardID, index) {
   // Hiển thị form chỉnh sửa sản phẩm
   var editForm = document.getElementById("editForm");
   editForm.style.display = "block";
- 
 
   // Điền thông tin sản phẩm vào form chỉnh sửa
   document.getElementById("editProductName").value = product;
   document.getElementById("editCycleTime").value = cycleTime;
   document.getElementById("editProductSet").value = productSet;
+}
 
-  editForm.dataset.index = index;
-}
-function closeEditForm() {
-    // Ẩn form chỉnh sửa sản phẩm mà không lưu thay đổi
-    var editForm = document.getElementById("editForm");
-    editForm.style.display = "none";
-    document.getElementById("productTable").style.display = "table";
-}
 function saveProduct() {
   var id = document.getElementById("cardID").innerHTML;
   var productJSON = JSON.parse(document.getElementById("dataProduct").value);
@@ -5873,13 +5718,14 @@ function saveProduct() {
   var editedCycleTime = document.getElementById("editCycleTime").value;
   var editedProductSet = document.getElementById("editProductSet").value;
 
-  // Lấy index từ thuộc tính data-index của form chỉnh sửa
+  // Cập nhật thông tin sản phẩm vào đối tượng JSON
+  var cardID = parseInt(document.getElementById("cardID").innerText);
   var index = parseInt(document.getElementById("editForm").dataset.index);
 
-  // Cập nhật thông tin sản phẩm vào đối tượng JSON
-  productJSON.data[id].product[index] = editedProductName;
-  productJSON.data[id].cycletime[index] = editedCycleTime;
-  productJSON.data[id].productset[index] = editedProductSet;
+
+  productJSON.data[cardID].product[index] = editedProductName;
+  productJSON.data[cardID].cycletime[index] = editedCycleTime;
+  productJSON.data[cardID].productset[index] = editedProductSet;
 
   // Chuyển đối tượng JSON thành chuỗi JSON và lưu vào phần tử HTML
   document.getElementById("dataProduct").value = JSON.stringify(productJSON);
@@ -5894,6 +5740,50 @@ function saveProduct() {
   loaddatasetting(id);
   displayDeleteProductList();
 }
+
+
+
+
+
+// // Hàm hiển thị danh sách sản phẩm để xóa
+// function displayDeleteProductList() {
+//   var productTableBody = document.getElementById("productTableBody");
+//   productTableBody.innerHTML = ""; // Xóa nội dung bảng sản phẩm cũ
+
+//   // Lấy danh sách sản phẩm từ chuỗi JSON
+//   var productJSON = JSON.parse(document.getElementById("dataProduct").value);
+
+//   // Lấy id của card
+//   var id = document.getElementById("cardID").innerHTML;
+
+//   // Hiển thị danh sách sản phẩm của card
+//   productJSON.data[id].product.forEach(function(product, index) {
+//     var row = document.createElement("tr");
+
+//     // Tạo cột hiển thị sản phẩm
+//     var productCell = document.createElement("td");
+//     productCell.textContent = product;
+
+//     // Tạo cột chứa nút xóa
+//     var deleteButtonCell = document.createElement("td");
+//     var deleteButton = document.createElement("button");
+//     deleteButton.textContent = "Delete";
+//     deleteButton.className = "btn btn-warning";
+//     deleteButton.type = "button";
+//     deleteButton.onclick = function() {
+//       deleteProduct(id, index); // Truyền id của card và index của sản phẩm vào hàm xóa sản phẩm
+//     };
+//     deleteButtonCell.appendChild(deleteButton);
+
+//     // Thêm cột vào hàng
+//     row.appendChild(productCell);
+//     row.appendChild(deleteButtonCell);
+
+//     // Thêm hàng vào bảng
+//     productTableBody.appendChild(row);
+//   });
+//   loaddatasetting(id);
+// }
 
 
 // Hàm xóa sản phẩm từ danh sách sản phẩm của card dựa trên id và index
@@ -5924,7 +5814,7 @@ function deleteProduct(cardID, index) {
           return;
       }
       var newProductName = document.getElementById("newProductName").value;
-      var selectElement = document.getElementById("ProductDataSaveSelect");
+      var selectElement = document.getElementById("ProductSelect");
       var id = document.getElementById("cardID").innerHTML;  
       var UpdateDataApp = JSON.parse(AppMemories);
       var r_d =[BappID, Bposs, Bapp, BnodeID, BnetID,name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2 , addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
@@ -5968,7 +5858,7 @@ function deleteProduct(cardID, index) {
         // In ra chuỗi JSON đã được cập nhật
         console.log("Updated JSON:", JSON.stringify(productJSON));
         // Tạo một option mới để thêm vào dropdown list
-        var selectElement = document.getElementById("ProductDataSaveSelect");
+        var selectElement = document.getElementById("ProductSelect");
         var option = document.createElement("option");
         option.text = newProductName;
         option.value = newID;
@@ -5979,7 +5869,7 @@ function deleteProduct(cardID, index) {
       }
       SaveDataProduct();
       loaddatasetting(id);
-      // displayDeleteProductList();
+      displayDeleteProductList();
 }
 
 function SaveDataProduct(){
@@ -5991,7 +5881,7 @@ function displaySelectedProduct() {
   var UpdateDataApp = JSON.parse(AppMemories);
   var vals = [BappID, Bposs, Bapp, BnodeID, BnetID, name, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, b1, b2, addRSSI, addTimetamp] = UpdateDataApp.Application[id].app.split(',');
 
-  var productID = document.getElementById("ProductDataSaveSelect").value;
+  var productID = document.getElementById("ProductSelect").value;
   console.log("Select id:" + productID);
   var cardid = document.getElementById("cardID").innerHTML;
 
@@ -6004,14 +5894,13 @@ function displaySelectedProduct() {
   // console.log(ProductSet);
 
   var sp = productJSON.data[cardid].product[productID];
-    // Hiển thị giá trị vừa chọn ra thẻ h3 có cùng ID với cardID
   console.log("id:"+ id);
   console.log("ProductSet:" + ProductSet);
   console.log("CyleTime:" + CyleTime);
   if(sp.length% 2 == 0){console.log("độ dài chẵn");}else{console.log("độ dài lẻ");sp = sp + " "}
 
 
-  SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=write id=" + r4 + " value=" + productID), getLooklineCmdSuccess, getLooklineCmdfailed);
+  // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
 
   SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=product id=" + id + " value=" + sp), getLooklineCmdSuccess, getLooklineCmdfailed);
   
@@ -6082,28 +5971,6 @@ function displaySelectedProduct() {
       // }
         // catch(e) {console.log(e);}
        }
-           function PassSave_AutoStop() { 
-            console.log("PassSave_AutoStop save"); 
-            AutoStopPass  = document.getElementById("pass_Save_AutoStop").value;preferenceslist[0].AutoStop = document.getElementById("pass_Save_AutoStop").value; SavePreferences(!0)
-        
-        console.log("AutoStopPass: " + AutoStopPass);
-        var inputElement = document.getElementById("pass_Save_AutoStop");
-        // Đặt giá trị của input thành rỗng
-        inputElement.value = "";
-      // }
-        // catch(e) {console.log(e);}
-       }
-       function PassGet_AutoStop() {
-        console.log("PassGet_AutoStop get"); 
-    try{
-      void 0 == AutoStopPass ? AutoStopPass = preferenceslist[0].AutoStop : AutoStopPass = preferenceslist[0].AutoStop,
-      document.getElementById("AutoStopShow").innerHTML = AutoStopPass;
-      
-        console.log("AutoStopPass: " + AutoStopPass);
-      }catch(e) {console.log(e);}
-      document.getElementById("dataProduct").value = preferenceslist[0].product;
-
-    }
     function PassGet() {
         console.log("PassGet"); 
     try{
@@ -6397,14 +6264,9 @@ function displaySelectedProduct() {
         void 0 !== preferenceslist[0].Pass_staff ? (console.log("Use prefs staff pass"),
         document.getElementById("preferences_Pass_Staff").value = preferenceslist[0].Pass_staff) : (console.log("Use default staff pass"),
         document.getElementById("preferences_Pass_Staff").value = String(default_preferenceslist[0].Pass_staff)),
-        
         void 0 !== preferenceslist[0].Pass_admin ? (console.log("Use prefs admin pass"),
         document.getElementById("preferences_Pass_Admin").value = preferenceslist[0].Pass_admin) : (console.log("Use default admin pass"),
         document.getElementById("preferences_Pass_Admin").value = String(default_preferenceslist[0].Pass_admin)),
-
-        void 0 !== preferenceslist[0].AutoStop ? (console.log("Use prefs AutoStop pass"),
-        document.getElementById("preferences_Pass_AutoStop").value = preferenceslist[0].AutoStop) : (console.log("Use default AutoStop pass"),
-        document.getElementById("preferences_Pass_AutoStop").value = String(default_preferenceslist[0].AutoStop)),
         
         void 0 !== preferenceslist[0].product ? (console.log("Use prefs admin pass"),
         document.getElementById("preferences_product").value = preferenceslist[0].product) : (console.log("Use default admin pass"),
@@ -6412,20 +6274,18 @@ function displaySelectedProduct() {
         prefs_toggledisplay("show_commands_panel")
         );
     }
-    function closePreferencesDialog() { var e = !1; 0 != preferenceslist[0].length ? void 0 === preferenceslist[0].language || void 0 === preferenceslist[0].enable_camera || void 0 === preferenceslist[0].auto_load_camera || void 0 === preferenceslist[0].app_data || void 0 === preferenceslist[0].Pass_staff || void 0 === preferenceslist[0].Pass_admin ||void 0 === preferenceslist[0].product || void 0 === preferenceslist[0].enable_DHT || void 0 === preferenceslist[0].enable_lock_UI || void 0 === preferenceslist[0].enable_ping || void 0 === preferenceslist[0].enable_autoscroll || void 0 === preferenceslist[0].enable_verbose_mode || void 0 === preferenceslist[0].enable_commands_panel ? e = !0 : (document.getElementById("preferences_AppDataSave").value != preferenceslist[0].app_data && (e = !0), document.getElementById("preferences_Pass_Staff").value != preferenceslist[0].Pass_staff && (e = !0), document.getElementById("preferences_Pass_Admin").value != preferenceslist[0].Pass_admin && (e = !0), document.getElementById("preferences_Pass_AutoStop").value != preferenceslist[0].AutoStop && (e = !0), document.getElementById("dataProduct").value != preferenceslist[0].product && (e = !0), document.getElementById("enable_DHT").checked != ("true" === preferenceslist[0].enable_DHT) && (e = !0), document.getElementById("enable_lock_UI").checked != ("true" === preferenceslist[0].enable_lock_UI) && (e = !0), document.getElementById("enable_ping").checked != ("true" === preferenceslist[0].enable_ping) && (e = !0), document.getElementById("show_commands_panel").checked != ("true" === preferenceslist[0].enable_commands_panel) && (e = !0)) : e = !0, language_save != language && (e = !0), e ? confirmdlg(translate_text_item("Data mofified"), translate_text_item("Do you want to save?"), process_preferencesCloseDialog) : closeModal("cancel") }
+    function closePreferencesDialog() { var e = !1; 0 != preferenceslist[0].length ? void 0 === preferenceslist[0].language || void 0 === preferenceslist[0].enable_camera || void 0 === preferenceslist[0].auto_load_camera || void 0 === preferenceslist[0].app_data || void 0 === preferenceslist[0].Pass_staff || void 0 === preferenceslist[0].Pass_admin ||void 0 === preferenceslist[0].product || void 0 === preferenceslist[0].enable_DHT || void 0 === preferenceslist[0].enable_lock_UI || void 0 === preferenceslist[0].enable_ping || void 0 === preferenceslist[0].enable_autoscroll || void 0 === preferenceslist[0].enable_verbose_mode || void 0 === preferenceslist[0].enable_commands_panel ? e = !0 : (document.getElementById("preferences_AppDataSave").value != preferenceslist[0].app_data && (e = !0), document.getElementById("preferences_Pass_Staff").value != preferenceslist[0].Pass_staff && (e = !0), document.getElementById("preferences_Pass_Admin").value != preferenceslist[0].Pass_admin && (e = !0),document.getElementById("dataProduct").value != preferenceslist[0].product && (e = !0), document.getElementById("enable_DHT").checked != ("true" === preferenceslist[0].enable_DHT) && (e = !0), document.getElementById("enable_lock_UI").checked != ("true" === preferenceslist[0].enable_lock_UI) && (e = !0), document.getElementById("enable_ping").checked != ("true" === preferenceslist[0].enable_ping) && (e = !0), document.getElementById("show_commands_panel").checked != ("true" === preferenceslist[0].enable_commands_panel) && (e = !0)) : e = !0, language_save != language && (e = !0), e ? confirmdlg(translate_text_item("Data mofified"), translate_text_item("Do you want to save?"), process_preferencesCloseDialog) : closeModal("cancel") }
     function process_preferencesCloseDialog(e) { "no" == e ? (translate_text(language_save), closeModal("cancel")) : SavePreferences() }
     function SavePreferences(e) {
       var appCode = document.getElementById("AppDataSave").value.replace(/"/g, '\\"');
       var productCode = document.getElementById("dataProduct").value.replace(/"/g, '\\"');
       var appCodeStaff = staffPass;
       var appCodeAdmin = adminPass;
-      var appCodeAutoStop = AutoStopPass;
 
       console.log("appCodeStaff: " + appCodeStaff);
       console.log("appCodeAdmin: " + appCodeAdmin);
-      console.log("appCodeAutoStop: " + appCodeAutoStop);
 
-      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","app_data":"' + appCode, t += '","product":"' + productCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '", "AutoStop":"' + appCodeAutoStop, t +=  '", "enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
+      if (http_communication_locked) alertdlg(translate_text_item("Busy..."), translate_text_item("Communications are currently locked, please wait and retry.")); else { preferenceslist = []; var t = '[{"language":"' + language; t += '","app_data":"' + appCode, t += '","product":"' + productCode, t += '","Pass_staff":"' + appCodeStaff, t +=  '","Pass_admin":"' + appCodeAdmin, t += '","enable_DHT":"' + document.getElementById("enable_DHT").checked, t += '","enable_lock_UI":"' + document.getElementById("enable_lock_UI").checked, t += '","enable_ping":"' + document.getElementById("enable_ping").checked, t += '","enable_files_panel":"' + document.getElementById("show_files_panel").checked, t += '","has_TFT_SD":"' + document.getElementById("has_tft_sd").checked, t += '","has_TFT_USB":"' + document.getElementById("has_tft_usb").checked, t += '","f_filters":"' + document.getElementById("preferences_filters").value, t += '","enable_autoscroll":"' + document.getElementById("preferences_autoscroll").checked, t += '","enable_verbose_mode":"' + document.getElementById("preferences_verbose_mode").checked, t += '","enable_commands_panel":"' + document.getElementById("show_commands_panel").checked + '"}]', preferenceslist = JSON.parse(t) }
       var a, n = new Blob([JSON.stringify(preferenceslist, null, " ")], { type: "application/json" }); browser_is("IE") || browser_is("Edge") ? ((a = n).name = preferences_file_name, a.lastModifiedDate = new Date) : a = new File([n], preferences_file_name); var r = new FormData; r.append("path", "/"), r.append("myfile[]", a, preferences_file_name), void 0 !== e && e ? SendFileHttp("/files", r) : SendFileHttp("/files", r, preferencesdlgUploadProgressDisplay, preferencesUploadsuccess, preferencesUploadfailed)
     }
     function preferencesdlgUploadProgressDisplay(e) { if (e.lengthComputable) { var t = e.loaded / e.total * 100; document.getElementById("preferencesdlg_prg").value = t, document.getElementById("preferencesdlg_upload_percent").innerHTML = t.toFixed(0), document.getElementById("preferencesdlg_upload_msg").style.display = "block" } }
@@ -6612,10 +6472,9 @@ function displaySelectedProduct() {
     function SDnavbar() { var e = "<table><tr>", t = SD_currentpath.split("/"), a = "", n = 1; for (e += "<td><button class='btn btn-primary'  onclick=\"SD_currentpath=''; SDSendCommand('list','all');\">/</button></td>"; n < t.length - 1;)e += "<td><button class='btn btn-link' onclick=\"SD_currentpath='" + (a += t[n] + "/") + "'; SDSendCommand('list','all');\">" + t[n] + "</button></td><td>/</td>", n++; return e += "</tr></table>" }
     function SDdispatchfilestatus(e) { var t = ""; if (t = translate_text_item("Total:") + " " + e.total, t += "&nbsp;&nbsp;|&nbsp;&nbsp;" + translate_text_item("Used:") + " " + e.used, t += "&nbsp;", t += "<meter min='0' max='100' high='90' value='" + e.occupation + "'></meter>&nbsp;" + e.occupation + "%", "Ok" != e.status && (t += "<br>" + translate_text_item(e.status)), document.getElementById("SD_status").innerHTML = t, document.getElementById("SD_status1").innerHTML = t, t = "", "/" != SD_currentpath) { var a = SD_currentpath.lastIndexOf("/", SD_currentpath.length - 2); t += "<tr style='cursor:pointer;' onclick=\"SD_currentpath='" + SD_currentpath.slice(0, a + 1) + "'; SDSendCommand('list','all');\"><td >" + get_icon_svg("level-up") + "</td><td colspan='4'> Up..</td></tr>" } e.SDfiles.sort(function (e, t) { return compareStrings(e.name, t.name) }); for (var n = 0; n < e.SDfiles.length; n++)"-1" != String(e.SDfiles[n].size) && (t += "<tr>", t += "<td  style='vertical-align:middle; color:#5BC0DE'>" + get_icon_svg("file") + "</td>", t += "<td  width='100%'  style='vertical-align:middle'><a href=\"SDdown?file=" + e.path + e.SDfiles[n].name + '" target=_blank><button  class="btn btn-link no_overflow">', t += e.SDfiles[n].name, t += "</button></a></td><td nowrap  style='vertical-align:middle'>", t += e.SDfiles[n].size, t += "</td><td width='0%'  style='vertical-align:middle'><button class=\"btn btn-danger btn-xs\" style='padding: 5px 5px 0px 5px;' onclick=\"SDDelete('" + e.SDfiles[n].name + "')\">", t += get_icon_svg("trash"), t += "</button></td></tr>"); for (n = 0; n < e.SDfiles.length; n++)"-1" == String(e.SDfiles[n].size) && (t += "<tr>", t += "<td style='vertical-align:middle ; color:#5BC0DE'>" + get_icon_svg("folder-close") + "</td>", t += "<td width='100%'  style='vertical-align:middle'><button class=\"btn btn-link\" onclick=\"SDselect_dir('" + e.SDfiles[n].name + "');\">", t += e.SDfiles[n].name, t += "</button></td><td>", t += "</td><td width='0%' style='vertical-align:middle'><button class=\"btn btn-danger btn-xs\" style='padding: 5px 4px 0px 4px;' onclick=\"SDDeletedir('" + e.SDfiles[n].name + "')\">", t += get_icon_svg("trash"), t += "</button></td></tr>"); document.getElementById("SD_file_list").innerHTML = t, document.getElementById("SD_file_list1").innerHTML = t, document.getElementById("SD_path").innerHTML = SDnavbar(), document.getElementById("SD_path1").innerHTML = SDnavbar() }
 
-    function refreshSD() {  document.getElementById("SD-select1").value = "", document.getElementById("uploadSDmsg").innerHTML = "", document.getElementById("uploadSDmsg1").innerHTML = "", document.getElementById("SD_file_name").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_file_name1").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_uploadbtn").style.display = 'none', document.getElementById("refreshSDbtn").style.display = 'none', document.getElementById("SD_select_files").style.display = 'none', SDSendCommand("list", "all") }
+    function refreshSD() { document.getElementById("SD-select").value = "", document.getElementById("SD-select1").value = "", document.getElementById("uploadSDmsg").innerHTML = "", document.getElementById("uploadSDmsg1").innerHTML = "", document.getElementById("SD_file_name").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_file_name1").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_uploadbtn").style.display = 'none', document.getElementById("refreshSDbtn").style.display = 'none', document.getElementById("SD_select_files").style.display = 'none', SDSendCommand("list", "all") }
 
-    function checkSDfiles() { var e = document.getElementById("SD-select1").files; if (document.getElementById("uploadSDmsg").style.display = 'none', 0 == e.length ? document.getElementById("SD_uploadbtn").style.display = 'none' : document.getElementById("SD_uploadbtn").style.display = "block", 0 < e.length) if (1 == e.length) document.getElementById("SD_file_name").innerHTML = e[0].name, document.getElementById("SD_file_name1").innerHTML = e[0].name; else { var t = translate_text_item("$n files"); document.getElementById("SD_file_name").innerHTML = t.replace("$n", e.length), document.getElementById("SD_file_name1").innerHTML = t.replace("$n", e.length) } else document.getElementById("SD_file_name").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_file_name1").innerHTML = translate_text_item("No file chosen") }
-
+    function checkSDfiles() { var e = document.getElementById("SD-select").files; if (document.getElementById("uploadSDmsg").style.display = 'none', 0 == e.length ? document.getElementById("SD_uploadbtn").style.display = 'none' : document.getElementById("SD_uploadbtn").style.display = "block", 0 < e.length) if (1 == e.length) document.getElementById("SD_file_name").innerHTML = e[0].name, document.getElementById("SD_file_name1").innerHTML = e[0].name; else { var t = translate_text_item("$n files"); document.getElementById("SD_file_name").innerHTML = t.replace("$n", e.length), document.getElementById("SD_file_name1").innerHTML = t.replace("$n", e.length) } else document.getElementById("SD_file_name").innerHTML = translate_text_item("No file chosen"), document.getElementById("SD_file_name1").innerHTML = translate_text_item("No file chosen") }
     function sendGyro(e) { var a = "/Gyro?State=" + e; console.log(a), SendGetHttp(a, sendGyrosuccess(e), sendGyrofailed(e)); if (e == "Stop") refreshSD(); }
     function sendGyrosuccess(e) { if (e == "Run") { document.getElementById("GyroStopBt").style.visibility = "visible", document.getElementById("GyroRunBt").style.visibility = "hidden" } if (e == "Stop") { document.getElementById("GyroStopBt").style.visibility = "hidden", document.getElementById("GyroRunBt").style.visibility = "visible" } }
     function sendGyrofailed(e) { if (e == "Run") { document.getElementById("GyroStopBt").style.visibility = "visible", document.getElementById("GyroRunBt").style.visibility = "hidden" } if (e == "Stop") { document.getElementById("GyroStopBt").style.visibility = "hidden", document.getElementById("GyroRunBt").style.visibility = "visible" } alertdlg(translate_text_item("Error"), "Error " + e), console.log("Error " + e) }

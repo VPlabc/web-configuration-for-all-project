@@ -336,6 +336,7 @@ float Moto::VoltUpdate() {
 }
 void Moto::SetTime(uint8_t ss,uint8_t mm, uint8_t hh, uint8_t dd,uint8_t mo,int16_t year)
 {
+  DS3231_set(ss,mm,hh,dd,mo,year);
   GetTime();
   //if(mins != mm && hours != hh && Days != dd && Months != mo && Years != year){
     struct ts t;

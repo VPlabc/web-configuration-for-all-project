@@ -1104,15 +1104,16 @@ void handleSDCardFileList()
     }
     file = root.openNextFile();
   }
+  
     jsonfile+="],";
     jsonfile+="\"path\":\"" + path + "\",";
     jsonfile+="\"status\":\"" + Status + "\",";
     size_t totalBytes;
     size_t usedBytes;
-    totalBytes = SD.totalBytes();
-    usedBytes = SD.usedBytes();
-    jsonfile+="\"total\":\"" + CONFIG::formatBytes(totalBytes) + "\",";
-    jsonfile+="\"used\":\"" + CONFIG::formatBytes(usedBytes) + "\",";
+    totalBytes = SD.totalBytes() / (1024 * 1024);
+    usedBytes = SD.usedBytes() / (1024 * 1024);
+    jsonfile+="\"total\":\"" + String(totalBytes) + "\",";
+    jsonfile+="\"used\":\"" + String(usedBytes) + "\",";
     jsonfile.concat(F("\"occupation\":\""));
     jsonfile+= CONFIG::intTostr(100*usedBytes/totalBytes);
     jsonfile+="\"";

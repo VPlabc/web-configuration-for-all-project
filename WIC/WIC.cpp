@@ -156,7 +156,7 @@ CONFIG conf;
   bool SetupDone = false;
 
 byte RunMode = 0;
-bool looklineDebug = false;
+bool looklineDebug = true;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef TIMER_INTER_FEATURES
 ////////////////////////////////////////// TIMER INTERUPT ///////////////////////////////////
@@ -352,7 +352,7 @@ CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
 #endif// lookline_ui
 #ifdef PLC_MASTER_UI
 CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
-RunMode =1;
+// RunMode =1;
 if(RunMode == 2){
 #endif//PLC_MASTER_UI
             // setup wifi according settings
@@ -373,7 +373,7 @@ if(RunMode == 2){
         }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif// lookline_ui
         #ifdef PLC_MASTER_UI
-        wifi_config.Setup(false, LED_STATUS, 1);}else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        if(!wifi_config.Setup(false, LED_STATUS, 1)){wifi_config.Setup(true, LED_STATUS, 1);}}else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif//PLC_MASTER_UI
             delay(100);
             // setup servers
@@ -736,7 +736,7 @@ void WIC::process(){
             uint32_t now_fw = millis();
             if (now_fw - last_Loop5S_update > (5 * 1000))
             {   last_Loop5S_update = now_fw;
-                if(looklineDebug)LOGLN(".");
+                // if(looklineDebug)LOGLN(".");
 #ifdef Switch_UI
                 light.LoadData();       
 #ifdef ServerUpdateFW
