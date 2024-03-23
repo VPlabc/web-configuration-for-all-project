@@ -759,7 +759,7 @@ typedef enum {
 #ifdef PLC_MASTER_UI
 #define NodeIoT
 #define TIMESTAMP_FEATURE
-#define MQTT_USE
+// #define MQTT_USE
 
 // #define MCP_USE
 // #define USE_LORA

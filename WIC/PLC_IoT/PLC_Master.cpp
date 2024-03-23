@@ -121,6 +121,24 @@ byte ProductName[4][40];
 bool WriteUpdate = 0;//bao cho ct biet la web co write xuong
 uint16_t WriteUpAddr = 0;//dia chi khi web write
 
+String Webmessage = "";
+void PLC_MASTER::SocketRecive(uint8_t *Payload){
+    Webmessage = String((char*)Payload);
+    if (Webmessage.indexOf("data:") >= 0) {
+      String dataRevice = Webmessage.substring(5);
+      // Serial.println("json:" + dataRevice);
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, dataRevice);
+        JsonObject obj = doc.as<JsonObject>();
+        //{"id":1,"type":0,"week":0,"date":"2024-03-15"}
+        String date = obj["date"];byte type = obj[String("type")];int id = obj[String("id")];
+        date.replace("-", "_");
+        String FileName = "/" + String(id) + "_DataLog_" + date + ".csv";
+        // LOGLN("file name: " + FileName);
+        DLGreadFile(SD, FileName, type);
+    }
+}
+
 
 void PLC_MASTER::SetLoRaValue(){
 CONFIG::SetLoRaValue();
@@ -225,9 +243,10 @@ Mesh_setup();
   LOGLN("Setup PLC done");///////
 
 }  
-void PLC_MASTER::readfile(){
+String PLC_MASTER::readfile(){
     Serial.println("Read file");
-  }
+
+}
 
 
 bool WebSendata = false;  
@@ -264,6 +283,10 @@ if(UpdateFirmware==false){
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
+
+#ifdef MeshNetwork
+Mesh_loop();
+#endif//#ifdef MeshNetwork
   //  if(connectWebSocket == 1 && WebSendata == 0){
     PLCModbusCom.modbus_loop(MBRole);//}
    
@@ -446,7 +469,7 @@ void sendInfo() {
   info_data["baud"] = baudRate;
   char   b[150];
   serializeJson(info_data, b); 
-  socket_server->broadcastTXT(b);;
+  socket_server->broadcastTXT(b);
 }
 
 void PLC_MASTER::connectWeb(byte connected){

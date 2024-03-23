@@ -29,8 +29,9 @@ void connectWeb(byte connected);
 void SetLoRaValue();
 void setup();
 void loop();
-void readfile();
+String readfile();
 void UpdateFW(bool UDFW);
+void SocketRecive(uint8_t *Payload);
 
 };
 extern PLC_MASTER PLC_master;

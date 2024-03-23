@@ -1,5 +1,7 @@
 #include "Arduino.h"
 // #include "MeshWifi.h"
+#include "webinterface.h"
+WEBINTERFACE_CLASS PLCweb_interface;
 #include <esp_now.h>
 #include <WiFi.h>
 #include "ESPAsyncWebServer.h"
@@ -14,6 +16,7 @@
 // const char* password = "12345678";
 // const char* ssid = "iSoft";
 // const char* password = "i-soft@123";
+AsyncWebSocket PLCws("/ws");
 
 esp_now_peer_info_t MeshSlave;
 int chan; 
@@ -55,8 +58,16 @@ struct_message incomingReadings;
 struct_message outgoingSetpoints;
 struct_pairing MSpairingData;
 
+float Vsolar[100];
+float Asolar[100];
+float Vmain[100];
+float Amain[100];
+long lastTime[100];
+
 unsigned long SentlastEventTime = 0;
+unsigned long SentlastEventTime1 = 0;
 void SaveData(String NameFile, String Data);
+void SendtoWeb();
 
 String DataLogStr = "";
 // ---------------------------- esp_ now -------------------------
@@ -96,6 +107,9 @@ bool addPeer(const uint8_t *peer_addr) {      // add pairing
   }
 } 
 byte MeshResent = 0;
+String message = "";
+
+
 // callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("Last Packet Send Status: ");
@@ -104,12 +118,15 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.println();
   if (status == ESP_NOW_SEND_SUCCESS && (outgoingSetpoints.energyMoving > 0 )){Serial.println("Success");SentlastEventTime = millis();MeshResent++;
   DataLogStr = String(incomingReadings.VMT) + "," + String(incomingReadings.AMT) + "," + String(incomingReadings.VMain) + "," + String(incomingReadings.AMain);
-  SaveData("DataLog_" , DataLogStr);outgoingSetpoints.energyMoving = 0;
+  SaveData(String (incomingReadings.id) + "_DataLog_" , DataLogStr);outgoingSetpoints.energyMoving = 0;
   }
   MeshResent++;if (MeshResent>5){MeshResent = 0;Serial.println("Done");outgoingSetpoints.energyMoving = 0;}
 }
 
-
+/// @brief Mesh recive Data
+/// @param mac_addr 
+/// @param incomingData 
+/// @param len 
 void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) { 
   Serial.print(len);
   Serial.print(" bytes of data received from : ");
@@ -127,15 +144,23 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) 
     // root["energyStat"] = incomingReadings.energyActive;
     // root["distanceMov"] = String(incomingReadings.distanceMoving);
     // root["energyMov"] = String(incomingReadings.energyMoving);
+    Vsolar[incomingReadings.id] = incomingReadings.VMT ;
+    Asolar[incomingReadings.id] = incomingReadings.AMT ;
+    Vmain[incomingReadings.id] = incomingReadings.VMain ;
+    Amain[incomingReadings.id] = incomingReadings.AMain ;
     root["state"] = String(incomingReadings.state);
     root["rssi"] = String(incomingReadings.rssi);
     root["vmt"] = String(incomingReadings.VMT );
     root["amt"] = String(incomingReadings.AMT );
     root["vmain"] = String(incomingReadings.VMain );
     root["amain"] = String(incomingReadings.AMain );
+    root["times"] = String(timeClient.getEpochTime()-lastTime[incomingReadings.id]);
     serializeJson(root, payload);
     Serial.print("event send :");
     serializeJson(root, Serial);
+    lastTime[incomingReadings.id] = timeClient.getEpochTime();
+
+    socket_server->sendTXT(ESPCOM::current_socket_id, payload.c_str());
     // events.send(payload.c_str(), "new_readings", millis());
     Serial.println();
     outgoingSetpoints.energyMoving = incomingReadings.id;//recive done send callback to ID
@@ -199,8 +224,7 @@ void Mesh_setup() {
   Serial.print("Wi-Fi Channel: ");
   Serial.println(WiFi.channel());
 
-  initESP_NOW();
-  
+  initESP_NOW(); 
 //   // Start Web server
 //   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
 //     request->send_P(200, "text/html", index_html);
@@ -237,4 +261,76 @@ void Mesh_loop() {
       Sentcount++;if(Sentcount>5){Sentcount = 0;outgoingSetpoints.energyMoving = 0;}
     }
   }
+
+  static const unsigned long EVENT_INTERVAL_MS1 = 5000;
+  if ((millis() - SentlastEventTime1) > EVENT_INTERVAL_MS1) {
+      SendtoWeb();
+    //   events.send("ping",NULL,millis());
+      SentlastEventTime1 = millis();
+  }
+}
+
+
+int countEventsSave = 0;
+void SendtoWeb(){
+    StaticJsonDocument<1000> root;
+    String payload; 
+    root["id"] = 1;
+    // root["distanceStat"] = incomingReadings.distanceActive;
+    // root["energyStat"] = incomingReadings.energyActive;
+    // root["distanceMov"] = String(incomingReadings.distanceMoving);
+    // root["energyMov"] = String(incomingReadings.energyMoving);
+    root["state"] = String(incomingReadings.state);
+    root["rssi"] = String(incomingReadings.rssi);
+    root["vmt"] = String(Vsolar[1]);
+    root["amt"] = String(Asolar[1]);
+    root["vmain"] = String(Vmain[1]);
+    root["amain"] = String(Amain[1]);
+    lastTime[1] = timeClient.getEpochTime();
+    root["times"] = String(timeClient.getEpochTime()-lastTime[1]);
+
+    serializeJson(root, payload);
+    // Serial.print("event send :");
+    // serializeJson(root, Serial);
+    // Serial.println("________________________________________________________________");
+    // Serial.println();
+
+  
+  socket_server->broadcastTXT(payload.c_str());
+    payload =""; 
+
+    root["id"] = incomingReadings.id = 2;
+    // root["distanceStat"] = incomingReadings.distanceActive;
+    // root["energyStat"] = incomingReadings.energyActive;
+    // root["distanceMov"] = String(incomingReadings.distanceMoving);
+    // root["energyMov"] = String(incomingReadings.energyMoving);
+
+    root["state"] = String(incomingReadings.state);
+    root["rssi"] = String(incomingReadings.rssi);
+    root["vmt"] = String(Vsolar[2]);
+    root["amt"] = String(Asolar[2]);
+    root["vmain"] = String(Vmain[2]);
+    root["amain"] = String(Amain[2]);
+    root["times"] = String(timeClient.getEpochTime()-lastTime[2]);
+    serializeJson(root, payload);
+    // Serial.print("event 2 send :");
+    // serializeJson(root, Serial);
+    // Serial.println("________________________________________________________________");
+    // Serial.println();
+countEventsSave++;if(countEventsSave > 10){countEventsSave = 0;
+    incomingReadings.rssi = random(50,200);
+    incomingReadings.VMT  = random(2.9,4.2);
+    incomingReadings.AMT = random(0, 10.0);
+    incomingReadings.VMain = random(2.9,4.2);
+    incomingReadings.AMain = random(0,10.0);
+    Vsolar[incomingReadings.id] = incomingReadings.VMT ;
+    Asolar[incomingReadings.id] = incomingReadings.AMT ;
+    Vmain[incomingReadings.id] = incomingReadings.VMain ;
+    Amain[incomingReadings.id] = incomingReadings.AMain ;
+  DataLogStr = String(incomingReadings.VMT) + "," + String(incomingReadings.AMT) + "," + String(incomingReadings.VMain) + "," + String(incomingReadings.AMain);
+  SaveData(String (incomingReadings.id) + "_DataLog_" , DataLogStr);outgoingSetpoints.energyMoving = 0;
+  lastTime[2] = timeClient.getEpochTime();
+}
+  socket_server->broadcastTXT(payload.c_str());
+    // socket_server->sendTXT(ESPCOM::current_socket_id, payload.c_str());
 }

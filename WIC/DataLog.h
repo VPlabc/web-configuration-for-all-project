@@ -18,7 +18,9 @@ char sbuf[MAX_DATA_LENGTH + 1];
 byte hoursLog,minsLog,secsLog;
 String dateLog,dayLog,monthLog,yearLog;
 String RealTime = "20_03_24";
-
+enum{Day,Week,Month,Year};
+String ListData[30];
+void DLGreadFile(fs::FS &fs, String path, byte type);
 void writeFile(fs::FS &fs, String path, String message);
 void appendFile(fs::FS &fs, String path, String message);
 
@@ -33,12 +35,13 @@ String uptime() {
 
 bool sd_card_found = false;
 void SaveData(String NameFile, String Data){
-    time_t nows = timeClient.getEpochTime();
+    long nows = timeClient.getEpochTime();
     timeClient.update();
-    time_t Time = time(nullptr);
+    // time_t Time = time(nullptr);
     struct tm  tmstruct;
     if(!getLocalTime(&tmstruct)){LOGLN("Failed to obtain time");return;}
-    RealTime = String(tmstruct.tm_mday-1) + "_" + String(tmstruct.tm_mon+1) + "_" + String((tmstruct.tm_year-100)+2000);
+    String month = "";if(tmstruct.tm_mon+1 < 10){month = "0" + String(tmstruct.tm_mon+1);}
+    RealTime = String(tmstruct.tm_mday-1) + "_" + month + "_" + String((tmstruct.tm_year-100)+2000) ;
     String Filename = "/" + NameFile + RealTime + ".csv";
     LOGLN("File name: " + Filename + "| " + RealTime + " | " + nows + "," + String(Data));
 
@@ -53,7 +56,50 @@ void SaveData(String NameFile, String Data){
         appendFile(SD, Filename, "\n");
         //saveMemoryToFile();
     }
+//  String(tmstruct.tm_hour)+':'+String(tmstruct.tm_min)
+    if(tmstruct.tm_min == 0){//day report
+      String Filename = "/" + NameFile + RealTime + "_day.csv";
+    LOGLN("File name: " + Filename + "| " + RealTime + " | " + nows + "," + String(Data));
+
+    if (!SD.begin(SDCard_CS)) {sd_card_found = false;} else {sd_card_found = true;LOGLN("SD Init ok");}
+      //LOG ("saveMemoryToFile > SD Card found:" + String(SDFunc.sd_card_found) + '\n');
+      //LOG ("Time:" + String(timeClient.getEpochTime()) + '\n');
+      if (sd_card_found) {
+          if(!SD.exists(Filename)){writeFile(SD, Filename, Data);LOGLN("File Day Created");}
+          else{appendFile(SD, Filename, Data);}
+          appendFile(SD, Filename, ",");
+          //saveMemoryToFile();
+      }
+    }
 }
+long countData = 0;
+long spaceData = 0;
+void DLGreadFile(fs::FS &fs, String path, byte type){
+  // if (!SD.begin(SDCard_CS)) {sd_card_found = false;} else {sd_card_found = true;LOGLN("SD Init ok");}
+  // Serial.println("Reading file: " + path);
+  File file = fs.open(path);
+  if(!file){LOG ("Failed to open file for reading");return;}
+  Serial.println("Read from file: ");
+  String ReadIn ="";
+  String TimeIn ="";
+  String RowData ="";
+  char charIn = 0;
+  while(file.available()){
+    charIn = (char)file.read();
+    if(charIn == '\n' || charIn == ','){
+      if(ReadIn.length() > 4){TimeIn += ReadIn + ",";countData++;}
+      else{ RowData+=  ReadIn + ",";}
+      ReadIn = "";}
+    else{ReadIn += charIn;}
+  }//lay a| lam ki tu phan biet
+  String PushData = "a|[{\"data\":\""+RowData + "\",\"time\":\"" + TimeIn + "\"}]|";
+  LOGLN("Load " + String(countData) + " data");
+  socket_server->broadcastTXT(PushData.c_str());
+  PushData = "{\"message\":\"Total" + String(countData) + " records\"}";
+  socket_server->broadcastTXT(PushData.c_str());PushData = "";
+  file.close();
+}
+
 void writeFile(fs::FS &fs, String path, String message){
 //   Serial.printf("Writing file: %s\n", path);
 
@@ -79,7 +125,7 @@ void appendFile(fs::FS &fs, String path, String message){
     return;
   }
   if(file.print(message)){
-    //   LOG ("Message appended");
+    // LOG ("data appended");
   } else {
     LOG ("Append failed");
   }

@@ -157,6 +157,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
     }
     break;
     case WStype_TEXT:
+    #ifdef PLC_MASTER_UI
+    webPLC.SocketRecive(payload);
+    #endif//PLC_MASTER_UI
 #ifdef Switch_UI    
             lights.reciverDataFromWeb(payload);
 #endif//Switch_UI
