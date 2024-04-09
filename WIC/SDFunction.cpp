@@ -302,27 +302,27 @@ void SDFunction::handleRetrySD() {
   }
 }
 
-void SDFunction::saveMemoryToFile() {
+void SDFunction::saveMemoryToFile(uint8_t sensorssaved, uint8_t *buf, size_t size) {
 
 //LOG ("saveMemoryToFile: " + String(SDFunction::sd_card_found) +"\n");
   if (SDFunction::sd_card_found == true) {
     if (SD.exists("/memory.bin")) {SD.remove("/memory.bin");}
     File file = SD.open("/memory.bin", FILE_WRITE);
     if (file) {
-      file.write(sensors_saved);
-      for (int i = 0; i < sensors_saved; i++) file.write((uint8_t *)&sensors[i], sizeof(struct sensor_data));
+      file.write(sensorssaved);
+      for (int i = 0; i < sensorssaved; i++) file.write((uint8_t *)&buf[i], size);
       file.close();
     }
   }
 }
 
-void SDFunction::readMemoryFromFile() {
+void SDFunction::readMemoryFromFile(uint8_t sensorssaved, uint8_t *buf, size_t size) {
 //LOG ("readMemoryFromFile: " + String(SDFunction::sd_card_found) + "\n");
   if (SDFunction::sd_card_found == true) {
     if (SD.exists("/memory.bin")) {
       File file = SD.open("/memory.bin", FILE_READ);
-      sensors_saved = file.read();//LOG (String(sensors_saved) + " Device Exists\n");
-      for (int i = 0; i <sensors_saved; i++) file.read((uint8_t *)&sensors[i], sizeof(struct sensor_data));
+      sensorssaved = file.read();//LOG (String(sensors_saved) + " Device Exists\n");
+      for (int i = 0; i <sensorssaved; i++) file.read((uint8_t *)&buf[i], size);
       file.close();
     }
     else{

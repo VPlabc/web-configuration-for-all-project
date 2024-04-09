@@ -1,8 +1,7 @@
 // #22012024 UPDATE NEW
-// #define SHT
-#define MeshNetwork
-#define DataLog
+// #27032024 UPDATE PLC MASTER // off MeshNetwork va DataLog
 
+// #undef MQTT_USE
 #include "config.h"
 #ifdef PLC_MASTER_UI
 #define ModbusCom
@@ -37,18 +36,18 @@ DNSServer LooklinednsServer;
 const byte DNS_PORT = 53;
 #endif
 
+// #include "time.h"
+// #include "TimeLib.h"
+// #include <WiFiUdp.h>
+// #include <NTPClient.h>
+// WiFiUDP LogntpUDP;
+// NTPClient timeClient(LogntpUDP);
+
 #include "SDFunction.h"
 SDFunction sdFunction;
-#include "RealTimeClock.h"
+// #include "RealTimeClock.h"
 
-#ifdef DataLog
-#include "DataLog.h"
-#endif//DataLog
 
-#ifdef MeshNetwork
-// #include "MeshWifi.h"
-#include "Mesh.h"
-#endif
 
 #ifdef MQTT_USE
 #include "MQTTcom.h"
@@ -61,7 +60,16 @@ MQTTCOM mqttPLC;
 #endif
 bool mqttWsConnected = false;
 bool mqttConnected = false;
+byte ConnectMQTT = 0;//Run MQTT
 #endif//
+
+#ifdef MeshNetwork
+#include "Mesh.h"
+#endif
+
+// #ifdef DataLog
+// #include "DataLog.h"
+// #endif//DataLog
 
 #ifdef SHT
 #include <SHT3x.h>
@@ -87,6 +95,8 @@ DataTransfer plcDataTrans;
 //   #include <SimpleModbusSlave.h>
 //   SimpleModbusSlave NodeSlave;
 
+
+
 #define             FRMW_VERSION         "1.2236"
 #define             PRGM_VERSION         "1.0"
 ///////////////////////// Modbus Role //////////////////////////
@@ -94,7 +104,7 @@ enum {slave,master};
 //////////////// registers of your slave ///////////////////
 
 
-unsigned long EVENT_INTERVAL_MS1 = 3000;
+unsigned long EVENT_INTERVAL_MS1 = 1000;
 unsigned long REFRESH_INTERVAL_MS = 600000;
 #ifdef MASTER_MODBUS
 byte MBRole = master;
@@ -105,6 +115,7 @@ byte CharterQuality = 40;
 byte connectWebSocket = 0;
 byte IDList[255];
 uint16_t Register[4][200];
+float FRegister[200];
 byte ProductName[4][40];
 // int16_t SlaveParameter[HOLDING_REGS_SIZE];
 // int16_t HOLDING_REGS_CoilData[HOLDING_REGS_SIZE];//1-9999
@@ -118,10 +129,24 @@ byte ProductName[4][40];
   uint8_t M1 = 0;
   byte ComMode = LoRa;
 
+
+
 bool WriteUpdate = 0;//bao cho ct biet la web co write xuong
 uint16_t WriteUpAddr = 0;//dia chi khi web write
+unsigned long lastEventTimeReset = millis();
 
 String Webmessage = "";
+// int NodeID[100];
+float reform_uint16_2_float32(uint16_t u1, uint16_t u2)
+{  
+  uint32_t num = ((uint32_t)u1 & 0xFFFF) << 16 | ((uint32_t)u2 & 0xFFFF);
+    float numf;
+    memcpy(&numf, &num, 4);
+    return numf;
+}
+
+int PLC_MASTER::getSenSorSaved(){return 0;};
+
 void PLC_MASTER::SocketRecive(uint8_t *Payload){
     Webmessage = String((char*)Payload);
     if (Webmessage.indexOf("data:") >= 0) {
@@ -131,11 +156,19 @@ void PLC_MASTER::SocketRecive(uint8_t *Payload){
         deserializeJson(doc, dataRevice);
         JsonObject obj = doc.as<JsonObject>();
         //{"id":1,"type":0,"week":0,"date":"2024-03-15"}
-        String date = obj["date"];byte type = obj[String("type")];int id = obj[String("id")];
+        String date = obj["date"];byte type = obj[String("type")];byte inhour = obj[String("houre")];int id = obj[String("id")];
         date.replace("-", "_");
-        String FileName = "/" + String(id) + "_DataLog_" + date + ".csv";
+        String FileName = "";
+        if(type == 0){FileName = "/" + String(id) + "_DataLog_" + date + ".csv";}
+        if(type == 1){FileName = "/" + String(id) + "_DataLog_" + date + "_day.csv";}
         // LOGLN("file name: " + FileName);
-        DLGreadFile(SD, FileName, type);
+#ifdef DataLog
+        String PushData = COMMAND::get_dataLog(SD, FileName, type, inhour);
+        // LOGLN("Load:\n " + PushData);
+        socket_server->broadcastTXT(PushData.c_str());
+        if(mqttConnected && WiFi.status() == WL_CONNECTED){mqttPLC.mqttPublish(PushData, "/isoft_sensor/updateChart");}
+        PushData = "";
+#endif//DataLog
     }
 }
 
@@ -224,39 +257,60 @@ void PLC_MASTER::setup(){
   Sensor.Begin();
 #endif//#ifdef SHT
 #ifdef MQTT_USE
+  LOGLN("MQTT Init ________________________________________");
 mqttPLC.setup();
 #endif//MQTT_USE
-#ifdef TIMESTAMP_FEATURE
-  LOGLN("Time Init ________________________________________");
-// SetupTime();
-updateTime();
-  LOGLN("File Init ________________________________________");
-  if(!SD.begin(SDCard_CS)){LOG ("Card Mount Failed\n");return; }
-  String FileName = "DataLog_20_03_24.csv";
-  if(!SD.exists(FileName)){writeFile(SD, FileName, "Creat file");LOGLN("File Created ");}
-
-#endif////////////////
+if(!SD.begin(SDCard_CS)){LOG ("Card Mount Failed\n");return; }
 #ifdef MeshNetwork
 Mesh_setup();
 #endif//#ifdef MeshNetwork
   LOGLN("______________________________________________________");
   LOGLN("Setup PLC done");///////
+  
+  //   NetworkDatas.ipAdress = "1.2.3.4";
+  //   NetworkDatas.getway = "192.168.1.1";
+  //   NetworkDatas.subnet = "255.255.255.0";
+  //   NetworkDatas.primaryDNS = "8.8.8.8";
+  //   NetworkDatas.secondaryDNS = "8.8.4.4";
+  //   NetworkDatas.EthPort = "502";
+  //   NetworkDatas.MQhost = "test.mosquitto.org";
+  //   NetworkDatas.MQport = "1883";
+  //   NetworkDatas.MQuser = "";
+  //   NetworkDatas.MQpass = "";
+  //   NetworkDatas.wssid = "VULETECH";
+  //   NetworkDatas.wpass = "vuletech123";
+  // saveLocalStorage(NetworkDatas);
 
+    
+  // connectWebSocket = 1;
 }  
 String PLC_MASTER::readfile(){
     Serial.println("Read file");
 
 }
 
-
+void PLC_MASTER::PushMQTT(String Payload, String Topic){
+  #ifdef MQTT_USE
+  if(mqttConnected && WiFi.status() == WL_CONNECTED){mqttPLC.mqttPublish(Payload, Topic);}
+  #endif//MQTT
+  }
 bool WebSendata = false;  
 bool UpdateFirmware = false;
 unsigned long lastRefresh1 = millis();
 void PLC_MASTER::UpdateFW(bool UDFW){UpdateFirmware = UDFW;static bool once=true;if(once){once = false;LOGLN("disable for update fw")}}
 
+
+
+
+
+
+
+
+
 bool onceInfo = true;
 void PLC_MASTER::loop(){// LOG("Loop");
 //Refresh wifi
+
 if(UpdateFirmware==false){
   
   if(connectWebSocket == 0){
@@ -279,7 +333,7 @@ if(UpdateFirmware==false){
   #ifdef MQTTSSL
      if(WiFi.status() == WL_CONNECTED)webSocket.loop();
   #else
-  if(connectWebSocket == 1 || connectWebSocket == 2)mqttPLC.loop();
+  if(ConnectMQTT == 1)mqttPLC.loop();
   #endif
 // webSocket.sendEVENT("hello");
 #endif//MQTT_USE
@@ -295,7 +349,7 @@ Mesh_loop();
   //   // LOGLN( PLCModbusCom.getModbusupdateData());
   //   PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
   // }
-#ifdef SHT
+
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
 static const unsigned long EVENT_INTERVAL_MS = 1000;
@@ -305,6 +359,7 @@ if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
 #ifdef MQTT_USE
 mqttConnected = mqttPLC.connect_state();
 if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSocket == 2)){
+#ifdef SHT
   Sensor.UpdateData();
   Serial.print("Temperature: ");
   Serial.print(Sensor.GetTemperature());
@@ -333,32 +388,56 @@ if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSock
   time_t now = time(nullptr);
   sensor += ",\"createAt\":\"" + String(ctime(&now));
   sensor += "\"}";
-  LOGLN(sensor);
+
+#endif//#ifdef SHT
+  // String sensor = "";
+
+  // LOGLN(sensor);
   #ifdef MQTTSSL
     if(!mqttWsConnected && WiFi.status() == WL_CONNECTED){webSocket.sendTXT(sensor);}
     #else
-    if(mqttConnected && WiFi.status() == WL_CONNECTED){mqttPLC.mqttPublish(sensor);}
+    // if(mqttConnected && WiFi.status() == WL_CONNECTED){mqttPLC.mqttPublish(sensor, "/isoft_sensor/update");}
   #endif
 
   }
   #endif//MQTT_USE
 }
-#endif//#ifdef SHT
+
+#if defined( VOM) || defined (DataLog)//Reset after 30s
+if (((millis() - lastEventTimeReset) > 60000 ) && connectWebSocket == 0 && WiFi.status() != WL_CONNECTED) {LOGLN("Reset after 60s");lastEventTimeReset = millis();ESP.restart();}
+#endif//VOM
+
 
 static unsigned long lastEventTime1 = millis();
 if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = millis();
-
-    time_t Nows = timeClient.getEpochTime();
-    timeClient.update();
-    time_t Times = time(nullptr);
+#ifdef DataLog
+    // time_t Nows = timeClient.getEpochTime();
+    // timeClient.update();
+    // time_t Times = time(nullptr);
+#endif//DataLog
     // LOGLN("Data Log: " + String(ctime(&Times)) + " | " + String(Nows));
-  #if defined(MQTTSSL) && defined(MQTT_USE)
+  #if defined(MQTTSSL) || defined(MQTT_USE)
   if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
   #endif///////////////////////////// ID Slave ////////// Type ////////////// Address ////////////// Data  //////////////////////
+#if defined(PLC_OEE) || defined(RFData)
+//View WORD   
 for(int i = 0 ; i < 120 ; i++) {Register[0][i] = 1;Register[2][i] = 2;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
+#endif//PLC_master
+#ifdef VOM
+for(int i = 0 ; i < 120 ; i++) {Register[0][i] = 1;Register[2][i] = 4;Register[1][i] =  i; FRegister[i] =  reform_uint16_2_float32(PLCModbusCom.holdingRegisters[i*2],PLCModbusCom.holdingRegisters[i*2+1]); }
+#endif//VOM
 // for(int i = 100 ; i < 200 ; i++) {Register[0][i] = 1;Register[2][i] = 1;Register[1][i] =  i;Register[3][i] = PLCModbusCom.getInputRegs()[i-100]; }
 RespondChar decod;byte charterOffset = 43;
 
+//clear array
+for(int j = 0 ; j < 4 ; j++) {
+  for(int i = 0 ; i < CharterQuality/2 ; i++) {
+    ProductName[j][i*2] = 0;
+    ProductName[j][i*2+1] = 0;
+  }
+  // LOGLN();
+}
+// Product name 
 for(int j = 0 ; j < 4 ; j++) {
   for(int i = 0 ; i < CharterQuality/2 ; i++) {
     decod = plcDataTrans.DecodeWord(PLCModbusCom.holdingRegisters[(charterOffset+i)+(j*(CharterQuality/2))]);
@@ -367,6 +446,41 @@ for(int j = 0 ; j < 4 ; j++) {
   }
   // LOGLN();
 }
+#ifdef VOM
+static String evn[17]={"Frequency","VoltagePhase1","CurrentPhase1","ActivePowerPhase1","PowerFactorPhase1","VoltagePhase2","CurrentPhase2","ActivePowerPhase2","PowerFactorPhase2","VoltagePhase3","CurrentPhase3","ActivePowerPhase3","PowerFactorPhase3","VoltageTotal","CurrentTotal","ActivePowerTotal","PowerFactorTotal"};
+//Frequency[7] 
+static byte ValuePosition[17] = {6,0,1,2,5,8,8,8,8,8,8,8,8,0,1,2,5};
+//VOM
+
+#ifdef MQTT_USE
+    StaticJsonDocument<2000> root;
+    String payload; 
+    timeClient.update();
+      root["msg"]["title"] = "Monitor station";
+      root["msg"]["sender"] = "Line1";
+      root["msg"]["Datalogger"] = "Datalogger";
+      root["msg"]["date"] = timeClient.getEpochTime();
+      root["content"]["controller"]["operation_mode"] = "auto";
+      root["content"]["tanks"][0] = "";
+      for(byte c = 0 ; c < 17 ; c++){
+        root["content"]["devices"][0]["solution"][c]["env"] = evn[c];
+        root["content"]["devices"][0]["solution"][c]["value"] =  FRegister[ValuePosition[c]];
+      }
+      root["content"]["devices"][0]["serial"] = "iSoft.NidecC200";
+      root["content"]["devices"][0]["value"] = "ON";
+      
+      serializeJson(root, payload);
+      // LOG("event send :");
+      // serializeJson(root, Serial);
+      // LOGLN("________________________________________________________________");
+      // LOGLN();
+      mqttConnected = mqttPLC.connect_state();
+      
+      // LOGLN("MQTT connected: " + String(mqttConnected));
+      PLC_MASTER_PROG.PushMQTT(payload, "/datalogger/shiratechPoE/stations/Line1/monitor");
+      // PLC_MASTER_PROG.PushMQTT("Done", "/datalogger/shiratechPoE/stations/Line1/monitor");
+#endif//
+#endif//#ifdef VOM
 
 String json = "{";
 //-------------------------
@@ -379,7 +493,12 @@ json += Register[1][0];
 json += ",\"RegType\":";
 json += Register[2][0];
 json += ",\"RegValue\":";
+#if defined(PLC_OEE) || defined(RFData)
 json += Register[3][0];
+#endif// PLC_OEE
+#ifdef VOM
+json += FRegister[0];
+#endif// VOM
 json += "}";
 for(int i = 1 ; i < 120 ; i++){
 json += ",{\"RegID\":";
@@ -389,7 +508,12 @@ json += Register[1][i];
 json += ",\"RegType\":";
 json += Register[2][i];
 json += ",\"RegValue\":";
+#if defined(PLC_OEE) || defined(RFData)
 json += Register[3][i];  
+#endif// PLC_OEE
+#ifdef VOM
+json += FRegister[i];  
+#endif// VOM
 json += "}";
 }
 json += "],\"RegsList\":[";//  "state":
@@ -440,6 +564,22 @@ json += "]}";
 }
 // PLCModbusCom.modbus_read_update(HOLDING_REGS_AnalogOutData);
 
+    static unsigned long previousMillisFW = 0; // Lưu thời gian kể từ khi bắt đầu chương trình hoặc kể từ khi hành động cuối cùng được thực hiện.
+    static const long intervalFW = 60000; // Khoảng thời gian cần chờ (ví dụ: 1000 milliseconds = 1 giây).
+      if (millis() - previousMillisFW >= intervalFW) {
+        // Nếu đã đủ thời gian chờ, thực hiện hành động ở đây.
+        if(WiFi.status() == WL_CONNECTED && (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA)){
+
+            // if(UDFWLookLine.FirmwareVersionCheck() == 1){LOGLN("Checking firmware version")
+            //   String s = "STATUS: New version";
+            //   // if(Debug)
+            //   LOGLN(s);
+            //   // newFWdetec = true;
+            // }
+          }
+        previousMillisFW = millis(); // Lưu lại thời gian này để so sánh trong lần lặp tiếp theo.
+      }
+    
  }//UpdateFirmware
 }
 
@@ -467,16 +607,27 @@ void sendInfo() {
   int baudRate = 0;
   if (!CONFIG::read_buffer (EP_BAUD_RATE,  (byte *) &baudRate, INTEGER_LENGTH)) {LOG ("Error read baudrate\r\n") }
   info_data["baud"] = baudRate;
-  char   b[150];
+  char b[150];
   serializeJson(info_data, b); 
-  socket_server->broadcastTXT(b);
+  if(connectWebSocket == 1 || connectWebSocket == 2){socket_server->broadcastTXT(b);}
 }
 
 void PLC_MASTER::connectWeb(byte connected){
-  LOGLN("Connected: "+String(connected));
+  LOGLN("Web Connected: "+String(connected));
   connectWebSocket = connected;
-  PLCModbusCom.connectModbus(connected-2);
-  lastRefresh1 = millis();
+  if(connected == 2){PLCModbusCom.connectModbus(0);}
+  if(connected == 1){PLCModbusCom.connectModbus(1);}
+  if(connected == 0){PLCModbusCom.connectModbus(0);}
+ #ifdef MeshNetwork
+  setConnect(connected);
+#endif//#ifdef MeshNetwork
+  lastRefresh1 = millis();lastEventTimeReset = millis();
+}
+void PLC_MASTER::connectMQTT(byte connected){
+  LOGLN("Connected: "+String(connected));
+ #ifdef MQTT_USE
+  ConnectMQTT = connected;
+#endif// MQTT_USE
 }
 
 void PLC_MASTER::GetIdList(int idlist[]){
@@ -484,6 +635,7 @@ void PLC_MASTER::GetIdList(int idlist[]){
   //   IDList[i] = idlist[i];
   // }
 }
+
 #endif//PLC_MASSTER_UI
 
 

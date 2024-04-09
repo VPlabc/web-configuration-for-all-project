@@ -93,6 +93,7 @@ bool debug = true;
 #include "WIC.h"
 WIC wic;
 #if defined(TIMESTAMP_FEATURE)
+bool WPrintOnce = 1;
 void dateTime (uint16_t* date, uint16_t* dtime)
 {
     struct tm  tmstruct;
@@ -105,6 +106,8 @@ void dateTime (uint16_t* date, uint16_t* dtime)
 #endif
 bool LED_OFF = true;
 byte ID;
+
+bool ClientConnect = 0;
 
 WIFI_CONFIG::WIFI_CONFIG()
 {
@@ -212,6 +215,8 @@ void  WIFI_CONFIG::Safe_Setup()
         #endif//LOOKLINE_UI
         #ifdef PLC_MASTER_UI
         String AP_NAME = "Node_BOX_(" + String(ID) + ")|Ver:" + FW_VERSION;
+        #else 
+        String AP_NAME = "Node_BOX";
         #endif//PLC_MASTER_UI
         WiFi.softAP (AP_NAME.c_str(), pwds.c_str());
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
@@ -283,7 +288,10 @@ void onWiFiEvent(WiFiEvent_t event)
         if(debug)ESPCOM::println (F ("(AP)Disconnected"), PRINTER_PIPE);
         #ifdef PLC_MASTER_UI
         PLC_wifi.connectWeb(0);
+        #ifdef PLC_OEE
+        LOG("Disconnected .... Restart");delay(1000);
         ESP.restart();
+        #endif//PLC_OEE
         #endif//PLC_MASTER_UI
     #endif//Moto_UI
         #ifdef LOOKLINE_UI
@@ -332,6 +340,7 @@ void onWiFiEvent(WiFiEvent_t event)
         // LOGLN("New client");
         #ifdef PLC_MASTER_UI
         PLC_wifi.connectWeb(2);
+        ClientConnect = 1;
         #endif//PLC_MASTER_UI
         #ifdef LOOKLINE_UI
         // cmdLookline_PROG.SetStart(1);
@@ -357,7 +366,6 @@ void onWiFiEvent(WiFiEvent_t event)
     }
 
 }
-
 //Read configuration settings and apply them
 bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
 {
@@ -502,6 +510,8 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
         #endif//PLC
         #ifdef LOOKLINE_UI
         String AP_NAME = String(sbuf) + "(" + String(ID) + ")|Ver:" + FW_VERSION;
+        #else
+        // String AP_NAME = String(sbuf) + "(" + String(ID) + ")|Ver:" + FW_VERSION;
         #endif//LOOKLINE
         WiFi.softAP (AP_NAME.c_str(), pwd);
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
@@ -575,19 +585,28 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
     } else {
         // LOG ("Set STA mode\r\n")
         ESPCOM::println(F("Set STA mode"), PRINTER_PIPE);
+#ifdef FILECONFIG
+    CFRespondNetworkData WiFiNetworkDatas;
+    if(WPrintOnce){WiFiNetworkDatas = CONFIG::init_Network_config();
+          if(debug){LOGLN("___ WIFI ___ \nSSID: " + WiFiNetworkDatas.wssid);
+          LOGLN("Password: " + WiFiNetworkDatas.wpass);}
+    }WPrintOnce = 1;
+        strcpy(sbuf, WiFiNetworkDatas.wssid.c_str());
+        strcpy(pwd, WiFiNetworkDatas.wpass.c_str());
+#else//EEPROM
         if (!CONFIG::read_string (EP_STA_SSID, sbuf, MAX_SSID_LENGTH) ) {
             return false;
         }
         if (!CONFIG::read_string (EP_STA_PASSWORD, pwd, MAX_PASSWORD_LENGTH) ) {
             return false;
         } 
-
-        if(debug){LOG ("SSID ")
-        LOG (sbuf)
-        LOG ("\r\n")
-        LOG ("PASS ")
-        LOG (pwd)
-        LOG ("\r\n")}
+#endif//FILECONFIG
+        // if(debug){LOG ("SSID ")
+        // LOG (sbuf)
+        // LOG ("\r\n")
+        // LOG ("PASS ")
+        // LOG (pwd)
+        // LOG ("\r\n")}
 
 #ifdef ESP_OLED_FEATURE
 #ifndef MKS_TFT_FEATURE
@@ -711,6 +730,7 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
 #ifndef MKS_TFT_FEATURE
 #ifdef DISABLE_CONNECTING_MSG
             if(debug)ESPCOM::println (msg, PRINTER_PIPE);
+            if(ClientConnect){i=21;}
 #else
 #ifdef ESP_OLED_FEATURE    
             OLED_DISPLAY::setCursor(0, 0);
@@ -830,7 +850,7 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
         if(debug)ESPCOM::print("Connected " + currentIP.toString() + "\n\n", SERIAL_PIPE);
         digitalWrite(LED_Pin, invert);
     } else if ((WiFi.getMode() == WIFI_AP_STA) && (WiFi.status() == WL_CONNECTED)) {
-        if(debug)ESPCOM::print("Connected(with AP) " + currentIP.toString() + "\n\n", SERIAL_PIPE);
+        if(debug)ESPCOM::print("Connected(with STA AP) " + currentIP.toString() + "\n\n", SERIAL_PIPE);
         digitalWrite(LED_Pin, invert);
     }
     ESPCOM::flush (DEFAULT_PRINTER_PIPE);

@@ -29,15 +29,23 @@ enum {slave,master};
 
   //  #ifdef LOOKLINE_UI
    if(wicTask2.GetSetup()){
-      if (Tskonece1){Tskonece1 = false;if(looklineDebug)ESPCOM::println(F("Wifi Server Working..."), PRINTER_PIPE);}
+      if (Tskonece1){Tskonece1 = false;if(looklineDebug)ESPCOM::println(F("Wifi Server Working..."), PRINTER_PIPE);
+        #ifdef MQTT_USE
+         if(WiFi.status() == WL_CONNECTED)PLC_MASTER_Prog.connectMQTT(1);
+         #endif//MQTT
+      }
             web_interface->web_server.handleClient();
             socket_server->loop();
+                       
       if (WiFi.getMode() != WIFI_OFF){
   #ifdef CAPTIVE_PORTAL_FEATURE
         if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
         {
             dnsServer.processNextRequest();
-            if (Tskonece2){Tskonece2 = false;if(looklineDebug)ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);}
+            if (Tskonece2){Tskonece2 = false;if(looklineDebug)ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE)  ;
+
+            
+            }
         }
   #endif//CAPTIVE_PORTAL_FEATURE
     }

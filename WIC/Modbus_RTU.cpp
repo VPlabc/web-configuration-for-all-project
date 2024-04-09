@@ -34,14 +34,20 @@ bool Done = false;
 
 void debugs();
 #define dataSize 10
-
+#if defined(PLC_OEE) || defined(RFData)
 // const int16_t offsetM0 = 2048;//
 const int16_t offsetD0 = 4096;//
 
 // const int16_t Write_Coil = offsetM0+0;
 // const int16_t Read_Coil = offsetM0+100;
-const int16_t RegWrite = offsetD0+2500;//Register Write
+// const int16_t RegWrite = offsetD0+2500;//Register Write
 const int16_t RegRead = offsetD0+2000;//Register Read
+#endif//PLC_OEE
+#ifdef VOM
+const int16_t RegRead = 0;//Register Read
+#else
+// const int16_t RegRead = 0;//Register Read
+#endif//VOM
 
 bool state0 = 0;
 bool state1 = 1;
@@ -179,7 +185,7 @@ initupdate();
   if(ModbusRole ==Slave){
     mb.begin(&Serial2);
     mb.slave(SLAVE_ID);
-    mb.addHreg(RegWrite, 0, dataSize);
+    // mb.addHreg(RegWrite, 0, dataSize);
     mb.addHreg(RegRead, 0, dataSize);
 #ifdef Ethernet_W5500
     Mb.addHreg(RegWrite, 0, dataSize);
@@ -315,7 +321,7 @@ void Modbus_Prog::modbus_loop(bool ModbusRole) {
     if(MB_Update_Once1){MB_Update_Once1 = false;LOGLN("Update Modbus");}
     for(int i = 0 ; i < dataSize ; i++){
       // coils[i] = mb.Coil(Write_Coil+i);//Read Coil
-      holdingRegisters[i] = mb.Hreg(RegWrite+i);
+      // holdingRegisters[i] = mb.Hreg(RegWrite+i);
       // mb.Coil(Read_Coil +i, discreteInputs[i]);//Write Coil
       // mb.Hreg(RegRead+i,inputRegisters[i]);//Write REG
       // LOG("inputRegisters: ");for (int i = 0; i < dataSize; i++){LOG(inputRegisters[i]);LOG(" ");}LOGLN("");

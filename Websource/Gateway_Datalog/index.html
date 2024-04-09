@@ -5169,14 +5169,14 @@ if(cmd == dash){html += "<div class='col-sm-12 col-md-4 col-lg-4 col-xl-4 mb-5' 
     if (onceAutoStop[id] == 0 && planStop - resultStop >= 100){
     if(preferenceslist[0].AutoStop == 0 && resultStop == 0){
       // changeState(id);
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+      // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       
       // console.log("aaaa " +id);
       onceAutoStop[id] = 1;
     }
     else if(preferenceslist[0].AutoStop == 1 ){
       // changeState(id);
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+      // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       // console.log("bbbb " +id);
       onceAutoStop[id] = 1;
     }
@@ -5377,15 +5377,15 @@ function changeState(id) {
     if(lock[id] == 1){stateID[id] = 1;}
     // number[type]
     if (stateID[id]) {
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
+      // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+      // console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
       // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=stop id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
       // console.log("/command?plain=[ESP403]cmd=stop id="+vals[number[vals[2]]+6]);
       
     } 
     if (stateID[id]==2) {
-      SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
-      console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6]);
+      // SendGetHttp("/command?plain=" + encodeURIComponent("[ESP403]cmd=run id="+vals[number[vals[2]]+6]), getLooklineCmdSuccess, getLooklineCmdfailed);
+      // console.log("/command?plain=[ESP403]cmd=run id="+vals[number[vals[2]]+6]);
     }
     lock[id]= !lock[id];
   }

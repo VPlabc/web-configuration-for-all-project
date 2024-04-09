@@ -44,8 +44,8 @@ static bool sd_card_found;
     
     uint64_t GetTotalSize();
     void Setup();
-    static void saveMemoryToFile();
-    static void readMemoryFromFile();
+    static void saveMemoryToFile(uint8_t sensorssaved, uint8_t *buf, size_t size);
+    static void readMemoryFromFile(uint8_t sensorssaved, uint8_t *buf, size_t size);
     static String printDirectory(File dir, int numTabs);
     static bool loadFromSDCARD(String path);
     static void handleRawFile();

@@ -339,6 +339,8 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     file.close();
                 }
             }
+            
+            CONFIG::init_Network_config();
     byte ID;
     CONFIG::read_byte (EP_EEPROM_ID, &ID);
     if(ID == 255){CONFIG::write_byte (EP_EEPROM_ID, IDfix);}
@@ -351,9 +353,13 @@ CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
 #endif// lookline_ui
 #ifdef PLC_MASTER_UI
 CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
-// RunMode =1;
-// RunMode =1;
+LOGLN("Wifi Mode: " + String(RunMode));
+#ifdef DataLog
+RunMode = 2;
+#endif//Datalog
 if(RunMode == 2){
+    byte Retry = 10;
+    while(Retry > 0){Retry--;wifi_config.Setup(false, LED_STATUS, 1);if(WiFi.status() == WL_CONNECTED)break;}
 #endif//PLC_MASTER_UI
             // setup wifi according settings
 // wifi_config.Setup(true, LED_STATUS, 1);
@@ -373,7 +379,8 @@ if(RunMode == 2){
         }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif// lookline_ui
         #ifdef PLC_MASTER_UI
-        if(!wifi_config.Setup(false, LED_STATUS, 1)){wifi_config.Setup(true, LED_STATUS, 1);}}else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        if(!wifi_config.Setup(false, LED_STATUS, 1)){ if(!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}}
+        else{if(!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
         #endif//PLC_MASTER_UI
             delay(100);
             // setup servers
@@ -412,7 +419,9 @@ if(RunMode == 2){
             //         OLED_DISPLAY::setCursor(0, 0);
             //         ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
             // #endif//#ifdef ESP_OLED_FEATURE
-
+#if defined(TIMESTAMP_FEATURE)
+if(WiFi.status() == WL_CONNECTED)CONFIG::init_time_client();
+#endif
 #ifdef Valve_UI
             valves.valve_setup();
 // time_t nows = time(nullptr);

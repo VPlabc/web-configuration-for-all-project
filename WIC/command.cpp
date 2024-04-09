@@ -80,6 +80,11 @@ WIC cmdWic;
 #include "LookLine/LookLine.h"
 LOOKLINE_PROG LooklineCMD;
 #endif//ValveLOOKLINE_UI_UI
+
+#ifdef DataLog
+#include "DataLog.h"
+#endif//DataLog
+
 #include "DataTransfer/data_transfer.h"
 String COMMAND::buffer_serial;
 String COMMAND::buffer_tcp;
@@ -92,7 +97,9 @@ byte LOCK = LEVEL_GUEST;
 
 extern uint8_t Checksum(const char * line, uint16_t lineSize);
 extern bool sendLine2Serial (String &  line, int32_t linenb, int32_t* newlinenb);
-
+#ifdef DataLog
+String COMMAND::get_dataLog(fs::FS &fs, String path, byte type, byte Inhour){DLGreadFile(fs, path, type, Inhour);}
+#endif//DataLog
 
 //  uint32_t millivolt = word1 << 16 | word2;
 void setAuth(byte Auth){
@@ -1075,6 +1082,9 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\",\"H\":\"Time Server 3\",\"M\":\""), output, espresponse);
             ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_DATA_LENGTH), output, espresponse);
             ESPCOM::print (F ("\"}"), output, espresponse);
+            // ESPCOM::println (F (","), output, espresponse);
+
+            
 #endif
 
 #ifdef NOTIFICATION_FEATURE
@@ -3055,6 +3065,66 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
             ESPCOM::print (F ("\"}"), output, espresponse);  
 
             ESPCOM::println (F (","), output, espresponse);
+
+            //////////////////////////////////////// MQTT /////////////////////////////////////////////////////
+            //MQTT Broker
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_BROKER), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_BROKER, sbuf, MAX_MQTT_BROKER_LENGTH) ) {
+                ESPCOM::print ("broker.emqx.io", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_BROKER_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT Server\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_BROKER_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"},"), output, espresponse);
+            //MQTT Port
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"I\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &ibuf, INTEGER_LENGTH) ) {
+                ESPCOM::print ("???", output, espresponse);
+            } else {
+                ESPCOM::print ( (const char *) CONFIG::intTostr (ibuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"H\":\"MQTT Port\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MAX_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (DEFAULT_MIN_DATA_PORT), output, espresponse);
+            ESPCOM::print (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
+            //MQTT User
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_USER), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_USER, sbuf, MAX_MQTT_USER_LENGTH) ) {
+                ESPCOM::print ("", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_USER_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT User\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_USER_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"},"), output, espresponse);
+            //MQTT Password
+            ESPCOM::print (F ("{\"F\":\"network\",\"P\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (EP_MQTT_PASS), output, espresponse);
+            ESPCOM::print (F ("\",\"T\":\"S\",\"V\":\""), output, espresponse);
+            if (!CONFIG::read_string (EP_MQTT_PASS, sbuf, MAX_MQTT_PASS_LENGTH) ) {
+                ESPCOM::print ("", output, espresponse);
+            } else {
+                ESPCOM::print (encodeString(sbuf), output, espresponse);
+            }
+            ESPCOM::print (F ("\",\"S\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MAX_MQTT_PASS_LENGTH), output, espresponse);
+            ESPCOM::print (F ("\",\"H\":\"MQTT Password\",\"M\":\""), output, espresponse);
+            ESPCOM::print ( (const char *) CONFIG::intTostr (MIN_MQTT_PASS_LENGTH), output, espresponse);
+            ESPCOM::println (F ("\"}"), output, espresponse);
+            ESPCOM::println (F (","), output, espresponse);
 #ifdef USE_LORA
             //2- Set CHANEL
             ESPCOM::print (F ("{\"F\":\"rf\",\"P\":\""), output, espresponse);
@@ -3436,7 +3506,7 @@ bool COMMAND::execute_command (int cmd, String cmd_params, tpipe output, level_a
                 }
                 #ifdef MQTT_USE
                 if(pos == EP_MQTT_BROKER || pos == EP_MQTT_USER || pos == EP_MQTT_PASS ){
-                    commandMQTT.update();
+                    // commandMQTT.update();
                 }
                 #endif//MQTT_USE
             }

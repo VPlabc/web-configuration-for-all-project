@@ -344,6 +344,7 @@
 #include "FS.h"
 #include "SPIFFS.h"
 using fs::File;
+
 #define WIFI_NONE_SLEEP WIFI_PS_NONE
 #define WIFI_LIGHT_SLEEP WIFI_PS_MIN_MODEM
 #define WIFI_MODEM_SLEEP WIFI_PS_MAX_MODEM
@@ -448,7 +449,7 @@ extern const char * pathToFileName(const char * path);
 
 #include "wificonf.h"
 
-enum{IDfix = 100};
+enum{IDfix = 101};
 
 typedef enum {
     UPLOAD_STATUS_NONE = 0,
@@ -569,6 +570,9 @@ typedef enum {
 #define EP_MODBUS_PORT          1083// 4 bytes
 #define EP_EEPROM_ID            1083// 6 bytes = ESP3D<V on one byte>
 #define LED_STATUS 26//1  bytes = flag
+#define EP_MQTT_PORT            1360// 4 bytes
+#define EP_EEPROM_NETID         1095// 4 bytes
+#define EP_EEPROM_ROLE 1083 // 1 bytes flag
 
 
 #define LAST_EEPROM_ADDRESS 1083
@@ -757,9 +761,29 @@ typedef enum {
 // #define USE_LORA
 #endif//LOOKLINE_UI
 #ifdef PLC_MASTER_UI
+#define FILECONFIG
 #define NodeIoT
 #define TIMESTAMP_FEATURE
-// #define MQTT_USE
+#define MQTT_USE
+/// MQTT Topic
+// #define vule
+#define isoft
+//#define vplab
+///  Firmware
+// #define VOM
+// #define PLC_OEE
+// #define SHT
+#define RFData
+
+//  Plugin
+#ifdef RFData
+#define MeshNetwork
+#define DataLog
+#endif//RFData
+
+
+// #define MeshGateway
+// #define MotionData
 
 // #define MCP_USE
 // #define USE_LORA
@@ -854,8 +878,8 @@ const char DEFAULT_AP_PASSWORD [] PROGMEM = "12345678";
 const char DEFAULT_STA_SSID []  PROGMEM =        "HUAWEI-8D22";
 const char DEFAULT_STA_PASSWORD [] PROGMEM =    "77091836";
 #else
-const char DEFAULT_STA_SSID []  PROGMEM =        "VPLab";
-const char DEFAULT_STA_PASSWORD [] PROGMEM =    "12345678";
+const char DEFAULT_STA_SSID []  PROGMEM =        "VULETECH";
+const char DEFAULT_STA_PASSWORD [] PROGMEM =    "vuletech123";
 #endif// LOOKLINE_UI
 const byte DEFAULT_STA_IP_MODE  =               DHCP_MODE;
 const byte DEFAULT_AP_IP_MODE =                 STATIC_IP_MODE;
@@ -883,10 +907,10 @@ const char DEFAULT_TIME_SERVER2 []  PROGMEM =   "2.pool.ntp.org";
 const char DEFAULT_TIME_SERVER3 []  PROGMEM =   "0.pool.ntp.org";
 const char DEFAULT_FW_VERSION_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/version.txt";
 const char DEFAULT_FIRMWARE_HOST []  PROGMEM =   "VPlabc/LookLineMitsuba/main/firmware.bin";
-const char DEFAULT_BOARD_NAME []  PROGMEM =   "name";
-const char DEFAULT_MQTT_BROKER []  PROGMEM =   "name";
-const char DEFAULT_MQTT_USER []  PROGMEM =   "name";
-const char DEFAULT_MQTT_PASS []  PROGMEM =   "name";
+const char DEFAULT_BOARD_NAME []  PROGMEM =   "PowerDatalog";
+const char DEFAULT_MQTT_BROKER []  PROGMEM =   "test.mosquitto.org";
+const char DEFAULT_MQTT_USER []  PROGMEM =   "_";
+const char DEFAULT_MQTT_PASS []  PROGMEM =   "_";
 const int DEFAULT_MQTT_PORT =           1883;
 
 #define DEFAULT_TIME_ZONE           7
@@ -936,12 +960,14 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define I2C_SCL     22
 #define SDCard_CS   5
 #define SCS         5
-#define SCLK        18
-#define MISO        19
-#define MOSI        23
 #define RXD2        16
 #define TXD2        17
 #endif//NodeIoT
+#define SCLK        18
+#define MISO        19
+#define MOSI        23
+#define SDCard_CS   5
+#define SCS         5
 #ifdef SDCARD_FEATURE
 #define DEFAULT_IS_DIRECT_SD 1
 #ifdef PLC_MASTER_UI
@@ -968,48 +994,48 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define DEFAULT_SDREADER_SPEED 4
 #endif
 
-const uint16_t Setting[][2] = {
-    {EP_WIFI_MODE, LEVEL_ADMIN},//0
-    {EP_STA_SSID, LEVEL_ADMIN},//1
-    {EP_STA_PASSWORD, LEVEL_ADMIN},//2
-    {EP_STA_IP_MODE, LEVEL_ADMIN},//3
-    {EP_STA_IP_VALUE, LEVEL_ADMIN},//4
-    {EP_STA_MASK_VALUE, LEVEL_ADMIN},//5
-    {EP_STA_GATEWAY_VALUE, LEVEL_ADMIN},//6
-    {EP_BAUD_RATE, LEVEL_ADMIN},//7
-    {EP_STA_PHY_MODE, LEVEL_ADMIN},//8
-    {EP_SLEEP_MODE, LEVEL_ADMIN},//9
-    {EP_CHANNEL, LEVEL_ADMIN},//10
-    {EP_AUTH_TYPE, LEVEL_ADMIN},//11
-    {EP_SSID_VISIBLE, LEVEL_ADMIN},//12
-    {EP_WEB_PORT, LEVEL_ADMIN},//13
-    {EP_DATA_PORT, LEVEL_ADMIN},//14
-    {EP_HOSTNAME, LEVEL_ADMIN},//15
-    {EP_ADMIN_PWD, LEVEL_ADMIN},//16
-    {EP_USER_PWD, LEVEL_USER},//17
-    {EP_AP_SSID, LEVEL_ADMIN},//18
-    {EP_AP_PASSWORD, LEVEL_ADMIN},//19
-    {EP_AP_IP_VALUE, LEVEL_ADMIN},//20
-    {EP_AP_MASK_VALUE, LEVEL_ADMIN},//21
-    {EP_AP_GATEWAY_VALUE, LEVEL_ADMIN},//22
-    {EP_AP_IP_MODE, LEVEL_ADMIN},//23
-    {EP_AP_PHY_MODE, LEVEL_ADMIN},//24
-    {EP_TARGET_FW, LEVEL_USER},//25
-    {EP_TIMEZONE, LEVEL_USER},//26
-    {EP_TIME_ISDST, LEVEL_USER},//27
-    {EP_TIME_SERVER1, LEVEL_USER},//28
-    {EP_TIME_SERVER2, LEVEL_USER},//29
-    {EP_TIME_SERVER3, LEVEL_USER},//30
-    {EP_IS_DIRECT_SD, LEVEL_USER},//31
-    {EP_PRIMARY_SD, LEVEL_USER},//32
-    {EP_SECONDARY_SD, LEVEL_USER},//33
-    {EP_DIRECT_SD_CHECK, LEVEL_USER}, //34
-    {EP_SD_CHECK_UPDATE_AT_BOOT, LEVEL_USER},//35
-    {EP_OUTPUT_FLAG, LEVEL_USER},//36
-    {EP_DHT_INTERVAL, LEVEL_USER},//37
-    {EP_DHT_TYPE, LEVEL_USER},//38
-    {EP_SD_SPEED_DIV, LEVEL_USER}//39
-};
+// const uint16_t Setting[][2] = {
+//     {EP_WIFI_MODE, LEVEL_ADMIN},//0
+//     {EP_STA_SSID, LEVEL_ADMIN},//1
+//     {EP_STA_PASSWORD, LEVEL_ADMIN},//2
+//     {EP_STA_IP_MODE, LEVEL_ADMIN},//3
+//     {EP_STA_IP_VALUE, LEVEL_ADMIN},//4
+//     {EP_STA_MASK_VALUE, LEVEL_ADMIN},//5
+//     {EP_STA_GATEWAY_VALUE, LEVEL_ADMIN},//6
+//     {EP_BAUD_RATE, LEVEL_ADMIN},//7
+//     {EP_STA_PHY_MODE, LEVEL_ADMIN},//8
+//     {EP_SLEEP_MODE, LEVEL_ADMIN},//9
+//     {EP_CHANNEL, LEVEL_ADMIN},//10
+//     {EP_AUTH_TYPE, LEVEL_ADMIN},//11
+//     {EP_SSID_VISIBLE, LEVEL_ADMIN},//12
+//     {EP_WEB_PORT, LEVEL_ADMIN},//13
+//     {EP_DATA_PORT, LEVEL_ADMIN},//14
+//     {EP_HOSTNAME, LEVEL_ADMIN},//15
+//     {EP_ADMIN_PWD, LEVEL_ADMIN},//16
+//     {EP_USER_PWD, LEVEL_USER},//17
+//     {EP_AP_SSID, LEVEL_ADMIN},//18
+//     {EP_AP_PASSWORD, LEVEL_ADMIN},//19
+//     {EP_AP_IP_VALUE, LEVEL_ADMIN},//20
+//     {EP_AP_MASK_VALUE, LEVEL_ADMIN},//21
+//     {EP_AP_GATEWAY_VALUE, LEVEL_ADMIN},//22
+//     {EP_AP_IP_MODE, LEVEL_ADMIN},//23
+//     {EP_AP_PHY_MODE, LEVEL_ADMIN},//24
+//     {EP_TARGET_FW, LEVEL_USER},//25
+//     {EP_TIMEZONE, LEVEL_USER},//26
+//     {EP_TIME_ISDST, LEVEL_USER},//27
+//     {EP_TIME_SERVER1, LEVEL_USER},//28
+//     {EP_TIME_SERVER2, LEVEL_USER},//29
+//     {EP_TIME_SERVER3, LEVEL_USER},//30
+//     {EP_IS_DIRECT_SD, LEVEL_USER},//31
+//     {EP_PRIMARY_SD, LEVEL_USER},//32
+//     {EP_SECONDARY_SD, LEVEL_USER},//33
+//     {EP_DIRECT_SD_CHECK, LEVEL_USER}, //34
+//     {EP_SD_CHECK_UPDATE_AT_BOOT, LEVEL_USER},//35
+//     {EP_OUTPUT_FLAG, LEVEL_USER},//36
+//     {EP_DHT_INTERVAL, LEVEL_USER},//37
+//     {EP_DHT_TYPE, LEVEL_USER},//38
+//     {EP_SD_SPEED_DIV, LEVEL_USER}//39
+// };
 #define AUTH_ENTRY_NB 40
 
 #define FLAG_BLOCK_M117 0x01
@@ -1138,9 +1164,37 @@ public:
 };
 #endif
 
+typedef struct
+{
+    String ipAdress;
+    String getway;
+    String subnet;
+    String primaryDNS;
+    String secondaryDNS;
+    String EthPort;
+    String MQhost ;
+    String MQport;
+    String MQuser;
+    String MQpass;
+    String wssid;
+    String wpass;
+} CFRespondNetworkData;
+
+typedef struct{
+  int hour;
+  int min;
+  int sec;
+  int day;
+  int month;
+  int year;
+  unsigned long epochTime;
+}CFrepondTime;
+
 class CONFIG
 {
 public:
+///  Config file 
+/// Realef Time
 
     static void wait (uint32_t milliseconds);
     static void wdtFeed();
@@ -1195,11 +1249,12 @@ public:
     static String getLoRaAirate();
     static String getLoRaPower();
     static void SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX );
+    static CFRespondNetworkData init_Network_config();
 #ifdef Gyro_UI
     static bool GetState();
 #endif//Gyro_UI    
 #if defined(TIMESTAMP_FEATURE)
-    static void init_time_client();
+    static CFrepondTime init_time_client();
 #endif
 private:
     static uint8_t FirmwareTarget;

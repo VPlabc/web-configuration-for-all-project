@@ -40,6 +40,11 @@ public:
     static String get_param (String & cmd_params, const char * id, bool withspace = false);
     static bool isadmin (String & cmd_params);
     static bool isuser (String & cmd_params);
+    void localStorageExport();
+    void saveLocalStorage(struct config);
+#ifdef DataLog
+    static String get_dataLog(fs::FS &fs, String path, byte type, byte Inhour);
+#endif//DataLog
 };
 
 #endif

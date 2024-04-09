@@ -148,6 +148,15 @@ typedef struct
         return ret;
     }
 
+    uint32_t Encodeuint32(uint16_t byte1, uint16_t byte2)
+    {
+        uint32_t ret = 0;
+        ret = byte1;
+        ret = ret << 16;
+        ret = ret | byte2;
+        return ret;
+    }
+
     unsigned int EncodeInt(byte byte1, byte byte2)
     {
         int ret = 0;

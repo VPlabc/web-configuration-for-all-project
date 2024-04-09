@@ -1,5 +1,5 @@
 #include "data_transfer.h"
-
+DataTransfer dataTrans;
 
 
 void monitorDataControlValve(uint16_t id, uint16_t regs_data)

@@ -4,14 +4,18 @@
 #include "SDFunction.h"
 #include <SPI.h>
 #include <SD.h>
-#include "time.h"
-#include <WiFiUdp.h>
-#include <NTPClient.h>
+// #include "time.h"
+#include "TimeLib.h"
+// #include <WiFiUdp.h>
+// #include <NTPClient.h>
 // #include "TimeLib.h"
 #ifndef LOG_
 #define LOG_
-WiFiUDP LogntpUDP;
-NTPClient timeClient(LogntpUDP);
+// WiFiUDP LogntpUDP_dtl;
+// NTPClient timeClient_dtl(LogntpUDP_dtl);
+// #include "RealTimeClock.h"
+// repondTime DatalogRepondTime;
+
 byte bbufer;
 // String sbuf;
 char sbuf[MAX_DATA_LENGTH + 1];
@@ -35,15 +39,21 @@ String uptime() {
 
 bool sd_card_found = false;
 void SaveData(String NameFile, String Data){
-    long nows = timeClient.getEpochTime();
-    timeClient.update();
+  
+    CFrepondTime DatalogRepondTime;
+    DatalogRepondTime = CONFIG::init_time_client();
+    unsigned long nows = DatalogRepondTime.epochTime;
+    LOGLN("nows: " + String(nows));
+
     // time_t Time = time(nullptr);
     struct tm  tmstruct;
     if(!getLocalTime(&tmstruct)){LOGLN("Failed to obtain time");return;}
     String month = "";if(tmstruct.tm_mon+1 < 10){month = "0" + String(tmstruct.tm_mon+1);}
-    RealTime = String(tmstruct.tm_mday-1) + "_" + month + "_" + String((tmstruct.tm_year-100)+2000) ;
+    if(tmstruct.tm_mday < 10){if(tmstruct.tm_mday < 10){RealTime = "0" + String(tmstruct.tm_mday) + "_" ;}else{RealTime = String(tmstruct.tm_mday) + "_" ;}}
+    else{if(tmstruct.tm_mday-1 < 9){RealTime = "0" + String(tmstruct.tm_mday-1) + "_" ;}else{RealTime = String(tmstruct.tm_mday-1) + "_" ;}}
+    RealTime +=  month + "_" + String((tmstruct.tm_year-100)+2000) ;
     String Filename = "/" + NameFile + RealTime + ".csv";
-    LOGLN("File name: " + Filename + "| " + RealTime + " | " + nows + "," + String(Data));
+    LOGLN("File name: " + Filename + "| " + String(tmstruct.tm_hour) + ":" + String(tmstruct.tm_min) + ":" + String(tmstruct.tm_sec) + " | " + nows + "," + String(Data));
 
    if (!SD.begin(SDCard_CS)) {sd_card_found = false;} else {sd_card_found = true;LOGLN("SD Init ok");}
     //LOG ("saveMemoryToFile > SD Card found:" + String(SDFunc.sd_card_found) + '\n');
@@ -57,16 +67,20 @@ void SaveData(String NameFile, String Data){
         //saveMemoryToFile();
     }
 //  String(tmstruct.tm_hour)+':'+String(tmstruct.tm_min)
-    if(tmstruct.tm_min == 0){//day report
+    if(DatalogRepondTime.min == 0){//day report
+    unsigned long nows = DatalogRepondTime.epochTime;
+    LOGLN("nows: " + String(nows));
+
       String Filename = "/" + NameFile + RealTime + "_day.csv";
-    LOGLN("File name: " + Filename + "| " + RealTime + " | " + nows + "," + String(Data));
+    LOGLN("File name: " + Filename + "| " + String(DatalogRepondTime.hour) + ":" + String(DatalogRepondTime.min) + ":" + String(DatalogRepondTime.sec)  + " | " + nows + "," + String(Data));
 
     if (!SD.begin(SDCard_CS)) {sd_card_found = false;} else {sd_card_found = true;LOGLN("SD Init ok");}
       //LOG ("saveMemoryToFile > SD Card found:" + String(SDFunc.sd_card_found) + '\n');
       //LOG ("Time:" + String(timeClient.getEpochTime()) + '\n');
       if (sd_card_found) {
-          if(!SD.exists(Filename)){writeFile(SD, Filename, Data);LOGLN("File Day Created");}
-          else{appendFile(SD, Filename, Data);}
+          if(!SD.exists(Filename)){writeFile(SD, Filename, String(nows));LOGLN("File Day Created");}
+          else{appendFile(SD, Filename, String(nows));}
+          appendFile(SD, Filename, Data);
           appendFile(SD, Filename, ",");
           //saveMemoryToFile();
       }
@@ -74,30 +88,51 @@ void SaveData(String NameFile, String Data){
 }
 long countData = 0;
 long spaceData = 0;
-void DLGreadFile(fs::FS &fs, String path, byte type){
+String DLGreadFile(fs::FS &fs, String path, byte type, byte Inhour){
   // if (!SD.begin(SDCard_CS)) {sd_card_found = false;} else {sd_card_found = true;LOGLN("SD Init ok");}
-  // Serial.println("Reading file: " + path);
+  Serial.println("Reading file: " + path + " | houre: " + Inhour);
   File file = fs.open(path);
-  if(!file){LOG ("Failed to open file for reading");return;}
+  if(!file){LOG ("Failed to open file for reading");return "{\"data\":\"Failed to open file for reading\"}";}
   Serial.println("Read from file: ");
   String ReadIn ="";
   String TimeIn ="";
   String RowData ="";
   char charIn = 0;
+  // int Mins = 0;
+  int Hours = 0;
   while(file.available()){
     charIn = (char)file.read();
     if(charIn == '\n' || charIn == ','){
-      if(ReadIn.length() > 4){TimeIn += ReadIn + ",";countData++;}
-      else{ RowData+=  ReadIn + ",";}
+      unsigned long t_unix_date1;
+      if(ReadIn.length() > 8 && type == 0){t_unix_date1 = ReadIn.toInt(); 
+        if(Inhour == hour(t_unix_date1)){
+          TimeIn += ReadIn + ",";countData++;
+          // printf("Date1: %4d-%02d-%02d %02d:%02d:%02d\n", year(t_unix_date1), month(t_unix_date1), day(t_unix_date1), hour(t_unix_date1), minute(t_unix_date1), second(t_unix_date1));
+        }
+        if(Inhour == 24){
+          TimeIn += ReadIn + ",";countData++;
+          // printf("Date1: %4d-%02d-%02d %02d:%02d:%02d\n", year(t_unix_date1), month(t_unix_date1), day(t_unix_date1), hour(t_unix_date1), minute(t_unix_date1), second(t_unix_date1));
+        }
+        ReadIn = "";
+      }
+      else if(ReadIn.length() > 8 && type == 1){TimeIn += ReadIn + ",";countData++;ReadIn = "";}
+      else if(ReadIn.length() > 1 && ReadIn.length() <= 8 && type == 1){ RowData+=  ReadIn + ",";
       ReadIn = "";}
+      else if(ReadIn.length() > 1 && ReadIn.length() <= 8 && type == 0){ 
+        if(Inhour == hour(t_unix_date1)){
+          if(spaceData > 3){spaceData = 0;Hours = hour(t_unix_date1);}RowData+=  ReadIn + ",";spaceData++;
+        }
+        if(Inhour == 24){
+          if(spaceData > 3){spaceData = 0;Hours = hour(t_unix_date1);}RowData+=  ReadIn + ",";spaceData++;
+        }
+        ReadIn = "";
+      }
+    }
     else{ReadIn += charIn;}
   }//lay a| lam ki tu phan biet
-  String PushData = "a|[{\"data\":\""+RowData + "\",\"time\":\"" + TimeIn + "\"}]|";
-  LOGLN("Load " + String(countData) + " data");
-  socket_server->broadcastTXT(PushData.c_str());
-  PushData = "{\"message\":\"Total" + String(countData) + " records\"}";
-  socket_server->broadcastTXT(PushData.c_str());PushData = "";
-  file.close();
+  String PushData = "a|[{\"data\":\""+RowData + "\",\"time\":\"" + TimeIn + "\",\"Total\":" + String(countData) + "}]|";
+  file.close();countData = 0;
+  return PushData;
 }
 
 void writeFile(fs::FS &fs, String path, String message){

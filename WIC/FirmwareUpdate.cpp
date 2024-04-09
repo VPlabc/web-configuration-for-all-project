@@ -285,6 +285,9 @@ void UpdateFW::FirmwareUpdate()
       if(UFWDebug)Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
     #endif//#ifdef IOTDEVICE_UI
     
+    #ifdef PLC_MASTER_UI
+      LOGLN("Update Faild!!\n");
+    #endif// PLC_MASTER_UI
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("Update Faild!!\n", OUPUT);
     #endif// LOOKLINE_UI
@@ -300,6 +303,9 @@ void UpdateFW::FirmwareUpdate()
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("No Update!!\n", OUPUT);
     #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("No Update!!\n");
+    #endif// PLC_MASTER_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("No Update!!");
       #endif//ESP_OLED_FEATURE
@@ -311,6 +317,9 @@ void UpdateFW::FirmwareUpdate()
     #endif//#ifdef IOTDEVICE_UI
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("Update OK!!\n", OUPUT);
+    #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("Update OK!!\n");
     #endif// LOOKLINE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("Update OK!!");
@@ -373,6 +382,9 @@ void UpdateFW::FirmwareUpdate()
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCodes) + "\n", OUPUT);
     #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("error in downloading version file:" + String(HttpCodes) + "\n");
+    #endif// PLC_MASTER_UI
       }
       https.end();
     }
@@ -383,6 +395,10 @@ void UpdateFW::FirmwareUpdate()
   {
     payload.trim();
     if (payload.equals(FirmwareVer)) {
+      
+      #ifdef PLC_MASTER_UI
+      LOGLN("Firmware detected ver:" + String(payload));
+      #endif//#ifdef PLC_MASTER_UI   
       #ifdef LOOKLINE_UI
       LOGLN("Firmware detected ver:" + String(payload));
       #endif//#ifdef LOOKLINE_UI    
@@ -397,6 +413,9 @@ void UpdateFW::FirmwareUpdate()
     else 
     {
       
+      #ifdef PLC_MASTER_UI
+      LOGLN("New firmware detected ver:" + String(payload));
+      #endif//#ifdef PLC_MASTER_UI 
       #ifdef LOOKLINE_UI
       LOGLN("New firmware detected ver:" + String(payload));
       #endif//#ifdef LOOKLINE_UI      

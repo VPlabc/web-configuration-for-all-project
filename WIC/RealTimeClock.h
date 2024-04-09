@@ -62,8 +62,20 @@ void GetTime()
   Years = Gettime_RTC.year;
 #endif//#ifdef RTC_DS3231
 }
-void updateTime()
+byte countTimeErrors = 0;
+typedef struct{
+  int hour;
+  int min;
+  int sec;
+  int day;
+  int month;
+  int year;
+  unsigned long epochTime;
+}repondTime;
+
+repondTime updateTime()
 {
+    repondTime retTime;
     struct tm  tmstruct;
     // time_t now;
     // time (&now);
@@ -99,22 +111,35 @@ void updateTime()
             now = time(nullptr);
         }
     }
-    printLocalTime();
+    // printLocalTime();ß
     if(!getLocalTime(&tmstruct)){
-      Serial.println("Failed to obtain time");
-      return;
-    }  
-    if(tmstruct.tm_hour > 24){tmstruct.tm_hour = tmstruct.tm_hour - 231;}
-    LOG("Time:" + String(tmstruct.tm_hour)+':'+String(tmstruct.tm_min) + '\n');
-    LOG("Date:" + String(tmstruct.tm_mday-1)+"/"+String(tmstruct.tm_mon+1)+"/"+String((tmstruct.tm_year-100)+2000) + '\n');
-    if(tmstruct.tm_hour-1 < 0 || tmstruct.tm_hour-1 > 23 || (tmstruct.tm_year-100)+2000 < 0){}
-   else{SetTime(tmstruct.tm_sec,tmstruct.tm_min,tmstruct.tm_hour,tmstruct.tm_mday-1,tmstruct.tm_mon+1,(tmstruct.tm_year-100)+2000);
-#ifdef Moto_UI
-    Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, 1);//OFF WiFi Run Moto Mode
-    Result = CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &ModeRun1);
-    LOGLN("ModeRun:" + String(ModeRun1));
-#endif//#ifdef Moto_UI
-   }
+      Serial.println("Failed to obtain time");countTimeErrors++;
+      // return;
+    }else {
+        time_t thisnow;
+        int day = tmstruct.tm_mday;
+        if(countTimeErrors > 10){ESP.restart();} 
+        if(tmstruct.tm_hour > 24){tmstruct.tm_hour = tmstruct.tm_hour - 231;}
+        if(tmstruct.tm_hour > 24){tmstruct.tm_hour = tmstruct.tm_hour - 24;}
+        if(day < 10){day = tmstruct.tm_mday;}else{day = tmstruct.tm_mday-1;}
+        // LOG("Time:" + String(tmstruct.tm_hour)+':'+String(tmstruct.tm_min) + '\n');
+        // LOG("Date:" + String(day)+"/"+String(tmstruct.tm_mon+1)+"/"+String((tmstruct.tm_year-100)+2000) + '\n');
+        if(tmstruct.tm_hour-1 < 0 || tmstruct.tm_hour-1 > 23 || (tmstruct.tm_year-100)+2000 < 0){}
+      else{SetTime(tmstruct.tm_sec,tmstruct.tm_min,tmstruct.tm_hour,day,tmstruct.tm_mon+1,(tmstruct.tm_year-100)+2000);
+      retTime.day = day;retTime.month = tmstruct.tm_mon+1;retTime.year = (tmstruct.tm_year-100)+2000;
+      retTime.hour = tmstruct.tm_hour-1;retTime.min = tmstruct.tm_min;retTime.sec = tmstruct.tm_sec;
+      time(&thisnow);retTime.epochTime = thisnow;
+     
+    // LOGLN("now: " + String(now));
+    // LOGLN("thisnow: " + String(thisnow));
+    #ifdef Moto_UI
+        Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, 1);//OFF WiFi Run Moto Mode
+        Result = CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &ModeRun1);
+        LOGLN("ModeRun:" + String(ModeRun1));
+    #endif//#ifdef Moto_UI
+    }
+   } 
+   return retTime;
 }
 
 #endif//RTC

@@ -40,6 +40,17 @@ extern "C" {
 #include <time.h>
 #endif
 
+#ifdef FILECONFIG
+#include "FileConfig.h"
+ NetworkFileConfig netconfig;
+ RespondNetworkData NetworkDatas;
+#endif//FILE_CONFIG
+#include "RealTimeClock.h"
+repondTime ConfigretTime;
+
+#include "DataTransfer/data_transfer.h"
+
+ CFRespondNetworkData NetworkDataCF;
 #ifdef DHT_FEATURE
 #include "DHTesp.h"
 extern DHTesp dht;
@@ -502,40 +513,49 @@ void  CONFIG::InitPins()
 }
 
 #if defined(TIMESTAMP_FEATURE)
-void CONFIG::init_time_client()
+CFrepondTime CONFIG::init_time_client()
 {
-    String s1, s2, s3;
-    int8_t t1;
-    byte d1;
-    if (!CONFIG::read_string (EP_TIME_SERVER1, s1, MAX_DATA_LENGTH) ) {
-        s1 = FPSTR (DEFAULT_TIME_SERVER1);
-    }
-    if (!CONFIG::read_string (EP_TIME_SERVER2, s2, MAX_DATA_LENGTH) ) {
-        s2 = FPSTR (DEFAULT_TIME_SERVER2);
-    }
-    if (!CONFIG::read_string (EP_TIME_SERVER3, s3, MAX_DATA_LENGTH) ) {
-        s3 = FPSTR (DEFAULT_TIME_SERVER3);
-    }
-    if (!CONFIG::read_byte (EP_TIMEZONE, (byte *) &t1 ) ) {
-        t1 = DEFAULT_TIME_ZONE;
-    }
-    if (!CONFIG::read_byte (EP_TIME_ISDST, &d1 ) ) {
-        d1 = DEFAULT_TIME_DST;
-    }
-    configTime (3600 * (t1), d1 * 3600, s1.c_str(), s2.c_str(), s3.c_str() );
-    time_t now = time(nullptr);
-    if (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) {
-        int nb = 0;
-        while ((now < 8 * 3600 * 2) && (nb < 6)) {
-            wait(500);
-            nb++;
-            now = time(nullptr);
-        }
-    }
+    CFrepondTime repondTimeCF;
+//   LOGLN("Time Init ________________________________________");
+// SetupTime();
+if(WiFi.status() == WL_CONNECTED){
+// updateTime();
+//   LOGLN("File Init ________________________________________");
+    ConfigretTime = updateTime();
+    repondTimeCF.day = ConfigretTime.day;
+    repondTimeCF.hour = ConfigretTime.hour;
+    repondTimeCF.min = ConfigretTime.min;
+    repondTimeCF.sec = ConfigretTime.sec;
+    repondTimeCF.month = ConfigretTime.month;
+    repondTimeCF.year = ConfigretTime.year;
+    repondTimeCF.epochTime = ConfigretTime.epochTime;
+  // String FileName = "DataLog_20_03_24.csv";
+  // if(!SD.exists(FileName)){writeFile(SD, FileName, "Creat file");LOGLN("File Created ");}
+}else{LOGLN("Not Init Time");}
+  return repondTimeCF;
 }
 
 #endif
+CFRespondNetworkData CONFIG::init_Network_config()
+{
+  #ifdef FILECONFIG
+  NetworkDatas = localStorageExport();
+        NetworkDataCF.ipAdress = NetworkDatas.ipAdress;
+        NetworkDataCF.getway = NetworkDatas.getway;
+        NetworkDataCF.subnet = NetworkDatas.subnet;
+        NetworkDataCF.primaryDNS = NetworkDatas.primaryDNS;
+        NetworkDataCF.secondaryDNS = NetworkDatas.secondaryDNS;
+        NetworkDataCF.EthPort = NetworkDatas.EthPort;
+        NetworkDataCF.MQhost = NetworkDatas.MQhost;
+        NetworkDataCF.MQport = NetworkDatas.MQport;
+        NetworkDataCF.MQuser = NetworkDatas.MQuser;
+        NetworkDataCF.MQpass = NetworkDatas.MQpass;
+        NetworkDataCF.wssid = NetworkDatas.wssid;
+        NetworkDataCF.wpass = NetworkDatas.wpass;
 
+  #endif//FILECONFIG
+  return NetworkDataCF;
+}
 bool CONFIG::is_direct_sd = false;
 
 
@@ -890,6 +910,7 @@ bool CONFIG::write_string (int pos, const __FlashStringHelper *str)
 //write a string (array of byte with a 0x00  at the end)
 bool CONFIG::write_string (int pos, const char * byte_buffer)
 {
+// 
     int size_buffer;
     int maxsize = LAST_EEPROM_ADDRESS;
     size_buffer = strlen (byte_buffer);
@@ -901,11 +922,37 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         break;
     case EP_AP_SSID:
     case EP_STA_SSID:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.wssid = String(byte_buffer);
+        NetworkDatas.wssid = NetworkDataCF.wssid;
+        #endif//FILECONFIG
         maxsize = MAX_SSID_LENGTH;
         break;
     case EP_AP_PASSWORD:
     case EP_STA_PASSWORD:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.wpass = String(byte_buffer);
+        NetworkDatas.wpass = NetworkDataCF.wpass;
+        #endif//FILECONFIG
         maxsize = MAX_PASSWORD_LENGTH;
+        break;
+    case EP_MQTT_BROKER:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQhost = String(byte_buffer);
+        NetworkDatas.MQhost = NetworkDataCF.MQhost;
+        #endif//FILECONFIG
+        break;
+    case EP_MQTT_USER:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQuser = String(byte_buffer);
+        NetworkDatas.MQuser = NetworkDataCF.MQuser;
+        #endif//FILECONFIG
+        break;
+    case EP_MQTT_PASS:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQpass = String(byte_buffer);
+        NetworkDatas.MQpass = NetworkDataCF.MQpass;
+        #endif//FILECONFIG
         break;
     case EP_HOSTNAME:
         maxsize = MAX_HOSTNAME_LENGTH;
@@ -937,6 +984,7 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
             return false;
         }
     }
+    // saveLocalStorage(NetworkDatas);
     //copy the value(s)
     EEPROM.begin (LAST_EEPROM_ADDRESS);
     for (int i = 0; i < size_buffer; i++) {
@@ -953,10 +1001,26 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
 //write a buffer
 bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 {
+    
+ DataTransfer data_transfer;
     //check if parameters are acceptable
     if (size_buffer == 0 ||  pos + size_buffer > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error write buffer\r\n")
         return false;
+    }
+    switch (pos) {
+        #ifdef MQTT_USE
+    case EP_MQTT_PORT:
+        static uint16_t int16 = data_transfer.EncodeWord(byte_buffer[1],byte_buffer[0]);
+        NetworkDataCF.MQport = String(int16);
+        NetworkDatas.MQport = NetworkDataCF.MQport;
+        LOGLN("MQTT PORT: " +  NetworkDataCF.MQport);
+    #endif//MQTT_USE
+        break;
+    case ESP_NOTIFICATION_SETTINGS:
+        break;
+    default:
+        break;
     }
     EEPROM.begin (LAST_EEPROM_ADDRESS);
     //copy the value(s)
@@ -965,6 +1029,9 @@ bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
     }
     EEPROM.commit();
     EEPROM.end();
+    #ifdef DataLog
+    saveLocalStorage(NetworkDatas);
+    #endif//DataLog
     return true;
 }
 
@@ -1162,6 +1229,8 @@ bool CONFIG::reset_config()
 
     return set_EEPROM_version(EEPROM_CURRENT_VERSION);
 }
+
+
 
 void CONFIG::print_config (tpipe output, bool plaintext, ESPResponseStream  *espresponse)
 {
