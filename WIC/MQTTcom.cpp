@@ -111,7 +111,8 @@ const char* chararray = "";
 const char* mqttserver = "";
 const char* charmqttUserName = "";
 const char* charmqttUserPassword = "";
-
+byte MQTTreconnect = 0;
+byte MQTTcheck = 0;bool PrintOnce = 1;
 
 byte Debug = true;
 byte DataACK = false;
@@ -194,43 +195,57 @@ if(Debug){
 }
 
 byte MQTTCOM::GetDataACK(){return DataACK;}
+void MQTTCOM::SetDataACK(byte d){ DataACK = d;}
 
-
+bool Statup = 1;
 void MQTTCOM::setup()
 {
+  mqttClient.disconnect();delay(1000);
   #ifdef RF
     RF_Serial.begin(115200);
   #endif
+  int mqttPort;
+  #ifdef FILECONFIG
+    CFRespondNetworkData MQTTNetworkDatas;
+    MQTTNetworkDatas = CONFIG::init_Network_config();
+    mqttbroker= MQTTNetworkDatas.MQhost;
+    mqttPort = MQTTNetworkDatas.MQport.toInt();
+    mqttUserName = MQTTNetworkDatas.MQuser;mqttUserName.replace(" ","");
+    charmqttUserName = mqttUserName.c_str();
+    mqttUserPassword = MQTTNetworkDatas.MQpass;mqttUserPassword.replace(" ","");
+    charmqttUserPassword = mqttUserPassword.c_str();
+  #else
   if(CONFIG::read_string (EP_MQTT_BROKER, mqttbroker, MAX_MQTT_BROKER_LENGTH)){
     // LOGLN("mqtt broker:" + String(mqttbroker));
   }
-  int mqttPort;
   CONFIG::read_buffer (EP_MQTT_PORT,  (byte *) &mqttPort, INTEGER_LENGTH);
+  #endif//#ifdef FILECONFIG
+
     mqttbroker.replace(" ","");
     mqttserver = mqttbroker.c_str();
     mqttClient.setServer( mqttserver, mqttPort);
     mqttClient.setCallback(callback);
   String MAC = WiFi.macAddress();
   MAC.replace(":", "");
-  thingName = "VPLAB_Hub_" + MAC + random(0,100);
+  thingName = "i-Soft_Hub_" + MAC + random(0,9999);
     #ifdef AutoIT
         Debug = DEBUG; 
     #endif
   if(CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug)){
-    LOGLN("Debug:" + String((Debug==0)?"Not Debug":"Debug"));
+    LOGLN("Debug mode :" + String((Debug==0)?"Not Debug":"Debug"));
   }
+  // PrintOnce = 1;
 }
 unsigned long next_receiver_ping_timestamp1;
 bool MQTTonce = true;
 void MQTTCOM::loop()
 {
-    if(DataACK == true){getDataFormSD();DataACK = false;}
-    if(WiFi.status() == WL_CONNECTED){mqttReconnect();mqttClient.loop();if(MQTTonce){LOG("MQTT Working...\n");MQTTonce = false;}}
+  if( DataACK == 1){DataACK = 2;getDataFormSD();DataACK = 0;}
+  if(WiFi.status() == WL_CONNECTED){mqttReconnect();mqttClient.loop();if(MQTTonce){LOG("MQTT Working...\n");MQTTonce = false;}}
 }
 
 /* ################################# MQTT ########################################### */
-byte MQTTreconnect = 0;
-byte MQTTcheck = 0;bool PrintOnce = 1;
+
 void MQTTCOM::mqttReconnect() {
   if ( String(mqttbroker) == "" || WiFi.status() != WL_CONNECTED){
     // #ifdef VOM
@@ -247,19 +262,21 @@ void MQTTCOM::mqttReconnect() {
   }
   #ifdef FILECONFIG
   CFRespondNetworkData MQTTNetworkDatas;
-        if(PrintOnce){
-          MQTTNetworkDatas = CONFIG::init_Network_config();
-          LOGLN("___ MQTT ___ \n MQTT Host: " + MQTTNetworkDatas.MQhost);
-          LOGLN("MQTT Port: " + MQTTNetworkDatas.MQport);
-          LOGLN("MQTT User: " + MQTTNetworkDatas.MQuser);
-          LOGLN("MQTT Password: " + MQTTNetworkDatas.MQpass);
-        }
-      mqttbroker = MQTTNetworkDatas.MQhost;mqttbroker.replace(" ","");
-      mqttserver = mqttbroker.c_str();
-      mqttUserName = MQTTNetworkDatas.MQuser;mqttUserName.replace(" ","");
-      charmqttUserName = mqttUserName.c_str();
-      mqttUserPassword = MQTTNetworkDatas.MQpass;mqttUserPassword.replace(" ","");
-      charmqttUserPassword = mqttUserPassword.c_str();
+  MQTTNetworkDatas = CONFIG::init_Network_config();
+  if(PrintOnce){
+    // LOGLN("___ MQTT ___ \n MQTT Host: " + MQTTNetworkDatas.MQhost);
+    // LOGLN("MQTT Port: " + MQTTNetworkDatas.MQport);
+    // LOGLN("MQTT User: " + MQTTNetworkDatas.MQuser);
+    // LOGLN("MQTT Password: " + MQTTNetworkDatas.MQpass);
+  }
+  int mqttPort;
+  mqttPort = MQTTNetworkDatas.MQport.toInt();
+  mqttbroker = MQTTNetworkDatas.MQhost;mqttbroker.replace(" ","");
+  mqttserver = mqttbroker.c_str();
+  mqttUserName = MQTTNetworkDatas.MQuser;mqttUserName.replace(" ","");
+  charmqttUserName = mqttUserName.c_str();
+  mqttUserPassword = MQTTNetworkDatas.MQpass;mqttUserPassword.replace(" ","");
+  charmqttUserPassword = mqttUserPassword.c_str();
   #else//EEPROM
     if(CONFIG::read_string (EP_MQTT_BROKER, mqttbroker, MAX_MQTT_BROKER_LENGTH)){
       if(PrintOnce)LOGLN("mqtt broker:" + String(mqttbroker));
@@ -286,14 +303,18 @@ void MQTTCOM::mqttReconnect() {
   mqtt_connected = false;
 
   MQTTcount--;
-   if ( MQTTcount < 0 && !mqttClient.connected()) {MQTTcount = 500;
+   if ( MQTTcount < 0 && !mqttClient.connected()) {MQTTcount = 50;
+        
+        mqttbroker.replace(" ","");
+        mqttserver = mqttbroker.c_str();
+        mqttClient.setServer( mqttserver, mqttPort);
          String MAC = WiFi.macAddress();
         MAC.replace(":", "");
-        thingName = "VPLAB_Hub_" + MAC + random(0,100);
-        if (mqttClient.connect(thingName.c_str())) {
-          if(Debug){
-          LOGLN("MQTT connected | user:" + String(charmqttUserName)+ "|pass:" + String(charmqttUserPassword) +"|");
-          LOGLN("connected");}
+        thingName = "i-Soft_Hub_" + MAC + random(0,9999);
+        if (mqttClient.connect(thingName.c_str(),charmqttUserName,charmqttUserPassword)) {
+          // if(Debug){
+          // LOGLN("MQTT connected | user:" + String(charmqttUserName)+ "|pass:" + String(charmqttUserPassword) +"|");
+          // LOGLN("connected");}
         String CharArray = Brand + TopicStatus;
         struct tm  tmstructMQTT;getLocalTime(&tmstructMQTT);
         if(tmstructMQTT.tm_hour > 24){tmstructMQTT.tm_hour = tmstructMQTT.tm_hour - 231;}
@@ -304,16 +325,16 @@ void MQTTCOM::mqttReconnect() {
         timeClientMQTT.update();byte ID = 0;CONFIG::read_byte (EP_EEPROM_ID, &ID);
         String msg = "Gateway online | " + String(timeClientMQTT.getEpochTime());
         msg =" Node "+ String(ID) + " Online | " + String(tmstructMQTT.tm_hour)+':'+String(tmstructMQTT.tm_min) + " | " + String(days)+"/"+String(tmstructMQTT.tm_mon+1)+"/"+String((tmstructMQTT.tm_year-100)+2000);
-        mqttClient.publish(CharArray.c_str(), msg.c_str(), willRetain);
-        if(Debug)LOGLN(F("Gateway online "));
-        if(Debug)LOGLN(CharArray.c_str());
+        if(Statup == 1){Statup = 0;mqttClient.publish(CharArray.c_str(), msg.c_str(), willRetain);}
+        // if(Debug)LOGLN(F("Gateway online "));
+        // if(Debug)LOGLN(CharArray.c_str());
 
         CharArray = Brand + TopicSetting;
-        if(Debug)LOGLN(CharArray.c_str());
+        // if(Debug)LOGLN(CharArray.c_str());
         mqttClient.subscribe(CharArray.c_str());
 
         CharArray = Brand + TopicControl;
-        if(Debug)LOGLN(CharArray.c_str());
+        // if(Debug)LOGLN(CharArray.c_str());
         mqttClient.subscribe(CharArray.c_str());
         // showInfo("MQTT", "connected", 3);
         if(Debug)LOGLN("MQTT connected");mqtt_connected = true;
@@ -325,13 +346,13 @@ void MQTTCOM::mqttReconnect() {
         ESPCOM::print("MQTT connected", WS_PIPE);
         mqtt_connected = true;
     } else {
-        if(Debug)LOGLN("MQTT connect failed");
+        if(Debug)LOGLN("MQTT connect failed"); //mqttClient.disconnect();delay(1000);
         #ifdef autoit
             AutoIT_MQTT.Command("0","0","0","0","0");//0_0_0_0_0 MQTT loss
         #endif
         ESPCOM::print("MQTT connect failed", WS_PIPE);
         // showInfo("MQTT", "connection failed", 3);
-        MQTTreconnect++; if(MQTTreconnect > 5)MQTTCOM::setup();
+        MQTTreconnect++; if(MQTTreconnect > 3)ESP.restart();
         mqtt_connected = false;
     }
   }
@@ -342,7 +363,7 @@ void MQTTCOM::mqttPublish(String payload ,String Topic) {
     //char mqttUserPassword[10];
     String CharArray = Brand + Topic;
     strcpy (mqttTopic, CharArray.c_str());
-    //   strcat (mqttTopic, "/status");
+    // strcat (mqttTopic, "/status");
     // LOGLN(mqttTopic);
     // LOGLN(payload);
     if(Debug){
@@ -353,9 +374,10 @@ void MQTTCOM::mqttPublish(String payload ,String Topic) {
     int len = payload.length();
     if(mqttClient.publish_P(mqttTopic, (const uint8_t*)payload.c_str() ,len, willRetain)){
       // LOGLN("Push Done");
+      fail_count = 0;
     }else{
-      LOGLN("Push Failed");
-      fail_count++;if(fail_count > 10){ESPCOM::print("MQTT Failed", WS_PIPE); ESP.restart();}
+      LOGLN("Push Failed");MQTTCOM::setup();
+      fail_count++;if(fail_count > 10){ESPCOM::print("MQTT Failed", WS_PIPE);LOGLN("MQTT push failed Reset"); ESP.restart();}
     }
 }
 

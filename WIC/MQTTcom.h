@@ -10,6 +10,7 @@ class MQTTCOM
 {
 public:
     bool mqtt_connected = false;
+    static void SetDataACK(byte d);
     static byte GetDataACK();
     void setup();
     void loop();

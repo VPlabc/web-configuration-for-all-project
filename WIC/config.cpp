@@ -47,6 +47,7 @@ extern "C" {
 #endif//FILE_CONFIG
 #include "RealTimeClock.h"
 repondTime ConfigretTime;
+repondRTC ConfigretTimeRTC;
 
 #include "DataTransfer/data_transfer.h"
 
@@ -513,8 +514,12 @@ void  CONFIG::InitPins()
 }
 
 #if defined(TIMESTAMP_FEATURE)
-CFrepondTime CONFIG::init_time_client()
+void CONFIG::init_time_client()
 {
+    RTC_Setup();
+}
+
+CFrepondTime CONFIG::Get_Time(){
     CFrepondTime repondTimeCF;
 //   LOGLN("Time Init ________________________________________");
 // SetupTime();
@@ -531,7 +536,22 @@ if(WiFi.status() == WL_CONNECTED){
     repondTimeCF.epochTime = ConfigretTime.epochTime;
   // String FileName = "DataLog_20_03_24.csv";
   // if(!SD.exists(FileName)){writeFile(SD, FileName, "Creat file");LOGLN("File Created ");}
-}else{LOGLN("Not Init Time");}
+}else{LOGLN("Not Init Time => Get RTC");
+byte hourG = 25;
+byte fail = 0;
+while(hourG > 24){
+    ConfigretTimeRTC = GetTime();
+    repondTimeCF.day = ConfigretTimeRTC.day;
+    repondTimeCF.hour = ConfigretTimeRTC.hour;
+    repondTimeCF.min = ConfigretTimeRTC.min;
+    repondTimeCF.sec = ConfigretTimeRTC.sec;
+    repondTimeCF.month = ConfigretTimeRTC.month;
+    repondTimeCF.year = ConfigretTimeRTC.year;
+    repondTimeCF.epochTime = ConfigretTimeRTC.epochTime;
+    hourG = repondTimeCF.hour;if(fail++ > 50)break;
+    }
+    LOGLN( String(repondTimeCF.hour) + ":" + String(repondTimeCF.min) + ":" + String(repondTimeCF.sec) + " | " + String(repondTimeCF.epochTime));
+    }
   return repondTimeCF;
 }
 

@@ -98,7 +98,7 @@ byte LOCK = LEVEL_GUEST;
 extern uint8_t Checksum(const char * line, uint16_t lineSize);
 extern bool sendLine2Serial (String &  line, int32_t linenb, int32_t* newlinenb);
 #ifdef DataLog
-String COMMAND::get_dataLog(fs::FS &fs, String path, byte type, byte Inhour){DLGreadFile(fs, path, type, Inhour);}
+String COMMAND::get_dataLog(fs::FS &fs, String path, byte type, byte Inhour){String Data = DLGreadFile(fs, path, type, Inhour);return Data;}
 #endif//DataLog
 
 //  uint32_t millivolt = word1 << 16 | word2;

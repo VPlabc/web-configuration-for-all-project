@@ -174,10 +174,12 @@ void IRAM_ATTR onTimer() {
 
 TaskHandle_t Task1;
 TaskHandle_t Task2;
+TaskHandle_t Task3;
 // TaskHandle_t Task3;
 
 #include "Tsk1.h"
 #include "Tsk2.h"
+#include "Tsk3.h"
 
 WIC::WIC()
 {
@@ -266,7 +268,8 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #endif//ESP_OLED_FEATURE
             CONFIG::InitDirectSD();
             CONFIG::InitPins();
-            #ifdef MCP_USE CONFIG::Init_MCP(0); 
+            #ifdef MCP_USE 
+            CONFIG::Init_MCP(0); 
             #endif//MCP_USE
 #ifdef RECOVERY_FEATURE
             delay(recoverydelayms);
@@ -358,8 +361,8 @@ LOGLN("Wifi Mode: " + String(RunMode));
 RunMode = 2;
 #endif//Datalog
 if(RunMode == 2){
-    byte Retry = 10;
-    while(Retry > 0){Retry--;wifi_config.Setup(false, LED_STATUS, 1);if(WiFi.status() == WL_CONNECTED)break;}
+    byte Retry = 3;
+    while(Retry > 0 && WiFi.status() != WL_CONNECTED){Retry--;wifi_config.Setup(false, LED_STATUS, 1);if(WiFi.status() == WL_CONNECTED)break;}
 #endif//PLC_MASTER_UI
             // setup wifi according settings
 // wifi_config.Setup(true, LED_STATUS, 1);
@@ -420,7 +423,7 @@ if(RunMode == 2){
             //         ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
             // #endif//#ifdef ESP_OLED_FEATURE
 #if defined(TIMESTAMP_FEATURE)
-if(WiFi.status() == WL_CONNECTED)CONFIG::init_time_client();
+CONFIG::init_time_client();
 #endif
 #ifdef Valve_UI
             valves.valve_setup();
@@ -499,6 +502,17 @@ PLC_MASTER_Prog.setup();
     NULL,        /* parameter of the task */
     1,           /* priority of the task*/
     &Task2,      /* Task handle to keep track of created task */
+    1);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  //Task3 :
+  xTaskCreatePinnedToCore(
+    Task3code,   /* Task function. */
+    "Task3",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task3,      /* Task handle to keep track of created task */
     1);          /* pin task to core x */
   delay(500);
   //------------------------------------------------------------------------

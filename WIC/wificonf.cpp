@@ -247,6 +247,7 @@ void onWiFiEvent(WiFiEvent_t event)
 #ifndef MKS_TFT_FEATURE
 #ifndef Moto_UI 
         if(debug)ESPCOM::println (F ("Connected"), PRINTER_PIPE);
+        ClientConnect = 1;
 #endif//
 #endif
 #ifdef ESP_OLED_FEATURE

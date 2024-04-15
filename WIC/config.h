@@ -781,7 +781,7 @@ typedef enum {
 #define DataLog
 #endif//RFData
 
-
+#define RTC_DS3231
 // #define MeshGateway
 // #define MotionData
 
@@ -1250,11 +1250,12 @@ public:
     static String getLoRaPower();
     static void SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX );
     static CFRespondNetworkData init_Network_config();
+    static CFrepondTime Get_Time();
 #ifdef Gyro_UI
     static bool GetState();
 #endif//Gyro_UI    
 #if defined(TIMESTAMP_FEATURE)
-    static CFrepondTime init_time_client();
+    static void init_time_client();
 #endif
 private:
     static uint8_t FirmwareTarget;

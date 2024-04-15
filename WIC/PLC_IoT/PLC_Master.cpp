@@ -104,7 +104,7 @@ enum {slave,master};
 //////////////// registers of your slave ///////////////////
 
 
-unsigned long EVENT_INTERVAL_MS1 = 1000;
+unsigned long EVENT_INTERVAL_MS1 = 3000;
 unsigned long REFRESH_INTERVAL_MS = 600000;
 #ifdef MASTER_MODBUS
 byte MBRole = master;
@@ -165,7 +165,7 @@ void PLC_MASTER::SocketRecive(uint8_t *Payload){
 #ifdef DataLog
         String PushData = COMMAND::get_dataLog(SD, FileName, type, inhour);
         // LOGLN("Load:\n " + PushData);
-        socket_server->broadcastTXT(PushData.c_str());
+        if(connectWebSocket == 1 || connectWebSocket == 2){socket_server->broadcastTXT(PushData.c_str());}
         if(mqttConnected && WiFi.status() == WL_CONNECTED){mqttPLC.mqttPublish(PushData, "/isoft_sensor/updateChart");}
         PushData = "";
 #endif//DataLog
@@ -349,6 +349,13 @@ Mesh_loop();
   //   // LOGLN( PLCModbusCom.getModbusupdateData());
   //   PLCModbusCom.Write_PLC(PLCModbusCom.getModbusupdateAddr(), PLCModbusCom.getModbusupdateData());
   // }
+static unsigned long lastTime = millis();
+static unsigned long INTERVAL_MS = 5000;
+if((millis() - lastTime) > INTERVAL_MS){
+  lastTime = millis();
+  // String PushData = COMMAND::get_dataLog(SD, "/1_DataLog_9_04_2024.csv", 0, 24);
+  // LOGLN(PushData);
+}
 
 static unsigned long lastEventTime = millis();
 // static unsigned long lastEventTimess = millis();
@@ -358,6 +365,10 @@ if ((millis() - lastEventTime) > EVENT_INTERVAL_MS) {
   lastEventTime = millis();
 #ifdef MQTT_USE
 mqttConnected = mqttPLC.connect_state();
+
+  #if defined(MQTTSSL) || defined(MQTT_USE)
+  if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
+  #endif
 if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSocket == 2)){
 #ifdef SHT
   Sensor.UpdateData();
@@ -404,21 +415,21 @@ if((mqttConnected || mqttWsConnected)&&( connectWebSocket == 1 || connectWebSock
 }
 
 #if defined( VOM) || defined (DataLog)//Reset after 30s
-if (((millis() - lastEventTimeReset) > 60000 ) && connectWebSocket == 0 && WiFi.status() != WL_CONNECTED) {LOGLN("Reset after 60s");lastEventTimeReset = millis();ESP.restart();}
+if (((millis() - lastEventTimeReset) > 60000 )&&( mqttConnected == 0 && connectWebSocket == 0 && WiFi.status() != WL_CONNECTED)) {LOGLN("Reset after 60s");lastEventTimeReset = millis();ESP.restart();}
 #endif//VOM
 
 
 static unsigned long lastEventTime1 = millis();
 if (((millis() - lastEventTime1) > EVENT_INTERVAL_MS1 )) {lastEventTime1 = millis();
 #ifdef DataLog
+    // LOGLN("MQTT connect state: " + String(mqttConnected));
     // time_t Nows = timeClient.getEpochTime();
     // timeClient.update();
     // time_t Times = time(nullptr);
 #endif//DataLog
     // LOGLN("Data Log: " + String(ctime(&Times)) + " | " + String(Nows));
-  #if defined(MQTTSSL) || defined(MQTT_USE)
-  if(!mqttConnected && connectWebSocket == 1 || connectWebSocket == 2){mqttPLC.mqttReconnect();}
-  #endif///////////////////////////// ID Slave ////////// Type ////////////// Address ////////////// Data  //////////////////////
+
+  ///////////////////////////// ID Slave ////////// Type ////////////// Address ////////////// Data  //////////////////////
 #if defined(PLC_OEE) || defined(RFData)
 //View WORD   
 for(int i = 0 ; i < 120 ; i++) {Register[0][i] = 1;Register[2][i] = 2;Register[1][i] =  i;Register[3][i] = PLCModbusCom.holdingRegisters[i]; }
@@ -561,6 +572,7 @@ json += "\"}";
 json += "]}";
 // LOG(json);
     if(connectWebSocket == 1){WebSendata = 1;socket_server->broadcastTXT(json);sendInfo();WebSendata = 0;}
+
 }
 // PLCModbusCom.modbus_read_update(HOLDING_REGS_AnalogOutData);
 
