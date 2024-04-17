@@ -508,6 +508,7 @@ new_sensor_found = false;
     CFrepondTime MeshRepondTime;
     MeshRepondTime = CONFIG::Get_Time();
   LOGLN("hour: " + String(MeshRepondTime.hour));
+  LOGLN("EpochTime: " +  String(MeshRepondTime.epochTime));
   for (int i = 0; i < RF_sensors_saved; i++) {
     if (RFsensors[i].id == ID){
        RFsensors[i].state = incomingReadings.state;
