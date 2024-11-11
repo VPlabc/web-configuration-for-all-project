@@ -31,6 +31,7 @@
 
 
 
+    // extern void sendMessage(String message);
 
 class WIC
 {
@@ -46,11 +47,12 @@ public:
 #endif//ServerUpdateFW
 
     WIC();
-    void begin(uint16_t startdelayms = 1000, uint16_t recoverydelayms = 1000);
+    void begin(uint16_t startdelayms = 0, uint16_t recoverydelayms = 1000);
     void process();
     #ifdef LOOKLINE_UI
     void checkFW();
     void OnceCheckFW();
+    void Set_Init_UI(String Auths);
     #endif//LooklineUI
 
 

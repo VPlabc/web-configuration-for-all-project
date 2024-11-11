@@ -4,16 +4,20 @@
 #ifdef LOOKLINE_UI
 
 // #include "wificonf.h"
-#include "espcom.h"
+
 // #include "webinterface.h"
-// #include "command.h"
+#include "command.h"
+// ESPResponseStream espresponses;
+#include "espcom.h"
+
 #include "WIC.h"
 WIC looklineWIC;
+#include "webinterface.h"
+
 #include "LookLine.h"
  Command cmdLookLine;
  LOOKLINE_PROG Lookline_PROG;
 #include "7SegModule.h"
-ESPResponseStream espresponse;
 #include "FirmwareUpdate.h"
 UpdateFW UDFWLookLine;
 #include "syncwebserver.h"
@@ -28,31 +32,36 @@ WebSocketsServer * socket_servers;
     PubSubClient mqtt(client);
 #endif//MQTT_Mode
 
+#define BootButton 0
+
+bool new_Lookline_found = false;
+// struct_message  msg1;
+struct_Parameter_message  Looklines[NUM_LOOKLINES];
+
+int Looklines_saved = 0;
+
 byte DispMode = Main;
 byte role = 0;
-#include "MeshNetwork.h"
-#include "MQTT.h"
-#include "LoRa.h"
-#define LoRa_Seri Serial2
-#define PC_Seri Serial
-#include "Task_Prog.h"
-TaskPin taskPins;
 
 bool newFWdetec = false;
-byte Debug = true;
+extern byte LooklineDebug = true;
 
 int CountOT_m=0;
 int CountOT_Hm=0;
 int CountOT_Lm=0;
 int PLAN=0;
 int RESULT=0;
+int PLanSet =    1;//boi so Plan
+int ResultSet =  1;//boi so Result
+int pcsInShift = 1;//số sản phẩm chạy theo Plan
+int PlanLimit =  9999;
 byte ModuleType=0;
 byte AmountNode = 0;
 byte CheckLoss = 0;
   bool setupEn = false;
   byte NodeRun = 1;
 
-  int NodeID =0;
+extern  int NodeID =0;
 
   byte BoardIDs = 01;
   byte NetIDs = 01;
@@ -75,24 +84,41 @@ byte CheckLoss = 0;
   byte MonitorMode = 0;
   byte ComMasterSlave = 1;
   byte Lora_CH = 0;
+  byte TEST = 0;
   int DisplayMode = Main;
   byte ComMode = LoRa;
   byte WiFiMode = 0;
-  int counter2 = 0;//nhap nhay
+  int counterTimePlan = 0;//nhap nhay
+  uint32_t counterTimeReset = 0;//nhap nhay
   int counter3 = 0;//connected 
   int Counter4 = 0;//GatewayTimeoutSend 
   int Counter5 = 0;//GatewayTimeoutfeedback 
   int Counterstatus = 10000;//GatewayTimeout status
   byte countSer;
-  // bool setupEn;
-  bool done;
-  // byte NodeID;
+bool done;
+  byte start = false;
+  byte config = false;
   int IDSent = 0;
-  char buffer[250];
+char buffer[250];
 bool LookLineOnce = true;
 bool LookLineOnce1 = true;
   int Time = 10;
 
+  uint32_t TimeReset = 60;
+//#include "MeshNetwork.h"
+#include "MQTT.h"
+#include "LoRa.h"
+#define LoRa_Seri Serial2
+#define PC_Seri Serial
+#include "Task_Prog.h"
+TaskPin taskPins;
+/////////////////////////////////////////////////////////////////
+#include <ClickButton.h>
+ClickButton button(BootButton, LOW, CLICKBTN_PULLUP);
+
+
+struct_command_message DataCommand;
+struct_Parameter_message DataLookline;
  #ifdef __cplusplus
   extern "C" {
  #endif
@@ -100,6 +126,264 @@ bool LookLineOnce1 = true;
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef Mesh_Network
+////////////////////// MESH
+/////////////////////////////////////////////////////////////////
+#include "esp_wifi.h"
+#include <WiFi.h>
+#include <esp_now.h>
+void formatMacAddress(const uint8_t *macAddr, char *buffer, int maxLength);
+void receiveCallback(const uint8_t *macAddr, const uint8_t *data, int dataLen);
+void sentCallback(const uint8_t *macAddr, esp_now_send_status_t status);
+void broadcast(const String &message);
+void MeshSetup(void);
+void MeshLoop(void);
+void MeshLookLineSetup();
+//char buffer[ESP_NOW_MAX_DATA_LEN + 1];
+
+uint8_t current_protocol;
+esp_now_peer_info_t peerInfo;
+esp_interface_t current_esp_interface;
+wifi_interface_t current_wifi_interface;
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};   // SENSOR MAC`
+int rssi_display;
+void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,int savePlan,int saveResult,byte Type,byte saveCom,byte saveWifi);
+// Estructuras para calcular los paquetes, el RSSI, etc
+typedef struct {
+  unsigned frame_ctrl: 16;
+  unsigned duration_id: 16;
+  uint8_t addr1[6]; /* receiver address */
+  uint8_t addr2[6]; /* sender address */
+  uint8_t addr3[6]; /* filtering address */
+  unsigned sequence_ctrl: 16;
+  uint8_t addr4[6]; /* optional */
+} wifi_ieee80211_mac_hdr_t;
+
+typedef struct {
+  wifi_ieee80211_mac_hdr_t hdr;
+  uint8_t payload[0]; /* network data ended with 4 bytes csum (CRC32) */
+} wifi_ieee80211_packet_t;
+//La callback que hace la magia
+void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
+  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
+  if (type != WIFI_PKT_MGMT)
+    return;
+
+  const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
+  const wifi_ieee80211_packet_t *ipkt = (wifi_ieee80211_packet_t *)ppkt->payload;
+  const wifi_ieee80211_mac_hdr_t *hdr = &ipkt->hdr;
+
+  int rssi = ppkt->rx_ctrl.rssi;
+  rssi_display = rssi;
+}
+  char bufferMesh[250];
+  bool Meshdone;
+void broadcast(const String &message);
+void formatMacAddress(const uint8_t *macAddr, char *buffer, int maxLength)
+{
+  snprintf(buffer, maxLength, "%02x:%02x:%02x:%02x:%02x:%02x", macAddr[0], macAddr[1], macAddr[2], macAddr[3], macAddr[4], macAddr[5]);
+}
+void OnLookLineDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  if(LooklineDebug){
+  // LOG("\r\nLast Packet Send Status:\t");
+  // LOGLN(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  
+  }
+ 
+}
+void MeshLookLineRecive(const uint8_t *macAddr, const uint8_t *data, int dataLen)
+{
+// only allow a maximum of 250 characters in the message + a null terminating byte
+  
+  int msgLen = min(ESP_NOW_MAX_DATA_LEN, dataLen);
+  memcpy(&DataLookline, data, sizeof(DataLookline));
+  // make sure we are null terminated
+  // format the mac address
+  char macStr[18];
+  formatMacAddress(macAddr, macStr, 18);
+  // debug log the message to the serial port
+  // LOGLN("Received message from:" + String(macStr));
+  // what are our instructions
+    done = true;
+    String net_id = "";String node_id = "";
+      net_id += String((DataLookline.networkID / 1000) % 10);
+      net_id += String((DataLookline.networkID / 100) % 10);
+      net_id += String((DataLookline.networkID / 10) % 10);
+      net_id += String((DataLookline.networkID / 1) % 10);
+      node_id += String((DataLookline.nodeID / 1000) % 10);
+      node_id += String((DataLookline.nodeID / 100) % 10);
+      node_id += String((DataLookline.nodeID / 10) % 10);
+      node_id += String((DataLookline.nodeID / 1) % 10);
+      if(LooklineDebug)LOGLN("Mesh revice | ID:" + node_id + " | network: " + net_id);node_id.clear();net_id.clear();
+      // Data_Proccess(buffer);
+  if(role == GATEWAY){
+    memcpy(&DataLookline, data, sizeof(DataLookline));
+    // LOGLN("Mesh revice LookLine");
+    String id = "";
+      id += String((DataLookline.nodeID / 1000) % 10);
+      id += String((DataLookline.nodeID / 100) % 10);
+      id += String((DataLookline.nodeID / 10) % 10);
+      id += String((DataLookline.nodeID / 1) % 10);
+
+      String StringPlan = "";
+      StringPlan += (DataLookline.PLAN / 1000) % 10;
+      StringPlan += (DataLookline.PLAN / 100) % 10;
+      StringPlan += (DataLookline.PLAN / 10) % 10;
+      StringPlan += (DataLookline.PLAN / 1) % 10;
+
+      String StringResult = "";
+      StringResult += (DataLookline.RESULT / 1000) % 10;
+      StringResult += (DataLookline.RESULT / 100) % 10;
+      StringResult += (DataLookline.RESULT / 10) % 10;
+      StringResult += (DataLookline.RESULT / 1) % 10;
+      String State = "";
+      if(DataLookline.state){State ="1" + String(WiFiMode);}else{State = "0" + String(WiFiMode);}
+      String sentData = id + "04" + "18" + StringPlan + StringResult + State;State.clear();StringResult.clear();StringPlan.clear();StringPlan.clear();
+      digitalWrite(taskStatus_LED, LOW);delay(100);digitalWrite(taskStatus_LED, HIGH);
+ 
+      // LOGLN("Mesh recived " + sentData);
+
+    if(DataLookline.networkID == BoardIDs){
+      PC_Seri.println(sentData);sentData.clear();if(LooklineDebug) LOGLN("Right network");
+      saveLooklineData(DataLookline.RSSI,DataLookline.nodeID,DataLookline.networkID,DataLookline.state,DataLookline.PLAN,DataLookline.RESULT,DataLookline.type,DataLookline.Com,DataLookline.WiFi);
+      
+      if(role == GATEWAY){     
+        if(start){      
+          String WebData = "GATEWAY: ";
+          for (int i = 0; i < Looklines_saved; i++) {
+            if(DataLookline.nodeID >= 0){
+            WebData += String(Looklines[i].nodeID) + ",";
+            WebData += String(Looklines[i].networkID) + ",";
+            WebData += String(Looklines[i].state) + ",";
+            WebData += String(Looklines[i].PLAN) + ",";
+            WebData += String(Looklines[i].RESULT) + ",";
+            WebData += String(Looklines[i].type) + ",";
+            WebData += String(Looklines[i].RSSI) + ",";
+            WebData += String(Looklines[i].Com) + ",";
+            WebData += String(Looklines[i].WiFi) + ",";
+            WebData += String(Looklines[i].Nodecounter);
+            if ( i < Looklines_saved - 1) WebData += '\n';
+            }
+          }
+          if(start){socket_server->broadcastTXT(WebData);WebData.clear();//LOGLN("update socketData");
+          }
+          //  ESPCOM::println (WebData, WEB_PIPE);
+
+        }
+      DataLookline.nodeID = BoardIDs;
+      DataLookline.networkID = BoardIDs;
+      DataLookline.Cmd = OKcmd;
+      if(config == 1){
+      // MeshLookLineSetup();
+      // esp_now_send(broadcastAddress, (uint8_t *) &DataLookline, sizeof(DataLookline));
+      }
+      // esp_now_send(broadcastAddress, (const uint8_t *)Log.c_str(), Log.length());
+      // LoRaLookLineSetup();
+      digitalWrite(Signal_LED, LOW);delay(100);digitalWrite(Signal_LED, HIGH);
+      }
+    }  
+  }
+  
+  // if(sizeof(DataLookline) == msgLen && (role == NODE || role == REPEARTER)){
+  //   memcpy(&DataLookline, data, sizeof(DataLookline));
+  //   // LOGLN("Mesh revice LookLine");
+  //   if(DataLookline.nodeID  == BoardIDs && DataLookline.networkID == NetIDs){
+  //     LOG("Recive Lookline ID:" + String(DataLookline.nodeID ));
+  //     if(DataLookline.Cmd == OKcmd){LOGLN(" OK");}
+  //     if(DataLookline.Cmd == ONWIFIcmd){LOGLN(" ON Wifi");Lookline_PROG.SetConfig(0);}
+  //     if(DataLookline.Cmd == UPDATEcmd){LOGLN(" UPDATE");
+  //       PLAN = DataLookline.PLAN;
+  //       RESULT = DataLookline.RESULT;
+  //       NodeRun = DataLookline.state;
+  //       Time = DataLookline.Nodecounter;
+
+  //     }
+  //   }
+  // }
+}
+
+
+int check_protocol()
+{
+    char error_buf1[100];
+  if(LooklineDebug){
+    LOGLN();
+    LOGLN("___________________________________");
+    LOGLN();
+  }
+     esp_err_t error_code = esp_wifi_get_protocol(current_wifi_interface, &current_protocol);
+     esp_err_to_name_r(error_code,error_buf1,100);
+  if(LooklineDebug){
+     LOG("esp_wifi_get_protocol error code: ");
+     LOGLN(error_buf1);
+    LOGLN("Code: " + String(current_protocol));
+    if ((current_protocol&WIFI_PROTOCOL_11B) == WIFI_PROTOCOL_11B)
+      LOGLN("Protocol is WIFI_PROTOCOL_11B");
+    if ((current_protocol&WIFI_PROTOCOL_11G) == WIFI_PROTOCOL_11G)
+      LOGLN("Protocol is WIFI_PROTOCOL_11G");
+    if ((current_protocol&WIFI_PROTOCOL_11N) == WIFI_PROTOCOL_11N)
+      LOGLN("Protocol is WIFI_PROTOCOL_11N");
+    if ((current_protocol&WIFI_PROTOCOL_LR) == WIFI_PROTOCOL_LR)
+      LOGLN("Protocol is WIFI_PROTOCOL_LR");
+    LOGLN("___________________________________");
+    LOGLN();
+    LOGLN();
+  }
+    return current_protocol;
+}
+void MeshLookLineSetup()
+{
+  #ifdef Mesh_Network
+   // Init ESP-NOW
+  WiFi.mode(WIFI_AP_STA);
+  #ifdef ARDUINO_ARCH_ESP8266
+  #else
+  if(check_protocol() != 8){
+  esp_wifi_set_protocol(current_wifi_interface, 7);//WIFI_PROTOCOL_LR);
+  check_protocol();
+  }
+  #endif//#ifdef ARDUINO_ARCH_ESP8266
+
+  if (esp_now_init() != ESP_OK) {
+    if(LooklineDebug)LOGLN("Error initializing ESP-NOW");
+    return;
+  }
+  else{
+    LOGLN("initializing MESH OK");
+  }
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnLookLineDataSent);
+  // Register peer
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+  // Add peer        
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    if(LooklineDebug)LOGLN("Failed to add peer");
+    return;
+  }
+  else{
+    if(LooklineDebug)LOGLN("add peer OK");
+  } 
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(MeshLookLineRecive);
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
+  #endif//
+  
+start = 0;config = 3;
+}
+void broadcast(const String &message){
+  esp_now_send(broadcastAddress, (const uint8_t *)message.c_str(), message.length());
+}
+#endif//  #ifdef Mesh_Network
+/////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 void LOOKLINE_PROG::caculaOT()
 {
   float nums = 0;
@@ -125,10 +409,14 @@ void LOOKLINE_PROG::caculaOT()
   }
 }
 
-void LOOKLINE_PROG::UpdateLookLineData(){
+void LOOKLINE_PROG::SetLookineValue(){
   CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
-  CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
   CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
+  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+}
+void LOOKLINE_PROG::UpdateLookLineData(){
+  CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
   CONFIG::read_buffer(EP_EEPROM_PLAN,(byte *) &PLAN, INTEGER_LENGTH);
   CONFIG::read_buffer(EP_EEPROM_PLAN_SET,(byte *) &PLanSet, INTEGER_LENGTH);
   CONFIG::read_buffer(EP_EEPROM_RESULT,(byte *) &RESULT, INTEGER_LENGTH);
@@ -141,50 +429,59 @@ void LOOKLINE_PROG::UpdateLookLineData(){
   CONFIG::read_byte(EP_EEPROM_RUN, &NodeRun);
   CONFIG::read_byte (EP_EEPROM_ROLE, &role);
   CONFIG::read_byte (EP_WIFI_MODE, &WiFiMode);
-  CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug);
-  SetChanel(Lora_CH);
-  if(Debug)LOGLN("Update Data");
-}
+  CONFIG::read_byte (EP_EEPROM_DEBUG, &LooklineDebug);
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  CONFIG::read_byte(EP_EEPROM_TEST_MODE, &TEST);
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  CONFIG::read_byte(EP_EEPROM_COM_MODE, &ComMode);
+  if(ComMode == LoRa){WriteLoRaConfig(Lora_CH, BoardIDs);}
+  if(LooklineDebug)LOGLN("Update Data");
+} 
 
 void LOOKLINE_PROG::DebugOut(String msg,byte output){//1 = Web / 2 = Serial
 if(output == 1) ESPCOM::webprint(msg);
-if(output == 2) ESPCOM::print(msg, DEBUG_PIPE, &espresponse);
+if(output == 2) ESPCOM::print(msg, DEBUG_PIPE);
 }
 
 void LOOKLINE_PROG::LookLineInitB(int pos,byte Mode){
 CONFIG::read_byte(pos, &Mode);
-if(pos == EP_EEPROM_ROLE){if(Debug)LOGLN("Role is :" + String(Mode));LookLineOnce1 = true;}
-if(pos == EP_EEPROM_COM_MODE){if(Debug)LOGLN("Com mode is :" + String(Mode));ComMode = Mode;}
-if(pos == EP_EEPROM_UPDATE_MODE){if(Debug)LOGLN("Update mode is :" + String(Mode));}
-if(pos == EP_EEPROM_AMOUNTNODE){if(Debug)LOGLN("Amount node is :" + String(Mode));AmountNode = Mode;}
-if(pos == EP_EEPROM_RUN){if(Debug)LOGLN("Run set is :" + String(Mode));NodeRun = Mode;
-    caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+if(pos == EP_EEPROM_ROLE){if(LooklineDebug)LOGLN("Role is :" + String(Mode));LookLineOnce1 = true;}
+if(pos == EP_EEPROM_COM_MODE){if(LooklineDebug)LOGLN("Com mode is :" + String(Mode));ComMode = Mode;}
+if(pos == EP_EEPROM_UPDATE_MODE){if(LooklineDebug)LOGLN("Update mode is :" + String(Mode));}
+if(pos == EP_EEPROM_AMOUNTNODE){if(LooklineDebug)LOGLN("Amount node is :" + String(Mode));AmountNode = Mode;}
+if(pos == EP_EEPROM_RUN){if(LooklineDebug)LOGLN("Run set is :" + String(Mode));NodeRun = Mode;
+    SetLookineValue();
   }
-if(pos == EP_EEPROM_ON_OFF){if(Debug)LOGLN("On/Off set is :" + String(Mode));}
-if(pos == EP_EEPROM_CHANELS){if(Debug)LOGLN("Chanel set is :" + String(Mode));SetChanel(Mode);Lora_CH = Mode;}
-if(pos == EP_EEPROM_MODULE_TYPE){if(Debug)LOGLN("Set Module type :" + String(Mode));PinMapInit();LookLineOnce1 = true;}
-if(pos == EP_EEPROM_TIMESENT){if(Debug)LOGLN("Time Sent :" + String(Mode));}
-if(pos == EP_EEPROM_DEBUG){if(Debug)LOGLN("Debuf Mode:" + String(Mode));}
+if(pos == EP_EEPROM_ON_OFF){if(LooklineDebug)LOGLN("On/Off set is :" + String(Mode));}
+if(pos == EP_EEPROM_CHANELS){if(LooklineDebug)LOGLN("Chanel set is :" + String(Mode));WriteLoRaConfig(Mode, BoardIDs);Lora_CH = Mode;}
+if(pos == EP_EEPROM_MODULE_TYPE){if(LooklineDebug)LOGLN("Set Module type :" + String(Mode));PinMapInit();LookLineOnce1 = true;}
+if(pos == EP_EEPROM_TIMESENT){if(LooklineDebug)LOGLN("Time Sent :" + String(Mode));}
+if(pos == EP_EEPROM_DEBUG){if(LooklineDebug)LOGLN("Debug Mode:" + String(Mode));}
+if(pos == EP_EEPROM_TEST_MODE){if(LooklineDebug)LOGLN("Test Mode:" + String(Mode));TEST = Mode;}
 // EP_EEPROM_TIMESENT
 }
 
 
 void LOOKLINE_PROG::LookLineInitI(int pos,int Mode){
 CONFIG::read_buffer(pos,(byte*) &Mode, INTEGER_LENGTH);
-if(pos == EP_EEPROM_TIME_PLAN){if(Debug)LOGLN("Time for Plan is :" + String(Mode));Time = Mode;}
-if(pos == EP_EEPROM_TIMESENT){if(Debug)LOGLN("TIME sent is :" + String(Mode));TimeSent = Mode;}
-if(pos == EP_EEPROM_PLAN){if(Debug)LOGLN("Plan is :" + String(Mode));PLAN = Mode;
-    caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+if(pos == EP_EEPROM_TIME_PLAN){if(LooklineDebug)LOGLN("Time for Plan is :" + String(Mode));Time = Mode;}
+if(pos == EP_EEPROM_TIMESENT){if(LooklineDebug)LOGLN("TIME sent is :" + String(Mode));TimeSent = Mode;
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
+  }
+if(pos == EP_EEPROM_PLAN){if(LooklineDebug)LOGLN("Plan is :" + String(Mode));PLAN = Mode;
+  SetLookineValue();
 }
-if(pos == EP_EEPROM_PLAN_SET){if(Debug)LOGLN("Plan set is :" + String(Mode));PLanSet = Mode;}
-if(pos == EP_EEPROM_RESULT){if(Debug)LOGLN("Result is :" + String(Mode));RESULT = Mode;
-      caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+if(pos == EP_EEPROM_PLAN_SET){if(LooklineDebug)LOGLN("Plan set is :" + String(Mode));PLanSet = Mode;}
+if(pos == EP_EEPROM_RESULT){if(LooklineDebug)LOGLN("Result is :" + String(Mode));RESULT = Mode;
+  SetLookineValue();
 
 }
-if(pos == EP_EEPROM_RESULT_SET){if(Debug)LOGLN("Result set is :" + String(Mode));ResultSet = Mode;}
-if(pos == EP_EEPROM_PCS){if(Debug)LOGLN("Result set is :" + String(Mode));pcsInShift = Mode;}
-if(pos == EP_EEPROM_COUNTER_DELAY){if(Debug)LOGLN("Counter delay :" + String(Mode));SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);}
-SerDisplay();
+if(pos == EP_EEPROM_RESULT_SET){if(LooklineDebug)LOGLN("Result set is :" + String(Mode));ResultSet = Mode;}
+if(pos == EP_EEPROM_PCS){if(LooklineDebug)LOGLN("Result set is :" + String(Mode));pcsInShift = Mode;}
+if(pos == EP_EEPROM_COUNTER_DELAY){if(LooklineDebug)LOGLN("Counter delay :" + String(Mode));
+SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);}SerDisplay();
 }
 void LOOKLINE_PROG::PinMapInit(){
   
@@ -193,7 +490,7 @@ if(ModuleType == ModGateway){
   uint8_t MapPin1[10] = {27,14, 2,15,19,25,26,18, 5, 4};// main board gateway V14
   for(byte i = 0 ; i < 10; i++){MapPin[i] = MapPin1[i];}
   CONFIG::write_byte (EP_EEPROM_ROLE, GATEWAY) ;
- if(Debug){if(Debug)LOGLN("Lookline Gateway V14");}//Debug
+ if(LooklineDebug){if(LooklineDebug)LOGLN("Lookline Gateway V14");}//Debug
 }//if(ModuleType == MoGateway){
 else{//lookline main V14
   uint8_t MapPin0[10] = {25,26, 2,15,19,27,13,22,21, 4};// main board lookline V14
@@ -211,7 +508,7 @@ else{//lookline main V14
   M1 = MapPin[8];
   PWR = MapPin[9];
 
-  if(Debug)LOGLN("pinmap --- SHCP:" + String(SHCP) + " STCP:" + String(STCP)  + " DATA1:" + String(DATA1)   + " DATA2:" + String(DATA2) + " DATA3:" + String(DATA3) + " M0:" + String(M0) + " M1:" + String(M1) + " X0:" + String(X0)  + " X1:" + String(X1) + " X2:" + String(X2)  + " X3:" + String(X3)  + " X4:" + String(X4) + " Status_LED:" + String(Startus_LED) + " Signal_LED:" + String(Signal_LED) ) ;
+  if(LooklineDebug)LOGLN("pinmap --- SHCP:" + String(SHCP) + " STCP:" + String(STCP)  + " DATA1:" + String(DATA1)   + " DATA2:" + String(DATA2) + " DATA3:" + String(DATA3) + " M0:" + String(M0) + " M1:" + String(M1) + " X0:" + String(X0)  + " X1:" + String(X1) + " X2:" + String(X2)  + " X3:" + String(X3)  + " X4:" + String(X4) + " Status_LED:" + String(Startus_LED) + " Signal_LED:" + String(Signal_LED) ) ;
 
   pinMode(PWR, OUTPUT);
   digitalWrite(PWR, HIGH);
@@ -235,10 +532,34 @@ else{//lookline main V14
   pinMode(Signal_LED, OUTPUT);
   pinMode(Startus_LED,OUTPUT);
 }
-
+String ConvBinUnits(int bytes, int resolution) {
+  if      (bytes < 1024)                 {
+    return String(bytes) + " B";
+  }
+  else if (bytes < 1024 * 1024)          {
+    return String((bytes / 1024.0), resolution) + " KB";
+  }
+  else if (bytes < (1024 * 1024 * 1024)) {
+    return String((bytes / 1024.0 / 1024.0), resolution) + " MB";
+  }
+  else return "";
+}
 void ShowParameters()
 {
-    if(Debug)LOGLN("Counter4:" + String(Counter4) + " |Counter5:" + String(Counter5) + " |Role: " + String(role) + " |Amount node: " + String(AmountNode) + " | Module type: " + String(ModuleType) + "| Com Mode: " + String(ComMode) + "| M0:" + String(digitalRead(M0)) + "| M1:" + String(digitalRead(M1) + "| CH:" + String(Lora_CH)));
+    if(LooklineDebug)
+      LOGLN("Counter4:" + String(Counter4) + 
+      " |Counter5:" + String(Counter5) + 
+      " |Role: " + String(role) + 
+      " |Amount node: " + String(AmountNode) + 
+      " | Module type: " + String(ModuleType) + 
+      "| Com Mode: " + String(ComMode) + 
+      "| M0:" +  String(M0) + "(" + String(digitalRead(M0)) + 
+      ")| M1:" +  String(M1) +  "(" + String(digitalRead(M1)) + 
+      ") | CH:" + String(Lora_CH) + 
+      "| TEST:" + String(TEST) + 
+      "| config:" +String(config) + 
+      "| Start: " + String(start)
+      );
 }
 void LOOKLINE_PROG::displayMode(byte Mode){
   DispMode = Mode;
@@ -256,35 +577,239 @@ void LOOKLINE_PROG::SetResult(int SetResults){
 
 void LOOKLINE_PROG::SetRun(byte SetRuns){
   if(SetRuns < 2){
-  NodeRun = SetRuns;if(Debug)LOGLN("Run/Stop Lookline");
-  LOG("Run:"+ String(NodeRun));
+  NodeRun = SetRuns;if(LooklineDebug)LOGLN("Run/Stop Lookline");
+  LOGLN("Run:"+ String(NodeRun));
   }
   if(SetRuns == 2){
-    if(Debug)LOGLN("On/Off Lookline");
-    SetValue(10,  10,  10,  10, 0);
+    if(role == NODE|| role == REPEARTER){
+      if(LooklineDebug)LOGLN("Off Lookline");
+      DispMode = SLEEP;
+    }
+    if(role == GATEWAY){
+      if(LooklineDebug)LOGLN("MESH Mode");
+      if(ComMode != MESH){
+          CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);}
+          else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);}
+          delay(1000);
+          ESP.restart();
+    }
   }
+    if(SetRuns == 5){ PLAN = RESULT = 0;
+      if(LooklineDebug)LOGLN("Clear");
+      CONFIG::write_buffer (EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+      CONFIG::write_buffer (EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+      CONFIG::read_buffer(EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+      CONFIG::read_buffer(EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+    }
+}
+bool onceConfig = true;
+byte LOOKLINE_PROG::GetRun(){return NodeRun;}
+byte LOOKLINE_PROG::GetDebug(){return LooklineDebug;}
+bool LOOKLINE_PROG::GetFW(){return newFWdetec;}
+void LOOKLINE_PROG::SetDone(){done = true;}
+bool oneceMesh = true;
+bool oneceWifi = true;
+void LOOKLINE_PROG::SetStart(byte START){start = START;
+ESPCOM::println("Start: " + String(START), SERIAL_PIPE);
+LOG("Config: " + String(config));LOGLN(" | start: " + String(start));
+//   if(start == 1){//esp_wifi_set_protocol(current_wifi_interface, 3);
+//     // if(oneceWifi){oneceWifi = false;LoRaLooklineSetup();LOGLN("OneceWifi");}
+//     ComMode = 4;oneceMesh = true;
+//   }
+//   if(start == 0){//esp_wifi_set_protocol(current_wifi_interface, WIFI_PROTOCOL_LR);
+//     if(MeshRun){oneceMesh = false;ComMode = MESH;}
+//     if(oneceMesh){oneceMesh = false;MeshLookLineSetup();oneceWifi = true;LOGLN("onceMesh");}
+//   }
+}
+void LOOKLINE_PROG::SetConfig(byte CONFIG){config = CONFIG;
+ESPCOM::println("Config: " + String(CONFIG), SERIAL_PIPE);
+LOG("Config: " + String(config));LOGLN(" | start: " + String(start));
+  if(CONFIG == 3){
+    MeshLookLineSetup();LOGLN("MeshLooklineSetup");
+  }
+  if(CONFIG == 0){//LoRaLooklineSetup();LOGLN("LoRaLooklineSetup");
+  // ComMode = LoRa;
+    // CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);
+  }
+  
+  if(CONFIG == 3){
+    counterTimeReset = 0;
+  }
+  
+}
+void LOOKLINE_PROG::Set_Init_UI(String auths){LOGLN("Set_Init_UI " + auths);socket_server->broadcastTXT(auths);}
 
+
+
+void LOOKLINE_PROG::SAVEDATA(){
+  if (!CONFIG::write_buffer (EP_EEPROM_PLAN, (const byte *) &PLAN, INTEGER_LENGTH) ) {LOG("save Plan failed");}
+  CONFIG::read_buffer(EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+  if (!CONFIG::write_buffer (EP_EEPROM_RESULT, (const byte *) &RESULT, INTEGER_LENGTH) ) {LOG("save Plan failed");}
+  CONFIG::read_buffer(EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
 }
 
-void LOOKLINE_PROG::SetDone(){
-  done = true;
+
+
+
+
+
+
+
+
+
+bool oncecommunication = false;
+
+byte LOOKLINE_PROG::Communication(){
+#ifdef LOOKLINE_MASTER
+  readConfigMessage();
+  if(requestOK == 1){//Update Config
+    return 1;
+  }
+  else if(requestOK == 2){// feedback OK
+    return 1;
+  }
+  else if(requestOK == 3){//Get Config command
+
+    return 1;
+  }
+  else if(requestOK == 4){//Get Config command
+
+    return 1;
+  }
+  else if (oncecommunication && millis() > last_activity_timestamp ){oncecommunication = false;
+    return 2;
+    }
+  else{}
+  #endif//LOOKLINE_MASTER
 }
+
+void LOOKLINE_PROG::sendConfigMessage(const void *message, const size_t length, int idle_timeout, byte CMD){
+#ifdef LOOKLINE_MASTER
+	LOG("Send message " + String(CMD));
+  Lookline_ConfigMsg.Cmd = CMD;  
+  if(CMD == UPDATEcmd){
+	LOGLN(F(" >> Update"));
+    Lookline_ConfigMsg.networkID = NetID;
+    Lookline_ConfigMsg.nodeID = NodeID;
+    Lookline_ConfigMsg.PLAN = PLAN;
+    Lookline_ConfigMsg.SPLAN = PLanSet;
+    Lookline_ConfigMsg.RESULT = RESULT;  
+    Lookline_ConfigMsg.SRESULT = ResultSet;
+    Lookline_ConfigMsg.PlanLimit = PlanLimit;
+    Lookline_ConfigMsg.PCSinH = pcsInShift;
+    Lookline_ConfigMsg.state = NodeRun;
+    Lookline_ConfigMsg.Mode = role;
+    Lookline_ConfigMsg.Com = ComMode;
+    Lookline_ConfigMsg.type = ModuleType;  
+  }
+  
+  if(CMD == OKcmd){
+	LOGLN(F(" >> Feedback OK"));
+  requestOK = 0;
+  }
+	char messageFixed[length];
+	memcpy(messageFixed,message,length);
+  WifiSerial.write(messageFixed,length);
+  WifiSerial.println();
+  if ( idle_timeout > 0 ) {last_activity_timestamp = millis() + idle_timeout * 1000;}
+#endif//Lookline master
+}
+byte LOOKLINE_PROG::readConfigMessage(){// 1: OK, 2:Error, 3:Get Configuration
+#ifdef LOOKLINE_MASTER
+  if (WifiSerial.available()) {
+    Lookline_received_msg_length = WifiSerial.readBytesUntil('\n', Lookline_incomingData, sizeof(Lookline_incomingData));
+    if (Lookline_received_msg_length == sizeof(Lookline_incomingData)) {  // got a msg from a sensor
+      memcpy(&Lookline_ConfigMsg, Lookline_incomingData, sizeof(Lookline_ConfigMsg));
+      	LOG(F("Read message "));
+      if ( Lookline_ConfigMsg.Cmd == UPDATEcmd ) {
+        LOGLN(F(" >> Update"));
+        requestOK = 1;
+        if ( Lookline_ConfigMsg.networkID != NetID ) {NetID = Lookline_ConfigMsg.networkID;}
+        if ( Lookline_ConfigMsg.nodeID != NodeID ) {NodeID = Lookline_ConfigMsg.nodeID;}
+        if ( Lookline_ConfigMsg.PLAN != PLAN ) {PLAN = Lookline_ConfigMsg.PLAN;}
+        if ( Lookline_ConfigMsg.SPLAN != PLanSet ) {PLanSet = Lookline_ConfigMsg.SPLAN;}
+        if ( Lookline_ConfigMsg.RESULT != RESULT ) {RESULT = Lookline_ConfigMsg.RESULT;}
+        if ( Lookline_ConfigMsg.SRESULT != ResultSet ) {ResultSet = Lookline_ConfigMsg.SRESULT;}
+        if ( Lookline_ConfigMsg.PlanLimit != PlanLimit ) {PlanLimit = Lookline_ConfigMsg.PlanLimit;}
+        if ( Lookline_ConfigMsg.PCSinH != pcsInShift ) {pcsInShift = Lookline_ConfigMsg.PCSinH;}
+        if ( Lookline_ConfigMsg.state != NodeRun ) {NodeRun = Lookline_ConfigMsg.state;}
+        if ( Lookline_ConfigMsg.Com != ComMode ) {ComMode = Lookline_ConfigMsg.Com;}
+        if ( Lookline_ConfigMsg.Mode != role ) {role = Lookline_ConfigMsg.Mode;}
+        if ( Lookline_ConfigMsg.type != ModuleType ) {ModuleType = Lookline_ConfigMsg.type;}
+      }
+      else if ( Lookline_ConfigMsg.Cmd == OKcmd ) {
+        LOGLN(F(" >> OK"));
+          sendConfigMessage(&Lookline_ConfigMsg, sizeof(Lookline_ConfigMsg),200, OKcmd);
+        requestOK = 2;
+        return 2;
+      }
+      else if ( Lookline_ConfigMsg.Cmd == GETcmd ) {
+        LOGLN(F(" >> Get Configuration"));
+            sendConfigMessage(&Lookline_ConfigMsg, sizeof(Lookline_ConfigMsg),200, UPDATEcmd);
+            LOGLN("Send Config Success");
+        requestOK = 3;
+        return 3;
+      }
+      else if ( Lookline_ConfigMsg.Cmd == ONWIFIcmd ) {
+        LOGLN(F(" >> On Wifi"));
+            sendConfigMessage(&Lookline_ConfigMsg, sizeof(Lookline_ConfigMsg),200, OKcmd);
+            Lookline_PROG.SetConfig(0);
+        requestOK = 4;
+        return 4;
+      }
+      else if ( Lookline_ConfigMsg.Cmd < 4 ) {
+       requestOK = 0;
+        return 0;
+      }
+    } else {
+        LOGLN("Data failed");
+      // if (Lookline_incomingData[0] == '0') Lookline_receiver_status = 0;
+      // if (Lookline_incomingData[0] == '1') Lookline_receiver_status = 1;
+      // if (Lookline_incomingData[0] == '2') {
+      //   Lookline_receiver_status = 2;
+      // }
+    }
+  }
+#endif//Lookline_master
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 void LOOKLINE_PROG::setup() {
-  Serial.begin(112500);
+  Serial.begin(9600);
   Serial2.begin(9600);
+    button.debounceTime   = 20;   // Debounce timer in ms
+    button.multiclickTime = 250;  // Time limit for multi clicks
+    button.longClickTime  = 1000; // Time until long clicks register
+
   UpdateLookLineData();PinMapInit();
-        // if(Debug)LOGLN("Main Data1--" + String(DATA1));//2
-        // if(Debug)LOGLN("Main Data2--" + String(DATA2));//15
-        // if(Debug)LOGLN("Main Data3--" + String(DATA3));//19
-        // if(Debug)LOGLN("Main STCP--" + String(STCP));//26
-        // if(Debug)LOGLN("Main SHCP--" + String(SHCP));//25
+        // if(LooklineDebug)LOGLN("Main Data1--" + String(DATA1));//2
+        // if(LooklineDebug)LOGLN("Main Data2--" + String(DATA2));//15
+        // if(LooklineDebug)LOGLN("Main Data3--" + String(DATA3));//19
+        // if(LooklineDebug)LOGLN("Main STCP--" + String(STCP));//26
+        // if(LooklineDebug)LOGLN("Main SHCP--" + String(SHCP));//25
   SetPin(DATA1, DATA2, DATA3, SHCP, STCP, BoardIDs, NetIDs, Lora_CH, Startus_LED, TimeSent);
   PrintSeg(Seg[0], Seg[0], Seg1[0]);latch();
-  SetPinLoRa( M0,  M1,  16,  17);
-  ReadLoRaConfig();
+  if(ComMode == LoRa){SetPinLoRa( M0,  M1,  16,  17);}
+  
+  
   if(ModuleType != ModGateway){ SetPin7Seg(DATA1, DATA2, DATA3, SHCP, STCP);}
   // #if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
   //           // CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
@@ -293,32 +818,16 @@ void LOOKLINE_PROG::setup() {
   //           DebugOut("\r\nSet serial baudrate\r\n", OUPUT);
   // #endif
   DebugOut("Initialized.", OUPUT);
+  SendMsg("Initialized.");
           String monitor = "";
-            if(ComMode == MESH){ monitor += "Communica: MESH |";}
-            if(ComMode == MQTT){ monitor += "Communica: MQTT |";}
-            if(ComMode == LoRa){ monitor += "Communica: Lora |";}
-            if(ComMode == RS485com){ monitor += "Communica: RS485 |";}
 
-            monitor += "firmware:";
-            monitor += UDFWLookLine.FirmwareVer;
-            monitor += "\nX0: ";
-            monitor += String(analogRead(X0));
-            monitor += "  X1:";
-            monitor += String(analogRead(X1));
-            monitor += "  X2:";
-            monitor += String(analogRead(X2));
-            monitor += "  X3:";
-            monitor += String(analogRead(X3));
-            monitor += "  X4:";
-            monitor += String(analogRead(X4));
-         if(Debug)LOGLN(monitor);
-  // String URL_FW = "http://";
-  // CONFIG::write_string (EP_EEPROM_URL_FW, URL_FW.c_str() ) ;
-  // CONFIG::write_string (EP_EEPROM_URL_VER, URL_FW.c_str() ) ;
 
+
+    CONFIG::read_byte(EP_EEPROM_TEST_MODE, &TEST);
+    if(TEST >= 2){TEST = 0;CONFIG::write_byte(EP_EEPROM_TEST_MODE, TEST);}
   /////// Test
 #ifdef TestDisplayIntro
-if(ModuleType != ModGateway){  
+if(ModuleType != GATEWAY && TEST){  
   for (int i = 0; i < 10; i++)
   {
     // TestDisplay(i);
@@ -334,25 +843,113 @@ caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
 #endif//not dev
 SerDisplay();
 
-  Serial2.begin(9600);
+if(ComMode == LoRa){
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
 }
+  // Serial2.begin(9600);
+  ///////////////////////////////////////////////////////////////////////////////////
+  #ifndef LOOKLINE_MASTER 
+   MeshLookLineSetup();
+if(TEST){
+    if(ComMode == LoRa){
+    digitalWrite(M0_, HIGH);
+    digitalWrite(M1_, HIGH);
+    // Startup all pins and UART
+    e32ttl100.begin();
+
+  //  If you have ever change configuration you must restore It
+    ResponseStructContainer c;
+    c = e32ttl100.getConfiguration();
+    Configuration configuration = *(Configuration*) c.data;
+    LOGLN(c.status.getResponseDescription());
+    configuration.CHAN = 0x17;
+    configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
+    e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+  c.close();
+    LOGLN("Hi, I'm going to send message!");
+
+    // Send message
+    ResponseStatus rs = e32ttl100.sendMessage("Hello, world?");
+    // Check If there is some problem of succesfully send
+    LOGLN(rs.getResponseDescription());
+    digitalWrite(M0_, LOW);
+    digitalWrite(M1_, LOW);
+    }
+  }//if(ComMode == LoRa){
+            if(ComMode == MESH){ monitor += "Communica: MESH |";MeshLookLineSetup();
+            }
+            if(ComMode == MQTT){ monitor += "Communica: MQTT |";}
+            if(ComMode == LoRa){ monitor += "Communica: Lora |";}
+            if(ComMode == RS485com){ monitor += "Communica: RS485 |";}
+
+            monitor += "firmware:";
+            monitor += UDFWLookLine.FirmwareVer;
+            monitor +=  "| X0: ";
+            monitor += String(analogRead(X0));
+            monitor += "  X1:";
+            monitor += String(analogRead(X1));
+            monitor += "  X2:";
+            monitor += String(analogRead(X2));
+            monitor += "  X3:";
+            monitor += String(analogRead(X3));
+            monitor += "  X4:";
+            monitor += String(analogRead(X4));
+         if(LooklineDebug)LOGLN(monitor);
+#endif//LOOKLINE_MASTER
+}//settup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* ############################ Loop ############################################# */
 
 
 // #define TEST_LORA
 
 
-  void LoRaCommu();
+  void LoRaCommu(byte mode);
 
-
+String strIn = "";
 void LOOKLINE_PROG::loop()
 {
-  //  Counterstatus++;if(Counterstatus > 10000){Counterstatus = 0;LookLineOnce1 = true;
-  // if(Debug)LOGLN("Status");UpdateLookLineData();
+  //   button.Update();
+  // if (button.clicks != 0) function = button.clicks;
+  // if(button.clicks == -1 ){function = 0;
+  //   if(Lookline_PROG.GetDebug())LOGLN("boot:");
+
+
   // }
+  //  Counterstatus++;if(Counterstatus > 10000){Counterstatus = 0;LookLineOnce1 = true;
+  // if(LooklineDebug)LOGLN("Status");UpdateLookLineData();
+  // }
+  
   if(LookLineOnce){LookLineOnce = false; DebugOut("Lookline Run.", OUPUT);}
+#ifndef LOOKLINE_MASTER
   TaskDisplay(DispMode);
   TaskInPut();
+#endif//LOOKLINE_MAS
+
     // if (role == NODE || role == REPEARTER ){digitalWrite(Startus_LED, NodeRun);}
   #ifdef ModbusSlave
   modbus_loop();
@@ -366,52 +963,73 @@ void LOOKLINE_PROG::loop()
   if(ComMode == MQTT){MQTT_loop();}
   #endif//MQTT_Mode
   #ifdef USE_LORA
-  if(ComMode == LoRa){LoRaCommu();}
+  if(ComMode == LoRa){if(TEST){LoRaCommu(1);}else{LoRaCommu(0);}}
   #endif//LoRa_Network
   #ifdef Mesh_Network
-  if(ComMode == MESH){}
+  if(ComMode == MESH){
+    if (Serial.available()>1) {
+      char charin = (char)Serial.read();
+      strIn += charin;
+      if(strIn == "Wifi"){LOGLN("On Wifi ok!!");
+          check_protocol();
+          esp_wifi_set_protocol(current_wifi_interface, 3);
+          check_protocol();
+          CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);
+          delay(1000);ESP.restart();
+          strIn = "";
+      }
+      
+      if(strIn == "Mesh"){LOGLN("On Mesh ok!!");
+        // if(strIn == "onwifi"){
+          check_protocol();
+          CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);
+          delay(1000);ESP.restart();
+          strIn = "";
+        // }else{
+        //   strIn = "";
+        // }
+      }
+      if(strIn == "RESET"){LOGLN("Reset ok!!");
+         CONFIG::reset_config();
+      strIn = "";
+      }
+      if(strIn == "Gateway"){LOGLN("switch to Gateway ok!!");
+          CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
+          CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
+      strIn = "";
+      }
+      if(charin == '\n'){LOG(strIn);strIn = "";}
+    }
+  }
   #endif//Mesh_Network
 
-  digitalWrite(M0, LOW);digitalWrite(M1, LOW);
+  digitalWrite(M0_, LOW);digitalWrite(M1_, LOW);
   
   /////////////////////////////////// Gateway mode ///////////////////////////
   if(LookLineOnce1){LookLineOnce1 = false; ShowParameters();}
-  if(role == GATEWAY && AmountNode > 0 && ModuleType == ModGateway){
-    if(Counter4 == 0){
-      Counter4++;NodeRun = false;
-       if(Debug)LOGLN("Send to node " + String(IDSent));
-      if(ModuleType == ModGateway){
-      digitalWrite(Startus_LED, HIGH);delay(100);digitalWrite(Startus_LED, LOW);
-      }//if(ModuleType == ModGateway){
-    #ifdef TEST_LORA
-    LoRa_Seri.println("Send to node " + String(IDSent));
-    #else
-      done = true;
-      buffer[4] = '0';buffer[5] = '4';
-      buffer[6] = '0';buffer[7] = '0';
-      Data_Proccess();
-    #endif//  #ifdef USE_LORA
-    }
-    if(Counter4 >= 6){
-      Counter4 = 0;
-    }
-    if(Counter5 == TimeSent){
-      CheckLoss++;if(CheckLoss > 5)CheckLoss = 0;
-      IDSent++;if(IDSent > AmountNode){IDSent = 0;}
-      Counter4++;
-      Counter5 = 0;
-    }
-    if(Counter5 == (TimeSent/3)){
-      IDSent++;if(IDSent > AmountNode){IDSent = 0;}
-      Counter4++;
-    }
-    if(Counter5 == (TimeSent/3) + (TimeSent/3)){
-      IDSent++;if(IDSent > AmountNode){IDSent = 0;}
-      Counter4++;
-    }
-  }
-///////////////////////////////////////////////////////////////////////////////////
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -424,10 +1042,30 @@ void LOOKLINE_PROG::loop()
   int Data[5][100];
   int LastTime[100];
   int MaxTime[100];
+bool started = false;
+
+
+void ResetConnect(){
+      if(counterTimeReset >= 100 * TimeReset){counterTimeReset = 0;
+      if(started == false){started = true;TimeReset = 60*60; Lookline_PROG.SetConfig(1); delay(1000);Lookline_PROG.SetConfig(3);}
+        if(start == 0 && config == 3)
+        {
+          LOGLN(">>>>>>>>>>>   Reset!! ");//delay(500);ESP.restart();
+        
+              if (!wifi_config.Setup(true))
+              {
+                  // ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
+                  wifi_config.Safe_Setup();
+                  LOGLN("Safe mode");
+              }
+          }
+        }
+}
+
 
 void LOOKLINE_PROG::SetParameter(int Plan, int taskPLanSet, int Result, int ResultSet, int taskTime, int taskpcsInShift, int taskPass, int taskDotIn){
   PLAN = Plan;PLanSet = taskPLanSet;RESULT = Result;ResultSet = ResultSet;Time = taskTime;pcsInShift = taskpcsInShift;Pass = taskPass;DotIn = taskDotIn;
-  if(Debug)LOGLN("Set parameters from gateway")
+  if(LooklineDebug)LOGLN("Set parameters from gateway");
 }
 
 #define TempDisplay
@@ -440,18 +1078,21 @@ void LOOKLINE_PROG::TimerPlanInc()
     // socket_servers->loop();
     if(UDFWLookLine.FirmwareVersionCheck() == 1){
       String s = "STATUS: New version";
-      if(Debug)LOGLN(s);
+      if(LooklineDebug)LOGLN(s);
       looklineWIC.checkFW();
       // socket_servers->broadcastTXT(s);
     }
   }
   // && (ComMode == LoRa || ComMode == MESH || ComMode == MQTT || ComMode == RS485com)
   if(role == GATEWAY){ Counter5++;
-  // if(Debug)LOGLN("Gateway");
+  // if(LooklineDebug)LOGLN("Gateway");
     for(byte i = 0 ; i < AmountNode; i++){
       LastTime[i]++;if(LastTime[i] > 10000)LastTime[i] = 10000;
       Data[2][i] = LastTime[i]/10;
       if(MaxTime[i] < LastTime[i]){MaxTime[i] = LastTime[i];}
+      }
+        if(role == GATEWAY && AmountNode > 0 && ModuleType == ModGateway){
+        ResetConnect();
       }
     }
 totalInterruptCounterLookline++;
@@ -498,30 +1139,34 @@ totalInterruptCounterLookline++;
     if (NodeRun == true)
     {
       digitalWrite(Startus_LED, HIGH);
-      counter2++;
-      int TimeCacu = 0;
-      if (DotIn == 0)
-      {
-        TimeCacu = (Time*10) * 1;
-      }
-      if (DotIn == 1)
-      {
-        TimeCacu = (Time*10) * 10;
-      }
-      if (DotIn == 2)
-      {
-        TimeCacu = (Time*10) * 100;
-      }
-      if (DotIn == 3)
-      {
-        TimeCacu = (Time*10) * 1000;
-      }
+      counterTimePlan++;
+      if(start == 0 && config == 3){counterTimeReset++;}else{counterTimeReset =0;}
+        ResetConnect();
+
+      // int TimeCacu = 0;
+      // if (DotIn == 0)
+      // {
+      //   TimeCacu = (Time*10) * 1;
+      // }
+      // if (DotIn == 1)
+      // {
+      //   TimeCacu = (Time*10) * 10;
+      // }
+      // if (DotIn == 2)
+      // {
+      //   TimeCacu = (Time*10) * 100;
+      // }
+      // if (DotIn == 3)
+      // {
+      //   TimeCacu = (Time*10) * 1000;
+      // }
       
-      if (counter2 >= Time)
+      if (counterTimePlan >= Time)
       {
-        counter2 = 0;
+        counterTimePlan = 0;
         //digitalWrite(Signal_LED, digitalRead(Signal_LED) ^ 1);
         PLAN = PLAN + PLanSet;//MODBUS_Write();
+        if(PLAN > 9999)PLAN = 9999;
         caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);SerDisplay();
         if(PLAN % 10 == 9){
                 if (!CONFIG::write_buffer (EP_EEPROM_PLAN, (const byte *) &PLAN, INTEGER_LENGTH) ) {
@@ -544,14 +1189,17 @@ totalInterruptCounterLookline++;
     if (countLED > 100)
       {//Monitor
         if (NodeRun == false){caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);SerDisplay();}
-        // if(NodeRun){LOG("Runing");}else{LOG("Stopping");} if(Debug)LOGLN(" | Time: "+ String(Time));
+        if(start == 0 && config == 0){SetStart(0);SetConfig(3);}// config = 3; start = 0;}
+        // if(start == 1 && config == 0){config = 3; start = 0;}
+        // if(NodeRun){LOG("Runing");}else{LOG("Stopping");} if(LooklineDebug)LOGLN(" | Time: "+ String(Time));
         countLED = 0;
       }
   }
-    if(totalInterruptCounterLookline >= 100){
+    if(totalInterruptCounterLookline >= 30){
       
-    // if(Debug)LOGLN("TimerPlanInc | Role:" + String(role));
-    SerDisplay();
+    // if(LooklineDebug)LOGLN("TimerPlanInc | Role:" + String(role));
+    // SerDisplay();
+
     if(MonitorMode == Main){
     #ifdef TempDisplay
       // SerDisplay();
@@ -575,77 +1223,81 @@ totalInterruptCounterLookline++;
 
 
 
-void LoRaCommu()
+void LoRaCommu(byte mode)
 {
-   digitalWrite(M0, LOW);digitalWrite(M1, LOW);
-  #ifdef USE_LORA
-  while (LoRa_Seri.available())
-  {    
-    char inChar = (char)LoRa_Seri.read();
-    LOG(inChar);
-
-        //if (inChar == '\n') {
-        if (setupEn == false)
-        {
-          buffer[countSer] = (char)inChar;
-          //LoRaInput += (char)inChar;
-          countSer++;
-          if (countSer > 50)
-          {
-            setupEn = true;
-            inChar = 0;
-            countSer = 0;
-          }
-        }
-    if (inChar == '\n')
-      {   
-      if(Debug)LOGLN("Done");
-      #ifdef TEST_LORA
-        // LOG(LoRa_Seri.read()); 
-      if (role == NODE || role == REPEARTER )
-      { 
-        LoRa_Seri.write(LoRa_Seri.read());
+  if(mode == 0){
+    // If something available
+  digitalWrite(M0_, LOW);digitalWrite(M1_, LOW);
+    if (e32ttl100.available()>1) {
+        // read the String message
+      ResponseContainer rc = e32ttl100.receiveMessage();
+      // Is something goes wrong print error
+      if (rc.status.code!=1){
+        rc.status.getResponseDescription();
+      }else{
+        // Print the data received
+        LOGLN(rc.data);
+  digitalWrite(M0_, LOW);digitalWrite(M1_, LOW);
+          ResponseStatus rs = e32ttl100.sendMessage(rc.data);
+        // Check If there is some problem of succesfully send
+        LOGLN(rs.getResponseDescription());
       }
-      #else//TEST_LORA
-        done = true;
-        setupEn = true;
-        String ids = "";
-        ids += buffer[0];
-        ids += buffer[1];
-        ids += buffer[2];
-        ids += buffer[3];
-        NodeID = ids.toInt();
-        Data_Proccess();
-        LoRa_Seri.flush();
-        inChar = 0;
-        countSer = 0;
-        setupEn = false;
-    #endif//TEST_LORA
-      }
+    }
   }
-  #endif//LoRa_Network
+  if(mode == 1){
+      	// If something available
+      if (e32ttl100.available()>1) {
+        // read the String message
+        ResponseContainer rc = e32ttl100.receiveMessage();
+        // Is something goes wrong print error
+        if (rc.status.code!=1){
+          rc.status.getResponseDescription();
+        }else{
+          // Print the data received
+          LOGLN(rc.data);
+          String input = rc.data;
+            for (int j = 0 ; j < input.length() ;j++){
+              buffer[j] = input[j];
+              if (j > 50)
+              {break;}
+            } 
+        
+          done = true;
+          setupEn = true;
+          String ids = "";
+          ids += buffer[0];
+          ids += buffer[1];
+          ids += buffer[2];
+          ids += buffer[3];
+          NodeID = ids.toInt();
+          Data_Proccess(buffer);
+          LoRa_Seri.flush();
+          countSer = 0;
+    }
+   }
+  }//Mode 1
 }
 
-void Data_Proccess()
+void Data_Proccess(char byte_buffer[])
 {
-if(done == true){
+if(done == true){if(LooklineDebug)LOGLN("Done");
         done = false;
-    String cmds = String(buffer[4]) + String(buffer[5]);
-    String Length = String(buffer[6]) + String(buffer[7]);
-    // if(Debug)LOGLN("Cmd:" + String(cmds.toInt()));
-    // if(Debug)LOGLN("Length:" + String(Length.toInt()));
+    String cmds = String(byte_buffer[4]) + String(byte_buffer[5]);
+    String Length = String(byte_buffer[6]) + String(byte_buffer[7]);
+    // if(LooklineDebug)LOGLN("Cmd:" + String(cmds.toInt()));
+    // if(LooklineDebug)LOGLN("Length:" + String(Length.toInt()));
     if (cmds.toInt() == cmdLookLine.updateStt && (role == NODE || role == REPEARTER))
     {
       if (Length.toInt() == 12)
       {
         if(NodeID == BoardIDs)
         {
-          // if(Debug){
-            if(Debug)LOGLN("Sent to gateway " );
-            // if(ComMode == MQTT){ LOG("  Topic:");if(Debug)LOGLN(String(Lookline_PROG.TopicOut));}
-            // else{if(Debug)LOGLN();}
+          // if(LooklineDebug){
+            if(LooklineDebug)LOGLN("Sent to gateway " );
+            // if(ComMode == MQTT){ LOG("  Topic:");if(LooklineDebug)LOGLN(String(Lookline_PROG.TopicOut));}
+            // else{if(LooklineDebug)LOGLN();}
           // }
-          // if(Debug){
+          // if(LooklineDebug){
             #ifdef MQTT_Mode
               if(ComMode == MQTT && Mode != 3){  
                 if(countermqtt > 50){
@@ -679,16 +1331,18 @@ if(done == true){
           if(NodeRun){State ="1" + String(WiFiMode);}else{State = "0" + String(WiFiMode);}
           String sentData = id + "04" + "18" + StringPlan + StringResult + State;
           #ifdef Mesh_Network 
-            if(ComMode == MESH && Mode == 0){broadcast(sentData);}
+            if(ComMode == MESH && role == NODE){esp_now_send(broadcastAddress, (const uint8_t *)sentData.c_str(), sentData.length());LOGLN("Mesh Send Data");}
           #endif//Mesh_Network   
           #ifdef RS485
             if(ComMode == RS485com){RS485_Ser.println(sentData);RS485_Ser.flush();}
           #endif//RS485    
           #ifdef USE_LORA 
             if(ComMode == LoRa){
-              digitalWrite(M0, LOW);digitalWrite(M1, LOW);
-              LoRa_Seri.println(sentData);LoRa_Seri.flush();
-              if(Debug)LOGLN(sentData);
+              // digitalWrite(M0, LOW);digitalWrite(M1, LOW);
+              // LoRa_Seri.println(sentData);LoRa_Seri.flush();
+  digitalWrite(M0_, LOW);digitalWrite(M1_, LOW);
+              e32ttl100.sendMessage(sentData);
+              if(LooklineDebug)LOGLN(sentData);
             }
           #endif//LoRa_Network  
           #ifdef MQTT_Mode
@@ -699,9 +1353,9 @@ if(done == true){
             }
           #endif//MQTT_Mode
           // LOG("data Sent:");
-          // if(Debug)LOGLN(buffer);
-          if(Debug)LOGLN("sent to gateway");
-          if(Debug)LOGLN("__________________________________");
+          // if(LooklineDebug)LOGLN(buffer);
+          if(LooklineDebug)LOGLN("sent to gateway");
+          if(LooklineDebug)LOGLN("__________________________________");
         }//if(NodeID == BoardIDs)
         //payload [IDh,IDl,01,16,PlanH,PlanL,ResultH,ResultL,TimeH,TimeL,PlanSH,PlanSL,ResultSH,ResultSL,PassH,PassL,PCSH,PCSL,DOT]
       }//if (Length.toInt() == 12)
@@ -712,50 +1366,50 @@ if(done == true){
       if (Length.toInt() == 16){
         if(NodeID == BoardIDs){
            String StringPlan = "";
-          StringPlan += (buffer[8] / 1000) % 10;
-          StringPlan += (buffer[9] / 100) % 10;
-          StringPlan += (buffer[10] / 10) % 10;
-          StringPlan += (buffer[11] / 1) % 10;
+          StringPlan += (byte_buffer[8] / 1000) % 10;
+          StringPlan += (byte_buffer[9] / 100) % 10;
+          StringPlan += (byte_buffer[10] / 10) % 10;
+          StringPlan += (byte_buffer[11] / 1) % 10;
            PLAN = StringPlan.toInt();
           String StringResult = "";
-          StringResult += (buffer[12] / 1000) % 10;
-          StringResult += (buffer[13] / 100) % 10;
-          StringResult += (buffer[14] / 10) % 10;
-          StringResult += (buffer[15] / 1) % 10; 
+          StringResult += (byte_buffer[12] / 1000) % 10;
+          StringResult += (byte_buffer[13] / 100) % 10;
+          StringResult += (byte_buffer[14] / 10) % 10;
+          StringResult += (byte_buffer[15] / 1) % 10; 
             RESULT = StringResult.toInt();
           String StringTime = "";
-          StringTime += (buffer[16] / 1000) % 10;
-          StringTime += (buffer[17] / 100) % 10;
-          StringTime += (buffer[18] / 10) % 10;
-          StringTime += (buffer[19] / 1) % 10; 
+          StringTime += (byte_buffer[16] / 1000) % 10;
+          StringTime += (byte_buffer[17] / 100) % 10;
+          StringTime += (byte_buffer[18] / 10) % 10;
+          StringTime += (byte_buffer[19] / 1) % 10; 
             int taskTime = StringTime.toInt();
           String PlanSets = "";
-          PlanSets += (buffer[20] / 1000) % 10;
-          PlanSets += (buffer[21] / 100) % 10;
-          PlanSets += (buffer[22] / 10) % 10;
-          PlanSets += (buffer[23] / 1) % 10; 
+          PlanSets += (byte_buffer[20] / 1000) % 10;
+          PlanSets += (byte_buffer[21] / 100) % 10;
+          PlanSets += (byte_buffer[22] / 10) % 10;
+          PlanSets += (byte_buffer[23] / 1) % 10; 
            int  taskPLanSet = PlanSets.toInt();
           String ResultSets = "";
-          ResultSets += (buffer[24] / 1000) % 10;
-          ResultSets += (buffer[25] / 100) % 10;
-          ResultSets += (buffer[26] / 10) % 10;
-          ResultSets += (buffer[27] / 1) % 10; 
+          ResultSets += (byte_buffer[24] / 1000) % 10;
+          ResultSets += (byte_buffer[25] / 100) % 10;
+          ResultSets += (byte_buffer[26] / 10) % 10;
+          ResultSets += (byte_buffer[27] / 1) % 10; 
            int  ResultSet = ResultSets.toInt();
           String StringPass = "";
-          StringPass += (buffer[28] / 1000) % 10;
-          StringPass += (buffer[29] / 100) % 10;
-          StringPass += (buffer[30] / 10) % 10;
-          StringPass += (buffer[31] / 1) % 10; 
+          StringPass += (byte_buffer[28] / 1000) % 10;
+          StringPass += (byte_buffer[29] / 100) % 10;
+          StringPass += (byte_buffer[30] / 10) % 10;
+          StringPass += (byte_buffer[31] / 1) % 10; 
            int  taskPass = StringPass.toInt();
           String PcsShift = "";
-          PcsShift += (buffer[32] / 1000) % 10;
-          PcsShift += (buffer[33] / 100) % 10;
-          PcsShift += (buffer[34] / 10) % 10;
-          PcsShift += (buffer[35] / 1) % 10; 
+          PcsShift += (byte_buffer[32] / 1000) % 10;
+          PcsShift += (byte_buffer[33] / 100) % 10;
+          PcsShift += (byte_buffer[34] / 10) % 10;
+          PcsShift += (byte_buffer[35] / 1) % 10; 
            int  taskpcsInShift = PcsShift.toInt();
           String StringDot = "";
-          StringDot += (buffer[36] / 10) % 10;
-          StringDot += (buffer[37] / 1) % 10;
+          StringDot += (byte_buffer[36] / 10) % 10;
+          StringDot += (byte_buffer[37] / 1) % 10;
            int  taskDotIn = StringDot.toInt();
           Lookline_PROG.SetParameter(PLAN, taskPLanSet, RESULT, ResultSet, taskTime, taskpcsInShift, taskPass, taskDotIn);
             // WriteAll();WriteRebootValue();
@@ -777,15 +1431,21 @@ if(done == true){
           id += String((IDSent / 1) % 10);
           String sentData = id + "00" + "120000";
           #ifdef Mesh_Network 
-            if(ComMode == MESH && Mode == 0) broadcast(sentData);
+            if(ComMode == MESH){esp_now_send(broadcastAddress, (const uint8_t *)sentData.c_str(), sentData.length());}
           #endif//Mesh_Network   
           #ifdef RS485
             if(ComMode == RS485com){RS485_Ser.println(sentData);RS485_Ser.flush();}
           #endif//RS485    
           #ifdef USE_LORA 
-            if(ComMode == LoRa){digitalWrite(M0, LOW);digitalWrite(M1, LOW);
-            LoRa_Seri.println(sentData);LoRa_Seri.flush();
-            // if(Debug)LOGLN(sentData);
+            if(ComMode == LoRa){
+            //   digitalWrite(M0, LOW);digitalWrite(M1, LOW);
+            // LoRa_Seri.println(sentData);LoRa_Seri.flush();
+            // if(LooklineDebug)LOGLN(sentData);
+            // ResponseStatus rs = e32ttl100.sendMessage(sentData); // OK The message is received on the other device
+            // // Check If there is some problem of succesfully send
+            //   LOGLN(rs.getResponseDescription());
+            digitalWrite(M0_, LOW);digitalWrite(M1_, LOW);
+            e32ttl100.sendMessage(sentData);
             setupEn = false;
             }
           #endif//LoRa_Network  
@@ -800,15 +1460,16 @@ if(done == true){
       {
         CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
         if(ModuleType == ModGateway){
-        digitalWrite(taskStatus_LED, HIGH);delay(100);digitalWrite(taskStatus_LED, LOW);
+        digitalWrite(taskStatus_LED, LOW);delay(100);digitalWrite(taskStatus_LED, HIGH);
         }//if(taskModuleType == ModGateway){
-        String ID = String(buffer[0]) + String(buffer[1]) + String(buffer[2]) + String(buffer[3]); 
+        String ID = String(byte_buffer[0]) + String(byte_buffer[1]) + String(byte_buffer[2]) + String(byte_buffer[3]); 
           if(ID.toInt() == IDSent){
+            SendMsg(String(buffer));
             PC_Seri.println(String(buffer));counter5 = TimeSent;delay(300);counter5 = TimeSent - 2;
-            String plan = String(buffer[8]) + String(buffer[9]) + String(buffer[10]) + String(buffer[11]);
-            String result = String(buffer[12]) + String(buffer[13]) + String(buffer[14]) + String(buffer[15]);
-            String Runs = String(buffer[16]);
-            String Modes = String(buffer[17]);
+            String plan = String(byte_buffer[8]) + String(byte_buffer[9]) + String(byte_buffer[10]) + String(byte_buffer[11]);
+            String result = String(byte_buffer[12]) + String(byte_buffer[13]) + String(byte_buffer[14]) + String(byte_buffer[15]);
+            String Runs = String(byte_buffer[16]);
+            String Modes = String(byte_buffer[17]);
             Data[0][IDSent] = plan.toInt();
             Data[1][IDSent] = result.toInt();
             Data[3][IDSent] = Runs.toInt();
@@ -829,7 +1490,7 @@ void LOOKLINE_PROG::SerDisplay()
         CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
         CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
         // CONFIG::read_byte(EP_EEPROM_RUN, &NodeRun);
-        CONFIG::read_byte(EP_EEPROM_DEBUG, &Debug);
+        CONFIG::read_byte(EP_EEPROM_DEBUG, &LooklineDebug);
         CONFIG::read_byte(EP_EEPROM_AMOUNTNODE, &AmountNode);
         CONFIG::read_byte(EP_EEPROM_TIMESENT, &TimeSent);
         CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
@@ -859,7 +1520,22 @@ void LOOKLINE_PROG::SerDisplay()
         Log +="  |Temp: ";
         Log +=(temprature_sens_read() - 32) / 1.8;
         Log +=" C |";
-        if(Debug)LOGLN(Log);
+        Log +=" Ram: " + String(ConvBinUnits(ESP.getFreeHeap(), 1));
+        // 100 * TimeReset
+        Log +=" | Time: " + String(counterTimeReset) + "/" + String(100 * TimeReset);
+        socket_server->broadcastTXT("VALUE:" + String(PLAN) + ":" + String(RESULT) + ":" + String(CountOT_Hm) + "." + String(CountOT_Lm));
+        if(LooklineDebug)LOGLN(Log);
+        // if(TEST)broadcast("Node: " + String(BoardID));
+        DataLookline.nodeID = BoardIDs;
+        DataLookline.networkID = NetIDs;
+        DataLookline.PLAN = PLAN;
+        DataLookline.RESULT = RESULT;
+        DataLookline.state = NodeRun;
+        if(ComMode == MESH){
+        esp_now_send(broadcastAddress, (uint8_t *) &DataLookline, sizeof(DataLookline));
+        esp_now_send(broadcastAddress, (const uint8_t *)Log.c_str(), Log.length());
+        }
+
         // ShowParameters();
       }
       // if(MonitorMode == 1){
@@ -906,7 +1582,7 @@ void LOOKLINE_PROG::ConfigJsonProcess(String Input)
   //{"Command":"Config","Run":1,"time":10,"Pla":1,"Res":0,"PSet":1,"RSet":1,"pass":0,"DotI":0,"PlL":9999,"PCS":10,"ID":1,"TS":10,"MM":0,"CMS":0,"QN":5,"GT":1,"STAN":1,"ILCH":410,"DFC":1000}
 
   if(obj["Command"].as<String>() == "Config"){ 
-      if(Debug)LOGLN("Config Readding");
+      if(LooklineDebug)LOGLN("Config Readding");
       Time = obj["time"].as<String>().toInt();
       PLanSet = obj["PSet"].as<String>().toInt();
       ResultSet = obj["RSet"].as<String>().toInt();
@@ -928,6 +1604,122 @@ void LOOKLINE_PROG::ConfigJsonProcess(String Input)
 
 
 }//void ConfigJsonProcess(String Input)
+#define         NUM_SENSORS 20
+typedef struct sensor_data {
+  int boardid;
+  int networkid;
+  int plan;
+  int result;
+  byte status;
+  time_t  timestamp;
+  byte RSSI;
+} sensor_data;
+int sensors_saved = 0;
+sensor_data     sensors[NUM_SENSORS];
 
+void handleLooklineRaw() {
+  sensors_saved = 4;
+   for (int i = 0; i < sensors_saved; i++) {
+    sensors[i].boardid = i;
+    sensors[i].networkid = 1;
+    sensors[i].status = random(1);
+    sensors[i].plan = random(9999);
+    sensors[i].result = random(9999);
+    sensors[i].timestamp = random(9999);
+    sensors[i].RSSI = random(100);
+  }
+  LOG ("/raw" + '\n');
+  String raw;
+  for (int i = 0; i < sensors_saved; i++) {
+    raw += String(sensors[i].boardid) + ",";
+    raw += String(sensors[i].networkid) + ",";
+    raw += String(sensors[i].status) + ",";
+    raw += String(sensors[i].plan) + ",";
+    raw += String(sensors[i].result) + ",";
+    raw += String(sensors[i].timestamp) + ",";
+    raw += String(sensors[i].RSSI);
+    if ( i < sensors_saved - 1) raw += '\n';
+  }
+  web_interface->web_server.send(200, "text/plain", raw);
+}
 
+///////////////////////////////////////////////// monitor
+
+//////////////////////////////////////////////////////////////// GATEWAY MONITOR FUNCTIONS////////////////////////////////
+
+void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,int savePlan,int saveResult,byte Type,byte saveCom,byte saveWifi) {//Save Web
+
+  new_Lookline_found = false;
+  String msg = "Save Lookline " + String(saveID);
+   if(LooklineDebug){ESPCOM::println(msg, PRINTER_PIPE);msg.clear();}
+  for (int i = 0; i < Looklines_saved; i++) {
+    if (Looklines[i].nodeID == saveID){//LOGLN(saveID);
+      Looklines[i].Nodecounter = 0;
+      Looklines[i].nodeID = saveID;
+      Looklines[i].networkID = saveNetID;
+      Looklines[i].state = saveState;
+      Looklines[i].PLAN = savePlan;
+      Looklines[i].RESULT = saveResult;
+      Looklines[i].Com = saveCom;
+      Looklines[i].WiFi = saveWifi;
+      Looklines[i].RSSI = saveRSSI;
+      Looklines[i].type = Type;
+      Looklines[i].Cmd = saveRSSI;
+      //Looklines[i].timestamp = time(nullptr);
+      // if(WiFi.getMode() == WIFI_STA){Looklines[i].time = timeClient.getEpochTime();}else{Looklines[Looklines_saved].time = 0;}
+      new_Lookline_found = true;
+    }
+  }
+
+  if ( new_Lookline_found == false ) {
+      msg = "New Lookline " + String(saveID);
+       if(LooklineDebug){ESPCOM::println(msg, PRINTER_PIPE);msg.clear();}
+      Looklines[Looklines_saved].Nodecounter = 0;
+      Looklines[Looklines_saved].nodeID = saveID;
+      Looklines[Looklines_saved].networkID = saveNetID;
+      Looklines[Looklines_saved].state = saveState;
+      Looklines[Looklines_saved].PLAN = savePlan;
+      Looklines[Looklines_saved].RESULT = saveResult;
+      Looklines[Looklines_saved].Com = saveCom;
+      Looklines[Looklines_saved].WiFi = saveWifi;
+      Looklines[Looklines_saved].RSSI = saveRSSI;
+      Looklines[Looklines_saved].type = Type;
+      Looklines[Looklines_saved].Cmd = saveRSSI;
+      //Looklines[Looklines_saved].timestamp = time(nullptr);
+      // if(WiFi.getMode() == WIFI_STA){Looklines[Looklines_saved].time = timeClient.getEpochTime();}else{Looklines[Looklines_saved].time = 0;}
+    Looklines_saved++;
+  }
+
+#ifdef SDCARD_FEATURE
+    if (!SD.begin(SDCard_CS)) {SDFunc.sd_card_found = false;} else {SDFunc.sd_card_found = true; }
+    //LOG ("saveMemoryToFile > SD Card found:" + String(SDFunc.sd_card_found) + '\n');
+    //LOG ("Time:" + String(timeClient.getEpochTime()) + '\n');
+  if (SDFunc.sd_card_found) {
+    String NameFile = "/data/" + String(ID) + ".log";
+    File log_file = SD.open( NameFile, "a");
+    time_t nows = time(nullptr);
+    log_file.print(nows);
+    log_file.print(",");
+    log_file.print(1);
+    log_file.print(",");
+    log_file.print(State);
+    log_file.print(",");
+    log_file.print(msg1.temperature);
+    log_file.print(",");
+    log_file.print(msg1.humidity);
+    log_file.print(",");
+    log_file.print(bat*0.0001);
+    log_file.print(",");
+    log_file.print(bat12*0.0001);
+    log_file.print(",");
+    log_file.println(RSSI);
+    log_file.flush();
+    log_file.close();
+
+    SDFunction::saveMemoryToFile();
+  }
+  #endif //SDCARD_FEATURE
+  // Looklines[ID].GateWayCommand = SleepCmd;
+  // for(byte l = 0 ; l < 20 ; l++){debug("ID:" + String(l) + "|" + String(Looklines[l].GateWayCommand) + "| ");}
+}
 #endif//LOOKLINE_UI

@@ -78,6 +78,9 @@ GyroDatalog Gyro;
 #include "Valve/Valve.h"
 Valve webValve;
 #endif//Valve_UI
+#ifdef LOOKLINE_UI
+#include "lookline/LookLine.h"
+#endif//LOOOKLINE_UI
 #include "WIC.h"
 WIC Wc;
 #ifdef SDCARD_FEATURE
@@ -436,7 +439,10 @@ WEBINTERFACE_CLASS::WEBINTERFACE_CLASS (int port) : web_server (port)
    web_server.on("/json", handleJson);
    web_server.on("/info", handleInfo);
 #endif//Valve_UI                    
-
+#ifdef LOOKLINE_UI
+   web_server.on("/raw", handleLooklineRaw);
+   
+#endif//LOOKLINE_UI
 //   web_server.on("/delete", handleDeleteSensor);
 //   web_server.on("/deleteF", handleDeleteFile);
 //   web_server.on("/rota_enable", handleROTA);
@@ -453,7 +459,9 @@ WEBINTERFACE_CLASS::WEBINTERFACE_CLASS (int port) : web_server (port)
 //   web_server.on("/SDupload1", SDhandleRoot1);
 //   web_server.on("/SDupload", SDhandleRoot);
 //   web_server.onNotFound(handleNotFound);
-                  
+
+// Sdt hai quan VN 02838650456
+
 
 #ifdef Valve_UI
 //   /*handling uploading file */

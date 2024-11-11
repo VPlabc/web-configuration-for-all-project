@@ -12,12 +12,16 @@
 #include <time.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+
+
+
 OneWire ds18x20[] = { SensorPin1, SensorPin2 };
 const int oneWireCount = sizeof(ds18x20) / sizeof(OneWire);
 DallasTemperature sensor[oneWireCount];
 
 long previousMillis_2 = 0;
 long previousMillis_DS1 = 0;
+long previousMillis_DS1a = 0;
 long previousMillis_DS2 = 0;
 float Bat_volt;
 float TemperatureEnegy;
@@ -38,6 +42,8 @@ bool checkFW = false;
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
+bool OFFWIFI = false;bool SOS = false;byte count = 0;byte GearPos = 0;
+
 UpdateFW MOTOUPDATEFW;
 
 void printLocalTime()
@@ -50,7 +56,9 @@ void printLocalTime()
   Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
 }
 
+
 void Moto::setup(){
+  
 ////////////////////////////////// DS18B20////////////////////////////////////
   // Start up the library on all defined bus-wires
   DeviceAddress deviceAddress;
@@ -78,7 +86,8 @@ digitalWrite(LEDButton, HIGH);
 #ifndef DEBUG_FLAG_  
      if(WiFi.status() == WL_CONNECTED)
      {
-       updateTime();
+       Moto::updateTime();
+      //  updateTime();
      }
 #else
 if(UPdateAffter15days == false){
@@ -102,8 +111,33 @@ GetTime();
 }
 #endif//DEBUG_FLAG
   OLED_DISPLAY::clear_lcd();
+  
+GetTime();
+  if((hours >= 17 & hours <= 23 )||(hours >= 0 & hours < 6)){digitalWrite(Light, LOW);LOGLN("On Light");}else{digitalWrite(Light, HIGH);}
 }
-bool OFFWIFI = false;bool SOS = false;byte count = 0;byte GearPos = 0;
+void Moto::Temp_update(){
+    unsigned long currentMillis1 = millis();
+    if ((currentMillis1 - previousMillis_DS1) >= 10000 && wifi_b == false) {
+      previousMillis_DS1 = currentMillis1; 
+      button1.Update();
+      Bat = VoltUpdate();
+      for (int i = 0; i < oneWireCount; i++) {
+        sensor[i].requestTemperatures();
+      }
+      // LOGLN("requestTemperatures");
+
+      WiFi.disconnect();
+      WiFi.mode (WIFI_OFF);
+      if(GearPos == 0){GearPos = 10;OLED_DISPLAY::clear_lcd();}
+    }
+    
+    if ((currentMillis1 - previousMillis_DS1a) >= 11000 && wifi_b == false) {
+      previousMillis_DS1a = currentMillis1; 
+      // LOGLN("update");
+      TemperatureEnegy = sensor[0].getTempCByIndex(0);
+      Temperature = sensor[1].getTempCByIndex(0);
+    }
+}
 void Moto::loop(){
   button1.Update();
   if (button1.clicks != 0) function = button1.clicks;
@@ -143,6 +177,7 @@ void Moto::loop(){
           OLED_DISPLAY::BigDisplay("WiFi ON", 15, 17);
           OLED_DISPLAY::setCursor(40, 48);
           ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
+          Moto::updateTime();
       }
     }
     else if(wifi_config.GetWifiMode() == false){
@@ -167,24 +202,9 @@ void Moto::loop(){
     // Reset function
     function = 0;
   }
+    Moto::Temp_update();
     unsigned long currentMillis = millis();
-    
-    if ((currentMillis - previousMillis_DS1) >= 10000 && wifi_b == false) {
-      Bat = VoltUpdate();
-      for (int i = 0; i < oneWireCount; i++) {
-        sensor[i].requestTemperatures();
-      }
-      //LOGLN("update");
-      WiFi.disconnect();
-      WiFi.mode (WIFI_OFF);
-      if(GearPos == 0){GearPos = 10;OLED_DISPLAY::clear_lcd();}
-    }
-    
-    if ((currentMillis - previousMillis_DS1) >= 11000 && wifi_b == false) {
-      previousMillis_DS1 = currentMillis; 
-      TemperatureEnegy = sensor[0].getTempCByIndex(0);
-      Temperature = sensor[1].getTempCByIndex(0);
-    }
+
     if ((currentMillis - previousMillis_2) >= 100 && wifi_b == false) {
       previousMillis_2 = currentMillis;count++; 
       if(SOS && count > 3){count = 0;digitalWrite(LEDButton, !digitalRead(LEDButton));}
@@ -196,7 +216,10 @@ void Moto::loop(){
     #endif//MOTO_DEBUG
     if(Menu == 0){
       String Gear_en = GearUpdate();
-      
+      if(digitalRead(Light) == 0){OLED_DISPLAY::DisplayText("ON",40, 100, 35-11, 10, false);}
+      if(digitalRead(Light) == 1){OLED_DISPLAY::DisplayText("OFF",40, 100, 35-11, 10, false);}
+      if(SOS == 1){OLED_DISPLAY::DisplayText("SOS",40, 100, 35-22, 10, false);}
+      if(SOS == 0){OLED_DISPLAY::DisplayText("___",40, 100, 35-22, 10, false);}
       GetTime();
       String Month_,Day_,Hour_,Min_;
           if(Months < 10){Month_ = "0" + String(Months);}else{Month_ = String(Months);}
@@ -209,7 +232,7 @@ void Moto::loop(){
           //OLED_DISPLAY::setCursor(0, 35);
           //ESPCOM::print("Out Side         | Engine", OLED_PIPE);
           OLED_DISPLAY::DisplayText("Out Side         Engine",23*5, 0, 35, 10, false);
-          OLED_DISPLAY::GearDisplay(Gear_en, 65 + GearPos, 0);
+          OLED_DISPLAY::GearDisplay(Gear_en, 60 + GearPos, 0);
           OLED_DISPLAY::TempDisplay(Temperature, 64, 48);
           OLED_DISPLAY::TempDisplay(TemperatureEnegy, 0, 48);
           //OLED_DISPLAY::BatDisplay(Bat, 74, 27-11);
@@ -328,10 +351,10 @@ void Moto::updateTime()
       Serial.println("Failed to obtain time");
       return;
     }  
-    LOG("Time:" + String(tmstruct.tm_hour)+':'+String(tmstruct.tm_min) + '\n');
+    LOG("Time:" + String(tmstruct.tm_hour-1)+':'+String(tmstruct.tm_min) + '\n');
     LOG("Date:" + String(tmstruct.tm_mday)+"/"+String(tmstruct.tm_mon+1)+"/"+String((tmstruct.tm_year-100)+2000) + '\n');
    if(tmstruct.tm_hour-1 < 0 || tmstruct.tm_hour-1 > 23 || (tmstruct.tm_year-100)+2000 < 0){}
-   else{SetTime(tmstruct.tm_sec,tmstruct.tm_min,tmstruct.tm_hour,tmstruct.tm_mday,tmstruct.tm_mon+1,(tmstruct.tm_year-100)+2000);}
+   else{SetTime(tmstruct.tm_sec,tmstruct.tm_min,tmstruct.tm_hour-1,tmstruct.tm_mday,tmstruct.tm_mon+1,(tmstruct.tm_year-100)+2000);}
    
 }
 #endif//Moto_UI

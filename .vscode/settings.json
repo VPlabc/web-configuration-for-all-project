@@ -4,6 +4,7 @@
         "string": "cpp",
         "string_view": "cpp",
         "system_error": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "functional": "cpp"
     }
 }

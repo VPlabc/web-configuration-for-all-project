@@ -3,6 +3,14 @@
 // node mesh master/slave
 // gateway master
 
+//Node Connector 
+//CONNECTOR
+//RS485 Connect
+  //GND --- 1
+  //A+  --- 2
+  //B-  --- 3
+//IO Connector
+
 
 #include <Arduino.h>
 #include "config.h"
@@ -26,7 +34,7 @@ MQTTCOM mqttcommu;
 
 //________ Sensor
 #include "DHTesp.h"
-DHTesp dht;
+DHTesp dht_iot;
 #define DHTPin 32
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -662,7 +670,7 @@ if(checkFW && RunMode == WIFIMODE  && (WiFi.status() == WL_CONNECTED))UDFW.repea
       esp_wifi_set_protocol(current_wifi_interface, 7);
       IOT_DEVICE.check_protocol();
     #endif//
-      if(Debug)Debug_Ser.println("hold button 2");
+      if(Debug)Debug_Ser.println("hold button 3");
       if(Debug)Debug_Ser.println("Wifi on");
       RunMode = 1;
     OLED_DISPLAY::clear_lcd();
@@ -858,13 +866,13 @@ if(RunMode == MESHMODE){
     if(cat == GROUP_HT){
       static uint32_t last_dht_update= 0;
       uint32_t now_dht = millis();
-      if (now_dht - last_dht_update > dht.getMinimumSamplingPeriod() *1.2) {
+      if (now_dht - last_dht_update > dht_iot.getMinimumSamplingPeriod() *1.2) {
           last_dht_update = now_dht;
-          humidity = dht.getHumidity();
-          temperature = dht.getTemperature();
+          humidity = dht_iot.getHumidity();
+          temperature = dht_iot.getTemperature();
 
           // Serial.print();
-          if(dht.getStatusString() == "TIMEOUT"){
+          if(dht_iot.getStatusString() == "TIMEOUT"){
               humidity = 0;
               temperature = 0;
           }
@@ -935,7 +943,7 @@ void IoT_Device::NodeCategoryInit(byte cat)
       pinMode(SWITCHPIN, INPUT_PULLUP);
     }
     else if (cat == GROUP_HT){
-      dht.setup(DHTPin); 
+      dht_iot.setup(DHTPin); 
     }
     else if (cat == GROUP_MOTION){
       pinMode(SWITCHPIN, INPUT_PULLUP);
