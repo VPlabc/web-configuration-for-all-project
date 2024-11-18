@@ -295,6 +295,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                 breset_config = true; // if requested =>reset settings
             }
 #endif
+// breset_config = true;
             // check if EEPROM has value
             if (!CONFIG::InitBaudrate() || !CONFIG::InitExternalPorts())
             {
@@ -358,25 +359,27 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     file.close();
                 }
             }
-
+            int times = 0;
+if(CONFIG::read_buffer (EP_EEPROM_TIME_PLAN,(byte*)&times, INTEGER_LENGTH) < 500){CONFIG::write_buffer (EP_EEPROM_TIME_PLAN, (const byte *) &DEFAULT_TIMEPLAN, INTEGER_LENGTH);}
             // setup wifi according settings
-            if (!wifi_config.Setup())
-            {
-#ifdef ESP3D_UI
-                OLED_DISPLAY::setCursor(0, 11);
-                ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
-#endif // Moto
-       // try again in AP mode
-                LOG("Safe mode 1");
-                if (!wifi_config.Setup(true))
-                {
-#ifdef ESP3D_UI
-                    ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
-                    wifi_config.Safe_Setup();
-#endif //
-                    LOG("Safe mode 2");
-                }
-            }
+            wifi_config.Safe_Setup();
+//             if (!wifi_config.Setup())
+//             {
+// #ifdef ESP3D_UI
+//                 OLED_DISPLAY::setCursor(0, 11);
+//                 ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
+// #endif // Moto
+//        // try again in AP mode
+//                 LOG("Safe mode 1");
+//                 if (!wifi_config.Setup(true))
+//                 {
+// #ifdef ESP3D_UI
+//                     ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
+//                     wifi_config.Safe_Setup();
+// #endif //
+//                     LOG("Safe mode 2");
+//                 }
+//             }
             delay(100);
             // setup servers
             if (!wifi_config.Enable_servers())
@@ -663,7 +666,7 @@ void WIC::process()
                     if (WiFi.getMode() != WIFI_OFF)
                     {
 #ifdef CAPTIVE_PORTAL_FEATURE
-                        if (WiFi.getMode() != WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
+                        if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
                         {
                             dnsServer.processNextRequest();
 #ifdef Switch_UI
@@ -687,9 +690,9 @@ void WIC::process()
                                 LOG("\nWifi Portal Working...\n");
                             }
 #endif // AUTOITGW_UI
-if (onece1)
+if (onece2)
                             {
-                                onece1 = false;
+                                onece2 = false;
                                 LOG("\nWifi Portal Working...\n");
                             }
                         }

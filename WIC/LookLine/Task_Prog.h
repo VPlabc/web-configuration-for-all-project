@@ -767,7 +767,6 @@ void TaskInPut()
 #ifndef Develop
 #ifndef Gateway
 
-
 if(taskRole == NODE || taskRole == REPEARTER){
   ///*
   //////////////////////////////////////////////////////////////////////
@@ -851,7 +850,8 @@ if(taskRole == NODE || taskRole == REPEARTER){
       int taskResultSet = 0;
       CONFIG::read_buffer(EP_EEPROM_RESULT_SET,(byte *) &taskResultSet, INTEGER_LENGTH);
       taskResult = taskResult + taskResultSet;Lookline_PROG.SetResult(taskResult);
-      if(taskResult % 10 == 9)CONFIG::write_buffer(EP_EEPROM_RESULT,(byte *) &taskResult, INTEGER_LENGTH);
+      if(taskResult % 10 == 5 || taskResult % 10 == 9){CONFIG::write_buffer(EP_EEPROM_RESULT,(byte *) &taskResult, INTEGER_LENGTH);      LOGLN("Save Result");}
+      
     }
   }
   else{
@@ -866,7 +866,7 @@ if(taskRole == NODE || taskRole == REPEARTER){
   ///////////////////////////////////////////////////////////////////////
   if (analogRead(X1) <= minValue)
   {
-    if(LogOnce){LogOnce = false;LOGLN("X1:" + String(analogRead(X1)));}
+    if(LogOnce){LogOnce = false;LOGLN("X1:" + String(analogRead(X1)));counter = 0;}
 
     if (o > delayForCounter/3)
     {
@@ -878,7 +878,7 @@ if(taskRole == NODE || taskRole == REPEARTER){
   }    //if (analogRead(X1) <= minValue)
 
   if (analogRead(X2) <= minValue){
-    if(LogOnce){LogOnce = false;LOGLN("X2:" + String(analogRead(X2)));}
+    if(LogOnce){LogOnce = false;LOGLN("X2:" + String(analogRead(X2)));counter = 0;}
     if (o > delayForCounter/3)
     {
       o = 0;
@@ -890,7 +890,7 @@ if(taskRole == NODE || taskRole == REPEARTER){
 
   if (analogRead(X3) <= minValue)
   {
-    if(LogOnce){LogOnce = false;LOGLN("X3:" + String(analogRead(X3)));}
+    if(LogOnce){LogOnce = false;LOGLN("X3:" + String(analogRead(X3)));counter = 0;}
     if (o > delayForCounter/3)
     {
       o = 0;

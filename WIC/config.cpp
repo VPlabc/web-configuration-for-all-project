@@ -931,51 +931,6 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ) {
         return false;
     }
-#if defined(LOOKLINE_UI)
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN, DEFAULT_PLAN) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN_SET, DEFAULT_PLANSET) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT, DEFAULT_RESULT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT_SET, DEFAULT_RESULTSET) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PLANMAX, DEFAULT_PLANLIMIT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIME_PLAN, DEFAULT_TIMEPLAN) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT, DEFAULT_TIMESENT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PCS, DEFAULT_PCS) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
-        return false;
-    }
-
-#endif//LOOKLINE_UI
 #if defined(TIMESTAMP_FEATURE)
     if (!CONFIG::write_byte (EP_TIMEZONE, DEFAULT_TIME_ZONE) ) {
         return false;
@@ -1026,6 +981,48 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {
         return false;
     }
+    
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN, (const byte *) &DEFAULT_PLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN_SET, (const byte *) &DEFAULT_PLANSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT, (const byte *) &DEFAULT_RESULT, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT_SET, (const byte *) &DEFAULT_RESULTSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PCS, (const byte *) &DEFAULT_PCS, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PLANMAX, (const byte *) &DEFAULT_PLANLIMIT, INTEGER_LENGTH) ) {
+        return false;
+    }
+        if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
+        return false;
+    }
+    
+    if (!CONFIG::write_buffer (EP_EEPROM_TIME_PLAN, (const byte *) &DEFAULT_TIMEPLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    // DEFAULT_TIMEPLAN
 #endif//LOOKLINE_UI
 #ifdef NOTIFICATION_FEATURE
     if (!CONFIG::write_byte (ESP_NOTIFICATION_TYPE, DEFAULT_NOTIFICATION_TYPE) ) {

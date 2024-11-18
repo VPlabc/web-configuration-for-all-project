@@ -5,6 +5,7 @@
         "string_view": "cpp",
         "system_error": "cpp",
         "*.tcc": "cpp",
-        "functional": "cpp"
+        "functional": "cpp",
+        "ostream": "cpp"
     }
 }

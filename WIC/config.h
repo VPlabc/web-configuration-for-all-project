@@ -43,7 +43,7 @@
 
 // #define Master
 //version and sources location
-#define FW_VERSION "2.1.1.11"
+#define FW_VERSION "14.9.9.3"
 #define REPOSITORY ""
 //#define ARDUINO_ARCH_ESP8266
 //Customize ESP3D ////////////////////////////////////////////////////////////////////////
@@ -406,6 +406,7 @@ extern const char * pathToFileName(const char * path);
 #define DEBUG_PIPE SERIAL_PIPE
 #define LOG(string) {Serial.print(string);}
 #define LOGLN(string) {Serial.println(string);}
+#define LOGFL() {Serial.flush();}
 #else
 #define LOG(string) {}
 #define LOGLN(string) {}
@@ -736,8 +737,8 @@ const byte DEFAULT_AP_IP_MODE =                 STATIC_IP_MODE;
 const byte DEFAULT_IP_VALUE[]   =           {192, 168, 0, 1};
 const byte DEFAULT_MASK_VALUE[]  =          {255, 255, 255, 0};
 #define DEFAULT_GATEWAY_VALUE               DEFAULT_IP_VALUE
-const long DEFAULT_BAUD_RATE =          115200;
-#define DEFAULT_PHY_MODE            WIFI_PHY_MODE_11G
+const long DEFAULT_BAUD_RATE =          9600;
+#define DEFAULT_PHY_MODE            WIFI_PHY_MODE_11B
 #define DEFAULT_SLEEP_MODE          WIFI_MODEM_SLEEP
 #define DEFAULT_CHANNEL             11
 #define DEFAULT_AUTH_TYPE           AUTH_WPA_PSK
@@ -788,22 +789,23 @@ const int DEFAULT_DHT_INTERVAL = 30;
 #define ESP_IFTTT_NOTIFICATION      4
 
 #ifdef LOOKLINE_UI
-#define DEFAULT_PLAN           0
-#define DEFAULT_PLANSET        1
-#define DEFAULT_RESULT         0
-#define DEFAULT_RESULTSET      1
-#define DEFAULT_TIMEPLAN       100
-#define DEFAULT_PLANLIMIT      9999
-#define DEFAULT_PCS            100
 
-#define DEFAULT_TIMESENT       15
-#define DEFAULT_AMOUNTNODE     5
-#define DEFAULT_BOARDID        1
-#define DEFAULT_NETID          1
-#define DEFAULT_CHANEL         0
-#define DEFAULT_ROLE           0
-#define DEFAULT_COMMODE        0
-#define DEFAULT_MODULETYPE     0
+const int DEFAULT_PLAN     =      0;
+const int DEFAULT_PLANSET  =      1;
+const int DEFAULT_RESULT  =       0;
+const int DEFAULT_RESULTSET =     1;
+const int DEFAULT_TIMEPLAN  =     1000;
+const int DEFAULT_PLANLIMIT =     9999;
+const int DEFAULT_PCS      =      100;
+
+const int DEFAULT_TIMESENT  =     15;
+const int DEFAULT_AMOUNTNODE =    5;
+const int DEFAULT_BOARDID  =      1;
+const int DEFAULT_NETID  =        1;
+const int DEFAULT_CHANEL =        0;
+const byte DEFAULT_ROLE    =       0;
+const byte DEFAULT_COMMODE  =      0;
+const byte DEFAULT_MODULETYPE =    0;
 
 #endif//LOOKLINE_UI
 

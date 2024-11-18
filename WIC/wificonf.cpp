@@ -155,7 +155,7 @@ const char * WIFI_CONFIG::get_default_hostname()
 #endif
     return hostname;
 }
-
+void onWiFiEvent(WiFiEvent_t event);
 //safe setup if no connection
 void  WIFI_CONFIG::Safe_Setup()
 {
@@ -164,28 +164,53 @@ void  WIFI_CONFIG::Safe_Setup()
     dnsServer.stop();
     CONFIG::wait(100);
 #endif
-
+    byte bflag = 0;
+    
+    WiFi.onEvent(onWiFiEvent);
+    if (!CONFIG::read_byte (EP_SLEEP_MODE, &bflag ) ) {
+        LOG ("Error read Sleep mode\r\n")
+    }
     WiFi.disconnect();
     //setup Soft AP
     WiFi.mode (WIFI_AP_STA);
+    esp_wifi_set_protocol (WIFI_IF_AP, bflag);
+    LOGLN("Power: " + String(bflag));
     IPAddress local_ip (DEFAULT_IP_VALUE[0], DEFAULT_IP_VALUE[1], DEFAULT_IP_VALUE[2], DEFAULT_IP_VALUE[3]);
     IPAddress gateway (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
     IPAddress subnet (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
+
     String ssid = FPSTR (DEFAULT_AP_SSID);
     String pwd = FPSTR (DEFAULT_AP_PASSWORD);
-    #ifdef LOOKLINE_UI
+    if (!CONFIG::read_string (EP_AP_SSID, ssid, MAX_SSID_LENGTH) ) {
+            // return false;
+    }
+    if (!CONFIG::read_string (EP_AP_PASSWORD, pwd, MAX_PASSWORD_LENGTH) ) {
+        // return false;
+    }
+    #ifdef CAPTIVE_PORTAL_FEATURE
+    if (WiFi.getMode() != WIFI_STA ) {
+        // if DNSServer is started with "*" for domain name, it will reply with
+        // provided IP to all DNS request
+        #ifdef LOOKLINE_UI
         String sbuf = "";
+        String pwds = "";
+        if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {
+            // return false;
+        }
+        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
+            // return false;
+        }
         byte b_ID = 0;
-        CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
-        CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9.3" ;
-        WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
-    #else
-    WiFi.softAP (ssid.c_str(), pwd.c_str() );
-    #endif//LOOKLINE_UI
-    CONFIG::wait (500);
-    WiFi.softAPConfig ( local_ip,  gateway,  subnet);
-    CONFIG::wait (1000);
+        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
+            // return false;
+        }
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|*Ver:14.9.9.3" ;
+        WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
+        #endif//LOOKLINE_UI
+        dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
+        dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
+    }
+#endif
 #ifdef ESP_OLED_FEATURE
 #ifndef Moto_UI 
     OLED_DISPLAY::display_signal(100);
@@ -195,7 +220,7 @@ void  WIFI_CONFIG::Safe_Setup()
     // ESPCOM::print(local_ip.toString().c_str(), OLED_PIPE);
 #endif//
 #endif
-    ESPCOM::println (F ("Safe mode started"), PRINTER_PIPE);
+    if(debug)ESPCOM::println (F ("Safe mode started"), PRINTER_PIPE);
 }
 
 
@@ -228,7 +253,7 @@ case WIFI_EVENT_STAMODE_DISCONNECTED:
     #endif//Moto_UI
         #ifdef LOOKLINE_UI
         cmdLookline_PROG.SetStart(0);
-        if(debug)LOG("Disconnected");
+        if(debug)LOGLN("Disconnected");
         cmdLookline_PROG.SetConfig(1);
     #endif//LOOKLINE_UI
         #ifdef Switch_UI
@@ -259,7 +284,7 @@ case WIFI_EVENT_STAMODE_DISCONNECTED:
         cmdLookline_PROG.SetConfig(1);
         cmdLookline_PROG.SetStart(0);
         static byte connectCount = 0;
-            if(connectCount == 2){ if(debug){LOG("Disconnected .... Restart");}}else{ if(debug){LOG("Disconnected");}}
+            if(connectCount == 2){ if(debug){LOGLN("Disconnected .... Restart");}}else{ if(debug){LOGLN("Disconnected");}}
             
         cmdLookline_PROG.SAVEDATA();
         if(connectCount >= 2){
@@ -413,7 +438,7 @@ bool WIFI_CONFIG::Setup (bool force_ap)
             delay (100);
         }
         //LOG ("Disable STA\r\n")
-        WiFi.enableSTA (false);
+        // WiFi.enableSTA (false);
         delay (100);
         //LOG ("Set phy mode\r\n")
         //setup PHY_MODE
@@ -775,30 +800,30 @@ bool WIFI_CONFIG::Enable_servers()
     //ask server to track these headers
     web_interface->web_server.collectHeaders (headerkeys, headerkeyssize );
 #endif
-#ifdef CAPTIVE_PORTAL_FEATURE
-    if (WiFi.getMode() != WIFI_STA ) {
-        // if DNSServer is started with "*" for domain name, it will reply with
-        // provided IP to all DNS request
-        #ifdef LOOKLINE_UI
-        String sbuf = "";
-        String pwds = "";
-        if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {
-            return false;
-        }
-        if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
-            return false;
-        }
-        byte b_ID = 0;
-        if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
-            return false;
-        }
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9.3" ;
-        WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
-        #endif//LOOKLINE_UI
-        dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
-        dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
-    }
-#endif
+// #ifdef CAPTIVE_PORTAL_FEATURE
+//     if (WiFi.getMode() != WIFI_STA ) {
+//         // if DNSServer is started with "*" for domain name, it will reply with
+//         // provided IP to all DNS request
+//         #ifdef LOOKLINE_UI
+//         String sbuf = "";
+//         String pwds = "";
+//         if (!CONFIG::read_string (EP_AP_PASSWORD, pwds, MAX_PASSWORD_LENGTH) ) {
+//             return false;
+//         }
+//         if (!CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ) {
+//             return false;
+//         }
+//         byte b_ID = 0;
+//         if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
+//             return false;
+//         }
+//         String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9.3" ;
+//         WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
+//         #endif//LOOKLINE_UI
+//         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
+//         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
+//     }
+// #endif
     web_interface->web_server.begin();
 #ifdef TCP_IP_DATA_FEATURE
     //start TCP/IP interface
