@@ -141,6 +141,8 @@ void MeshSetup(void);
 void MeshLoop(void);
 void MeshLookLineSetup();
 //char buffer[ESP_NOW_MAX_DATA_LEN + 1];
+void saveMemoryToFile();
+void readMemoryFromFile();
 
 uint8_t current_protocol;
 esp_now_peer_info_t peerInfo;
@@ -417,8 +419,13 @@ void LOOKLINE_PROG::SetLookineValue(){
   CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
   WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
   caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+  saveMemoryToFile();
 }
 void LOOKLINE_PROG::UpdateLookLineData(){
+#ifdef ROM_V2
+readMemoryFromFile();
+  if(LooklineDebug)LOGLN("Update Data V2");
+#else
   CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
   CONFIG::read_buffer(EP_EEPROM_PLAN,(byte *) &PLAN, INTEGER_LENGTH);
   CONFIG::read_buffer(EP_EEPROM_PLAN_SET,(byte *) &PLanSet, INTEGER_LENGTH);
@@ -439,6 +446,7 @@ void LOOKLINE_PROG::UpdateLookLineData(){
   CONFIG::read_byte(EP_EEPROM_COM_MODE, &ComMode);
   if(ComMode == LoRa){WriteLoRaConfig(Lora_CH, BoardIDs);}
   if(LooklineDebug)LOGLN("Update Data");
+#endif//ROM_V2
 } 
 
 void LOOKLINE_PROG::DebugOut(String msg,byte output){//1 = Web / 2 = Serial
@@ -462,6 +470,7 @@ if(pos == EP_EEPROM_TIMESENT){if(LooklineDebug)LOGLN("Time Sent :" + String(Mode
 if(pos == EP_EEPROM_DEBUG){if(LooklineDebug)LOGLN("Debug Mode:" + String(Mode));}
 if(pos == EP_EEPROM_TEST_MODE){if(LooklineDebug)LOGLN("Test Mode:" + String(Mode));TEST = Mode;}
 // EP_EEPROM_TIMESENT
+saveMemoryToFile();
 }
 
 
@@ -485,10 +494,16 @@ if(pos == EP_EEPROM_RESULT_SET){if(LooklineDebug)LOGLN("Result set is :" + Strin
 if(pos == EP_EEPROM_PCS){if(LooklineDebug)LOGLN("Result set is :" + String(Mode));pcsInShift = Mode;}
 if(pos == EP_EEPROM_COUNTER_DELAY){if(LooklineDebug)LOGLN("Counter delay :" + String(Mode));
 SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);}SerDisplay();
+saveMemoryToFile();
 }
 void LOOKLINE_PROG::PinMapInit(){
-  
-CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
+#ifdef ROM_V2
+  readMemoryFromFile();
+#else//ROM_V2
+  if(LooklineDebug)LOGLN("Update Data V2");
+#endif //ROM_V2 
+// CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
+
 if(ModuleType == ModGateway){
   uint8_t MapPin1[10] = {27,14, 2,15,19,25,26,18, 5, 4};// main board gateway V14
   for(byte i = 0 ; i < 10; i++){MapPin[i] = MapPin1[i];}
@@ -777,21 +792,52 @@ byte LOOKLINE_PROG::readConfigMessage(){// 1: OK, 2:Error, 3:Get Configuration
 } 
 
 
+LooklineData LOOKLINE_Data;
+void saveMemoryToFile() {
+    LOOKLINE_Data.ID = BoardIDs;
+    LOOKLINE_Data.netID = NetIDs;
+    LOOKLINE_Data.chanel = Lora_CH;
+    LOOKLINE_Data.plan = PLAN;
+    LOOKLINE_Data.planset = PLanSet;
+    LOOKLINE_Data.result = RESULT;
+    LOOKLINE_Data.resulset = ResultSet;
+    LOOKLINE_Data.planmax = PlanLimit;
+    LOOKLINE_Data.pcsh = pcsInShift;
+    LOOKLINE_Data.type = ModuleType;
+    LOOKLINE_Data.role = role;
+    LOOKLINE_Data.Debug = LooklineDebug;
+//LOG ("saveMemoryToFile: " + String(SDFunction::sd_card_found) +"\n");
+    if (SPIFFS.exists("/memory.bin")) {SPIFFS.remove("/memory.bin");}
+    File file = SPIFFS.open("/memory.bin", FILE_WRITE);
+    if (file) {
+      file.write((uint8_t *)&LOOKLINE_Data, sizeof(struct LooklineData));
+      file.close();
+    }
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void readMemoryFromFile() {
+//LOG ("readMemoryFromFile: " + String(SDFunction::sd_card_found) + "\n");
+    if (SPIFFS.exists("/memory.bin")) {
+      File file = SPIFFS.open("/memory.bin", FILE_READ);
+      file.read((uint8_t *)&LOOKLINE_Data, sizeof(struct LooklineData));
+      file.close();
+      BoardIDs = LOOKLINE_Data.ID;
+      NetIDs = LOOKLINE_Data.netID;
+      Lora_CH = LOOKLINE_Data.chanel;
+      PLAN = LOOKLINE_Data.plan;
+      PLanSet = LOOKLINE_Data.planset;
+      RESULT = LOOKLINE_Data.result;
+      ResultSet = LOOKLINE_Data.resulset;
+      PlanLimit = LOOKLINE_Data.planmax;
+      pcsInShift = LOOKLINE_Data.pcsh;
+      ModuleType = LOOKLINE_Data.type;
+      role = LOOKLINE_Data.role;
+      LooklineDebug = LOOKLINE_Data.Debug;
+    }
+    else{
+    LOG ("File not Exists\n");
+    }
+}
 
 
 
@@ -901,6 +947,7 @@ if(TEST){
             monitor += String(analogRead(X4));
          if(LooklineDebug)LOGLN(monitor);
 #endif//LOOKLINE_MASTER
+
 UpdateLookLineData(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
 }//settup
 
@@ -932,7 +979,7 @@ UpdateLookLineData(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun)
 // #define TEST_LORA
 
 
-  void LoRaCommu(byte mode);
+void LoRaCommu(byte mode);
 
 String strIn = "";
 void LOOKLINE_PROG::loop()
@@ -1466,7 +1513,7 @@ if(done == true){if(LooklineDebug)LOGLN("Done");
         } //if (Length.toInt() == 0)
       if (Length.toInt() >= 16)
       {
-        CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
+        // CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
         if(ModuleType == ModGateway){
         digitalWrite(taskStatus_LED, LOW);delay(100);digitalWrite(taskStatus_LED, HIGH);
         }//if(taskModuleType == ModGateway){
@@ -1494,16 +1541,17 @@ if(done == true){if(LooklineDebug)LOGLN("Done");
 void LOOKLINE_PROG::SerDisplay()
 {
       if(MonitorMode == Main){
-        CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
-        CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
-        CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
-        // CONFIG::read_byte(EP_EEPROM_RUN, &NodeRun);
-        CONFIG::read_byte(EP_EEPROM_DEBUG, &LooklineDebug);
-        CONFIG::read_byte(EP_EEPROM_AMOUNTNODE, &AmountNode);
-        CONFIG::read_byte(EP_EEPROM_TIMESENT, &TimeSent);
-        CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
-        CONFIG::read_byte(EP_EEPROM_ROLE, &role);
-        CONFIG::read_buffer(EP_EEPROM_TIME_PLAN,(byte*) &Time, INTEGER_LENGTH);
+        // readMemoryFromFile();
+        // CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+        // CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
+        // CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+        // // CONFIG::read_byte(EP_EEPROM_RUN, &NodeRun);
+        // CONFIG::read_byte(EP_EEPROM_DEBUG, &LooklineDebug);
+        // CONFIG::read_byte(EP_EEPROM_AMOUNTNODE, &AmountNode);
+        // CONFIG::read_byte(EP_EEPROM_TIMESENT, &TimeSent);
+        // CONFIG::read_byte(EP_EEPROM_MODULE_TYPE, &ModuleType);
+        // CONFIG::read_byte(EP_EEPROM_ROLE, &role);
+        // CONFIG::read_buffer(EP_EEPROM_TIME_PLAN,(byte*) &Time, INTEGER_LENGTH);
         String Log = "";
         Log = "| Board ID: "+ String(BoardIDs);
         Log +=" | Network ID: "+ String(NetIDs);

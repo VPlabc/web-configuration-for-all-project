@@ -770,7 +770,7 @@ void TaskInPut()
 if(taskRole == NODE || taskRole == REPEARTER){
   ///*
   //////////////////////////////////////////////////////////////////////
-  if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;}
+  if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;counterBoot=0;}
   if (analogRead(X0) > maxValue || analogRead(X4) > maxValue)
   {
     // LOGLN("update InputState");
@@ -789,10 +789,10 @@ if(taskRole == NODE || taskRole == REPEARTER){
       // if(LogOnce){LogOnce = false;LOGLN("X0:" + String(analogRead(X0)) + "|X4:" + String(analogRead(X4)));}
           counter2Pin++;counterBoot++;if(Lookline_PROG.GetDebug())LOGLN("boot:" + String(counterBoot));
         if(counterBoot > 10000){//5S
-          CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
-          CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
-          delay(1000);
-          ESP.restart();
+          // CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
+          // CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
+          // delay(1000);
+          // ESP.restart();
         }
         if(counter2Pin > 500 && Lookline_PROG.GetRun()  == false){
 

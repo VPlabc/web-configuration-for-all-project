@@ -29,6 +29,8 @@
 // #define AUTOITGW_UI
 // #define Moto_UI
 #define LOOKLINE_UI
+#define ROM_V2
+
 // #define LOOKLINE_MASTER
 
 #ifdef LOOKLINE_MASTER
@@ -875,6 +877,43 @@ const uint16_t Setting[][2] = {
     {EP_DHT_TYPE, LEVEL_USER},//38
     {EP_SD_SPEED_DIV, LEVEL_USER}//39
 };
+// #define EP_EEPROM_ID            1091// 4 bytes
+// #define EP_EEPROM_NETID         1095// 4 bytes
+// #define EP_EEPROM_CHANELS       1099// 4 bytes
+// #define EP_EEPROM_ROLE          1103// 4 bytes Node|gateway|repearter
+// #define EP_EEPROM_RUN           1107// 4 bytes Run/Stop/Sleep
+// #define EP_EEPROM_AMOUNTNODE    1111// 4 bytes
+// #define EP_EEPROM_COM_MODE      1115// 4 bytes
+// #define EP_EEPROM_MODULE_TYPE   1119// 4 bytes
+// #define EP_EEPROM_PLAN          1123// 4 bytes
+// #define EP_EEPROM_RESULT        1127// 4 bytes
+// #define EP_EEPROM_PLANMAX       1131// 4 bytes
+// #define EP_EEPROM_PCS           1135// 4 bytes
+// #define EP_EEPROM_TIME_PLAN     1139// 4 bytes
+// #define EP_EEPROM_TIMESENT      1143// 4 bytes
+// #define EP_EEPROM_URL_VER       1147// 100 bytes
+// #define EP_EEPROM_URL_FW        1247// 100 bytes
+// #define EP_EEPROM_PLAN_SET      1347// 4 bytes
+// #define EP_EEPROM_RESULT_SET    1351// 4 bytes
+// #define EP_EEPROM_ON_OFF        1355// 1 bytes
+// #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
+typedef struct LooklineData {
+  int     ID;
+  int     netID;
+  byte    chanel;
+  byte    role;
+  byte    run;
+  byte    type; 
+  byte  Debug;
+  int   plan;
+  int   planset;
+  int   result;
+  int   resulset;
+  int   planmax;  
+  int   pcsh;
+  int   timeplan;
+  int   counterdelay;
+} LooklineData;
 #define AUTH_ENTRY_NB 40
 
 #define FLAG_BLOCK_M117 0x01
