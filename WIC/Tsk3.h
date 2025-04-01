@@ -1,6 +1,8 @@
 #include "config.h"
+#ifdef MQTT_USE
 #include "MQTTcom.h"
 MQTTCOM MQTTTask3;
+#endif//MQTT_USE
 #include "WIC.h"
 WIC wicTask3;
 //Task2 :

@@ -46,7 +46,7 @@ const int16_t RegRead = offsetD0+2000;//Register Read
 #ifdef VOM
 const int16_t RegRead = 0;//Register Read
 #else
-// const int16_t RegRead = 0;//Register Read
+const int16_t RegRead = 0;//Register Read
 #endif//VOM
 
 bool state0 = 0;

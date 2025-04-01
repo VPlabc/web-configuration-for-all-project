@@ -1,9 +1,10 @@
 #include "LookLine.h"
 #include "7SegModule.h"
 #include "config.h"
-
+// #define Develop
+#ifdef LoRaNetwork
 #define LoRa_Ser Serial2
-
+#endif//LoRaNetwork
 void Data_Proccess();
 typedef struct TaskPin{
     uint8_t Data1;
@@ -772,6 +773,7 @@ void TaskInPut()
 if(taskRole == NODE || taskRole == REPEARTER){
   ///*
   //////////////////////////////////////////////////////////////////////
+  
   if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;}
   if (analogRead(X0) > maxValue || analogRead(X4) > maxValue)
   {

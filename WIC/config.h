@@ -29,11 +29,11 @@
 // #define AUTOITGW_UI
 // #define Moto_UI
 // #define Switch_UI
-// #define LOOKLINE_UI
-#define PLC_MASTER_UI
+#define LOOKLINE_UI
+// #define PLC_MASTER_UI
 //  #define Basic_UI
 // #define GATEWAY_UI
-
+#define MASTER_COMUNICATION
 
 
 #ifdef ARDUINO_ARCH_ESP8266
@@ -724,8 +724,8 @@ typedef enum {
 
 #define TIMESTAMP_FEATURE
 // #define MQTT_Mode
-#define Mesh_Network
-#define USE_LORA
+// #define Mesh_Network
+// #define USE_LORA
 #else
 // #define TestDisplayIntro
 // // #define TEST_MODE

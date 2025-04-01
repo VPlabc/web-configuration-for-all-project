@@ -216,8 +216,11 @@ void  WIFI_CONFIG::Safe_Setup()
         #ifdef PLC_MASTER_UI
         String AP_NAME = "Node_BOX_(" + String(ID) + ")|Ver:" + FW_VERSION;
         #else 
-        String AP_NAME = "Node_BOX";
+        // AP_NAME = "Node_BOX";
         #endif//PLC_MASTER_UI
+        #ifdef Basic_UI
+        String AP_NAME = "VPlab(" + String(ID) + ")|Ver:" + FW_VERSION;
+        #endif//Basic_UI
         WiFi.softAP (AP_NAME.c_str(), pwds.c_str());
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
@@ -514,6 +517,10 @@ bool WIFI_CONFIG::Setup(bool force_ap, byte LED_Pin = 2, int8_t invert = 1)
         #else
         // String AP_NAME = String(sbuf) + "(" + String(ID) + ")|Ver:" + FW_VERSION;
         #endif//LOOKLINE
+
+        #ifdef Basic_UI
+        String AP_NAME = "VPlab(" + String(ID) + ")|Ver:" + FW_VERSION;
+        #endif//Basic_UI
         WiFi.softAP (AP_NAME.c_str(), pwd);
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);
         dnsServer.start (DNS_PORT, "*", WiFi.softAPIP() );
