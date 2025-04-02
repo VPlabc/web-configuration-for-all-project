@@ -41,7 +41,12 @@ LITTLEFSImpl::LITTLEFSImpl()
 
 bool LITTLEFSImpl::exists(const char* path)
 {
+    // #define ESP32_C3
+    #ifdef ESP32_C3
+    File f = open(path, "r", false);
+    #else 
     File f = open(path, "r");
+    #endif//ESP32_C3
     return (f == true);
 }
 

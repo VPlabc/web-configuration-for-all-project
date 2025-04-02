@@ -157,13 +157,13 @@ void MQTTCOM::mqttReconnect() {
     if(String(mqttUserName) == "_"){charmqttUserName = "";}
     // LOGLN("mqtt user:" + String(mqttUserName));
   }
-    mqttUserName.replace(" ","");
+    mqttUserName.replace("_","");
     charmqttUserName = mqttUserName.c_str();
   if(CONFIG::read_string (EP_MQTT_PASS, mqttUserPassword, MAX_MQTT_PASS_LENGTH)){
     if(String(mqttUserPassword) == "_"){charmqttUserPassword = "";}
     // LOGLN("mqtt pass:" + String(mqttUserPassword));
   }  
-    mqttUserPassword.replace(" ","");
+    mqttUserPassword.replace("_","");
     charmqttUserPassword = mqttUserPassword.c_str();
   mqtt_connected = false;
 

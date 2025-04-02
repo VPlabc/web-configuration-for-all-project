@@ -1,7 +1,7 @@
 #ifndef ModuleType_
 #define ModuleType_
 #include "LookLine.h"
- 
+#ifndef LOOKLINE_MASTER
 void latch();
 void shiftOut4Row(uint8_t dataPin0, uint8_t dataPin1, uint8_t dataPin2, uint8_t clockPin, uint8_t bitOrder, uint8_t val0, uint8_t val1, uint8_t val2);
 void PrintSeg(uint8_t val0, uint8_t val1, uint8_t val2);
@@ -435,16 +435,16 @@ void SetLoad()
   }
   
   if(Lookline_PROG.SetupPro == 8){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.ResultSet/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.ResultSet/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.ResultSet/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.ResultSet/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.ResultSet/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.ResultSet/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.ResultSet/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.ResultSet/1)%10;
   }    
   if(Lookline_PROG.SetupPro == 7){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.PLanSet/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.PLanSet/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.PLanSet/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.PLanSet/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.PLanSet/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.PLanSet/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.PLanSet/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.PLanSet/1)%10;
   }
   if(Lookline_PROG.SetupPro == 6){
     // Lookline_PROG.ValueSet0 = (Lookline_PROG.Time/1000)%10;
@@ -459,16 +459,16 @@ void SetLoad()
     // Lookline_PROG.ValueSet3 = (Lookline_PROG.PLAN/1)%10;
   }
   if(Lookline_PROG.SetupPro == 3){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.PlanLimit/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.PlanLimit/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.PlanLimit/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.PlanLimit/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.PlanLimit/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.PlanLimit/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.PlanLimit/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.PlanLimit/1)%10;
   }  
   if(Lookline_PROG.SetupPro == 2){
-    Lookline_PROG.ValueSet0 = (Lookline_PROG.pcsInShift/1000)%10;
-    Lookline_PROG.ValueSet1 = (Lookline_PROG.pcsInShift/100)%10;
-    Lookline_PROG.ValueSet2 = (Lookline_PROG.pcsInShift/10)%10;
-    Lookline_PROG.ValueSet3 = (Lookline_PROG.pcsInShift/1)%10;
+    // Lookline_PROG.ValueSet0 = (Lookline_PROG.pcsInShift/1000)%10;
+    // Lookline_PROG.ValueSet1 = (Lookline_PROG.pcsInShift/100)%10;
+    // Lookline_PROG.ValueSet2 = (Lookline_PROG.pcsInShift/10)%10;
+    // Lookline_PROG.ValueSet3 = (Lookline_PROG.pcsInShift/1)%10;
   }
   if(Lookline_PROG.SetupPro == 1){
     // Lookline_PROG.ValueSet0 = (Lookline_PROG.RESULT/1000)%10;
@@ -741,5 +741,6 @@ void SetupDisplay()
     */
   latch();
 }  
+#endif//LOOKLINE_MASTER
 #endif//sevenSegModuleType_
  

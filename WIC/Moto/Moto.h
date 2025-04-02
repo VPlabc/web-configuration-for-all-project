@@ -50,6 +50,7 @@ void SetTime(uint8_t ss,uint8_t mm, uint8_t hh, uint8_t dd,uint8_t mo,int16_t ye
 void GetTime();
 void updateTime();
 float VoltUpdate();
+void Temp_update();
 private:
 
 };

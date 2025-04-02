@@ -3,6 +3,14 @@
 // node mesh master/slave
 // gateway master
 
+//Node Connector 
+//CONNECTOR
+//RS485 Connect
+  //GND --- 1
+  //A+  --- 2
+  //B-  --- 3
+//IO Connector
+
 
 #include <Arduino.h>
 #include "config.h"
@@ -23,24 +31,63 @@ IoT_Device IOT_DEVICE_;
 MQTTCOM mqttcommu;
 #include <PubSubClient.h>
 
-
 //________ Sensor
 #include "DHTesp.h"
-DHTesp dht;
+DHTesp dht_iot;
+#ifdef ESP32
 #define DHTPin 32
+#else//ESP8266
+#define DHTPin 2
+#endif// ESP32
+
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#ifdef ESP32
 OneWire ds18x20[] = { 32, 33, 34, 35 };
+#else//ESP8266
+OneWire ds18x20[] = { 14, 15 };
+#endif// ESP32
+
 const int oneWireCount = sizeof(ds18x20) / sizeof(OneWire);
 DallasTemperature sensor[oneWireCount];
-
+#ifdef ESP32
 const byte AnalogPins[] = { 32, 33, 34, 35 ,36 ,39};
+#endif// ESP32
 
+#include <PZEM004Tv30.h>
+
+#if !defined(PZEM_RX_PIN) && !defined(PZEM_TX_PIN)
+#define PZEM_RX_PIN 12
+#define PZEM_TX_PIN 13
+#endif
+
+#if defined(ESP32)
+#define pzemSWSerial Serial1
+PZEM004Tv30 pzem(pzemSWSerial, 16,17,0);
+#else
+#include <SoftwareSerial.h>
+SoftwareSerial pzemSWSerial(PZEM_RX_PIN, PZEM_TX_PIN);
+PZEM004Tv30 pzem(pzemSWSerial);
+#endif
+
+
+
+
+#ifdef ESP32
 #define SWITCHPIN 32
 #define RELAYPIN 33
 #define  ANALOGPIN1 36
 #define ANALOGPIN2 39
+#else//ESP8266
+#define SWITCHPIN 12
+#define RELAYPIN 13
+#define  ANALOGPIN1 A0
+#define SWITCHPIN1 4
+#define SWITCHPIN2 5
+
+#endif// ESP32
+
 // #include "WifiFunc.h"
 // #include "updatefirmware.h"
 #define MESH_ID               6734922
@@ -52,6 +99,7 @@ const byte AnalogPins[] = { 32, 33, 34, 35 ,36 ,39};
 #define GROUP_TEMP            6
 #define GROUP_VALVE           7
 #define GROUP_POSITION        8
+#define GROUP_POWER_ENERGY    9
 #define battery_cutoff_volt   3.3
 
 // Define variables to store BME280 readings to be sent
@@ -75,7 +123,7 @@ String mqtt_server = "";
 String MQTTPort = "";
 String TopicOut = "";
 String TopicIn = "";
-bool checkFW = true;
+byte checkFW = true;
 byte ModeRun1 = 0;
 byte Result = 0;
 String FW_version;
@@ -126,7 +174,29 @@ typedef struct struct_command_message {
 } struct_command_message;
 
 
+esp_now_peer_info_t slave;
+int chan; 
+
+enum MessageType {PAIRING, DATA,};
+MessageType messageType;
+
+int counter = 0;
+
+
+typedef struct struct_pairing {       // new structure for pairing
+    uint8_t networkID;
+    uint8_t boardid;
+    uint8_t macAddr[6];
+    uint8_t channel;
+} struct_pairing;
+
+// struct_message incomingReadings;
+// struct_message outgoingSetpoints;
+struct_pairing pairingData;
+
+
 struct_command_message DataCommand;
+
 // Create a struct_message called BME280Readings to hold sensor readings
 struct_message DataSenddings;
 
@@ -157,12 +227,20 @@ SH1106  display(0x3C, 21, 22);
 Adafruit_SSD1306 display1(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 #endif//OLED_SSD1306
 //---------------------------------   Hardware
+#ifdef ESP32
 #define BUTTON_PIN1   13
 #define BUTTON_PIN   0
 #define PIXEL_PIN    2  // Digital IO pin connected to the NeoPixels.
 #define PIXEL_COUNT 8  // Number of NeoPixels
 #define Status_LED 12
+#else//ESP8266
+#define BUTTON_PIN1  14
+#define BUTTON_PIN   0
+#define PIXEL_PIN    2  // Digital IO pin connected to the NeoPixels.
+#define PIXEL_COUNT 8  // Number of NeoPixels
+#define Status_LED 16
 
+#endif//ESP32
 #define  Debug_Ser Serial
 /////////////////////////////////////////////////////////////////
 #include <ClickButton.h>
@@ -196,6 +274,42 @@ int pos = 0, dir = 1; // Position, direction of "eye"
 
 
 bool STT = true;
+
+uint8_t current_protocol;
+esp_now_peer_info_t peerInfo;
+esp_interface_t current_esp_interface;
+wifi_interface_t current_wifi_interface;
+int rssi_display;
+
+// Estructuras para calcular los paquetes, el RSSI, etc
+typedef struct {
+  unsigned frame_ctrl: 16;
+  unsigned duration_id: 16;
+  uint8_t addr1[6]; /* receiver address */
+  uint8_t addr2[6]; /* sender address */
+  uint8_t addr3[6]; /* filtering address */
+  unsigned sequence_ctrl: 16;
+  uint8_t addr4[6]; /* optional */
+} wifi_ieee80211_mac_hdr_t;
+
+typedef struct {
+  wifi_ieee80211_mac_hdr_t hdr;
+  uint8_t payload[0]; /* network data ended with 4 bytes csum (CRC32) */
+} wifi_ieee80211_packet_t;
+//La callback que hace la magia
+void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
+  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
+  if (type != WIFI_PKT_MGMT)
+    return;
+
+  const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
+  const wifi_ieee80211_packet_t *ipkt = (wifi_ieee80211_packet_t *)ppkt->payload;
+  const wifi_ieee80211_mac_hdr_t *hdr = &ipkt->hdr;
+
+  int rssi = ppkt->rx_ctrl.rssi;
+  rssi_display = 120 - rssi;
+}
+
 
 // if ( incomingCatagory == 0 && incomingstatus == 0 ){LOG("Reciver: mesh"); ESPCOM::print("Reciver: mesh", WS_PIPE);}
 // if ( incomingCatagory == 0 && incomingstatus == 1 ){ LOG("Reciver: online");  ESPCOM::print("Reciver: online", WS_PIPE);}
@@ -276,7 +390,7 @@ void IoT_Device::UpdateStatus()// MQTT
   sensor["temperature"]  = incomingtemperature;
   sensor["humidity"]  = incominghumidity;
   sensor["mbattery"] = incomingmbattery;
-  sensor["battery"] = incomingmbattery;
+  sensor["battery"] = incomingbattery;
   sensor["rssi"] = incomingrssi_display;
   String payload = "";
   size_t n = serializeJson(sensor, payload);
@@ -301,6 +415,8 @@ void IoT_Device::WifiMode()
           ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
           checkFW = true;
 
+      CONFIG::read_byte (EP_EEPROM_UPDATE_FW, &checkFW);
+      // CONFIG::read_byte (EP_EEPROM_FW_BUTTON, &checkFW);
       Result = CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &ModeRun1);
       if(Debug)Debug_Ser.println("STA ModeRun:" + String(ModeRun1));
     }
@@ -326,6 +442,13 @@ void IoT_Device::WifiMode()
       //delay(3000);
     }
 }
+
+void OnWiFi(){
+  Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, WIFIMODE);  
+    if(IOT_DEVICE.RunMode == MESHSLAVE){IOT_DEVICE_.sendCurrentStatus(1);}
+    delay(3000);ESP.restart(); 
+}
+
 #ifdef ARDUINO_ARCH_ESP32
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -378,49 +501,56 @@ void IoT_Device::Mesh_Init(){
   check_protocol();
   }
   #endif//#ifdef ARDUINO_ARCH_ESP8266
-  if (esp_now_init() != ESP_OK) {
-    if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
-    IOT_DEVICE.OLED_Display("Error!!",3);}
-    else{dataDisp = "Error!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 16, 128);}
-    if(Debug)LOGLN("Error initializing ESP-NOW");
-    strip.setBrightness(100);strip.setPixelColor(0, 0xff0000);strip.show(); 
-    return;
-  }
-  else{
-    if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
-    IOT_DEVICE.OLED_Display("OK!!",3);}
-    else{dataDisp = "OK!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 16, 128);}
-    if(Debug)LOGLN("initializing ESP-NOW OK");
-    strip.setBrightness(100);strip.setPixelColor(0, 0x00ff00);strip.show(); 
-  }
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
-  // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK){
-    if(Debug)LOGLN("Failed to add peer");
-    if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
-    IOT_DEVICE.OLED_Display("Failed to add peer",4);}
-    else{dataDisp = "Failed to add peer!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 24, 128);}
-    strip.setBrightness(100);strip.setPixelColor(1, 0xff0000);strip.show();
-    // RunMode = 1;
-    return;
-  }
-  else{
-    if(Debug)LOGLN("add peer OK");
-    if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
-    IOT_DEVICE.OLED_Display("add peer OK",4);}
-    else{dataDisp = "add peer OK!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 24, 128);}
-    strip.setBrightness(100);strip.setPixelColor(1, 0x00ff00);strip.show(); 
-    }
-  // Register for a callback function that will be called when data is received
-  esp_now_register_recv_cb(MeshRecive);
+  // if (esp_now_init() != ESP_OK) {
+  //   if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
+  //   IOT_DEVICE.OLED_Display("Error!!",3);}
+  //   else{dataDisp = "Error!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 16, 128);}
+  //   if(Debug)LOGLN("Error initializing ESP-NOW");
+  //   strip.setBrightness(100);strip.setPixelColor(0, 0xff0000);strip.show(); 
+  //   return;
+  // }
+  // else{
+  //   if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
+  //   IOT_DEVICE.OLED_Display("OK!!",3);}
+  //   else{dataDisp = "OK!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 16, 128);}
+  //   if(Debug)LOGLN("initializing ESP-NOW OK");
+  //   strip.setBrightness(100);strip.setPixelColor(0, 0x00ff00);strip.show(); 
+  // }
+  // // Once ESPNow is successfully Init, we will register for Send CB to
+  // // get the status of Trasnmitted packet
+  // esp_now_register_send_cb(OnDataSent);
+  // // Register peer
+  // // memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  // peerInfo.channel = 0;  
+  // peerInfo.encrypt = false;
+  // // Add peer        
+  // if (esp_now_add_peer(&peerInfo) != ESP_OK){
+  //   if(Debug)LOGLN("Failed to add peer");
+  //   if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
+  //   IOT_DEVICE.OLED_Display("Failed to add peer",4);}
+  //   else{dataDisp = "Failed to add peer!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 24, 128);}
+  //   strip.setBrightness(100);strip.setPixelColor(1, 0xff0000);strip.show();
+  //   // RunMode = 1;
+  //   return;
+  // }
+  // else{
+  //   if(Debug)LOGLN("add peer OK");
+  //   if (!CONFIG::is_locked(FLAG_BLOCK_OLED)) {
+  //   IOT_DEVICE.OLED_Display("add peer OK",4);}
+  //   else{dataDisp = "add peer OK!!";OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 24, 128);}
+  //   strip.setBrightness(100);strip.setPixelColor(1, 0x00ff00);strip.show(); 
+  //   }
+  // // Register for a callback function that will be called when data is received
+  // esp_now_register_recv_cb(MeshRecive);
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
+      // Init ESP-NOW
+    if (esp_now_init() != ESP_OK) {
+      Serial.println("Error initializing ESP-NOW");
+      return;
+    }
+    esp_now_register_send_cb(OnDataSent);
+    esp_now_register_recv_cb(MeshRecive);
   #endif//
 }
 
@@ -445,7 +575,42 @@ void IoT_Device::MeshBegin()
   #endif//
 }
 
+// ---------------------------- esp_ now -------------------------
+void printMAC(const uint8_t * mac_addr){
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  Serial.print(macStr);
+}
 
+bool addPeer(const uint8_t *peer_addr) {      // add pairing
+  memset(&slave, 0, sizeof(slave));
+  const esp_now_peer_info_t *peer = &slave;
+  memcpy(slave.peer_addr, peer_addr, 6);
+  
+  slave.channel = chan; // pick a channel
+  slave.encrypt = 0; // no encryption
+  // check if the peer exists
+  bool exists = esp_now_is_peer_exist(slave.peer_addr);
+  if (exists) {
+    // Slave already paired.
+    Serial.println("Already Paired");
+    return true;
+  }
+  else {
+    esp_err_t addStatus = esp_now_add_peer(peer);
+    if (addStatus == ESP_OK) {
+      // Pair success
+      Serial.println("Pair success");
+      return true;
+    }
+    else 
+    {
+      Serial.println("Pair failed");
+      return false;
+    }
+  }
+} 
 
 
 
@@ -465,6 +630,7 @@ void MeshRecive(const uint8_t * mac, const uint8_t *incomingDatas, int len) {
     if(len == sizeof(incomingReadings)) {
     memcpy(&incomingReadings, incomingDatas, sizeof(incomingReadings));
     LOG("Data  incomingReadings");
+    LOGLN("RSSI:" + String(rssi_display));
     // LOGLN(len);
     incomingnetworkID = incomingReadings.networkID;
     incomingnodeID = incomingReadings.nodeID;
@@ -473,7 +639,7 @@ void MeshRecive(const uint8_t * mac, const uint8_t *incomingDatas, int len) {
     incominghumidity = incomingReadings.humidity;
     incomingmbattery = incomingReadings.mbattery;
     incomingbattery = incomingReadings.battery;
-    incomingrssi_display = incomingReadings.RSSI;
+    incomingReadings.RSSI = rssi_display;
     IOT_DEVICE.updateDisplay();
     }
     if(len == sizeof(DataCommand)){// Control by Mesh
@@ -497,9 +663,30 @@ void MeshRecive(const uint8_t * mac, const uint8_t *incomingDatas, int len) {
     }
   }//RunMode == MESHMODE
   if(IOT_DEVICE.RunMode == MESHSLAVE){
+    if(len == sizeof(pairingData)) {
+      memcpy(&pairingData, incomingDatas, sizeof(pairingData));
+      Serial.println("Net ID: " + String(pairingData.networkID));
+      Serial.println("Node ID: " + String(pairingData.boardid));
+      Serial.print("Pairing request from: ");
+      printMAC(mac);
+      Serial.println();
+      Serial.println("chanel: " + String(pairingData.channel));
+      if (pairingData.boardid > 0) {     // do not replay to server itself
+        // if (pairingData.networkID == networkID) { 
+          pairingData.boardid = 0;       // 0 is server
+          // Server is in AP_STA mode: peers need to send data to server soft AP MAC address 
+          WiFi.softAPmacAddress(pairingData.macAddr);   
+          pairingData.channel = chan;
+          Serial.println("send response");
+          esp_err_t result = esp_now_send(broadcastAddress ,(uint8_t *) &pairingData, sizeof(pairingData));
+          addPeer(mac);
+        // }  
+      }  
+    }
     if(len == sizeof(incomingReadings)) {
     memcpy(&incomingReadings, incomingDatas, sizeof(incomingReadings));
     LOG("Data  incomingReadings");
+    LOGLN(" | RSSI:" + String(rssi_display));
     // LOGLN(len);
     incomingnetworkID = incomingReadings.networkID;
     incomingnodeID = incomingReadings.nodeID;
@@ -508,11 +695,12 @@ void MeshRecive(const uint8_t * mac, const uint8_t *incomingDatas, int len) {
     incominghumidity = incomingReadings.humidity;
     incomingmbattery = incomingReadings.mbattery;
     incomingbattery = incomingReadings.battery;
-    incomingrssi_display = incomingReadings.RSSI;
+    incomingReadings.RSSI = rssi_display;
     IOT_DEVICE.updateDisplay();
     }
     // Serial.println("DataIn");
-    RF_Serial.write(incomingDatas, len);
+
+    RF_Serial.write((const uint8_t*)&incomingReadings,  sizeof(incomingReadings));
     RF_Serial.write('\n');
     //Serial.println("update status");
   }
@@ -571,6 +759,7 @@ void IoT_Device::setup() {
   }
   #endif//OLED_SSD1306
   
+  CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);
   //----------------------------------------------------------------
   // MQTT
   if(RunMode == WIFIMODE)mqttcommu.setup();
@@ -583,11 +772,7 @@ void IoT_Device::setup() {
 
 
 
-void OnWiFi(){
-  Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, WIFIMODE);  
-    if(IOT_DEVICE.RunMode == MESHSLAVE){IOT_DEVICE_.sendCurrentStatus(1);}
-    delay(3000);ESP.restart(); 
-}
+
 
 byte          receiver_status = 1;    // tracks the ESPNow receiver status
 bool Statement = false;
@@ -662,7 +847,7 @@ if(checkFW && RunMode == WIFIMODE  && (WiFi.status() == WL_CONNECTED))UDFW.repea
       esp_wifi_set_protocol(current_wifi_interface, 7);
       IOT_DEVICE.check_protocol();
     #endif//
-      if(Debug)Debug_Ser.println("hold button 2");
+      if(Debug)Debug_Ser.println("hold button 3");
       if(Debug)Debug_Ser.println("Wifi on");
       RunMode = 1;
     OLED_DISPLAY::clear_lcd();
@@ -741,12 +926,18 @@ if(checkFW && RunMode == WIFIMODE  && (WiFi.status() == WL_CONNECTED))UDFW.repea
               incomingmbattery = incomingReadings.mbattery;
               incomingbattery = incomingReadings.battery;
               incomingrssi_display = incomingReadings.RSSI;
+              LOGLN("Read RSSI: " + String(incomingrssi_display));
               if(incomingnetworkID == 0 && incomingnodeID == 0) {
                 LOG("\n\nslave cmd\n\n");
                 if ( incomingCatagory == 0 && incomingstatus == 0 ){LOG("\n\nReciver: mesh\n\n"); ESPCOM::print("Reciver: mesh", WS_PIPE);}
                 if ( incomingCatagory == 0 && incomingstatus == 1 ){ LOG("\n\nReciver: online\n\n");  ESPCOM::print("Reciver: online", WS_PIPE);}
                 if ( incomingCatagory == 1 && incomingstatus == 0 ){ LOG("\n\nReciver: update\n\n");  ESPCOM::print("Reciver: update", WS_PIPE);}
-              }else if(incomingCatagory <= 8 && incomingstatus <= 2){
+              }
+              else if(incomingCatagory <= 8 && incomingstatus <= 2){
+                IOT_DEVICE.updateDisplay();
+                UpdateStatus();
+              }
+              else if(incomingCatagory == 9 && incomingstatus > 2){
                 IOT_DEVICE.updateDisplay();
                 UpdateStatus();
               }
@@ -796,61 +987,6 @@ if(checkFW && RunMode == WIFIMODE  && (WiFi.status() == WL_CONNECTED))UDFW.repea
 
 
 
-void IoT_Device::sendDataNode(){
-    DataSenddings.networkID = networkID;
-    DataSenddings.nodeID = nodeID;
-    DataSenddings.category = category;
-    DataSenddings.status = Status;
-    DataSenddings.temperature = temperature;
-    DataSenddings.humidity = humidity;
-    DataSenddings.mbattery = mbattery;
-    DataSenddings.battery = battery;
-    DataSenddings.RSSI = rssi_display;
-    if(Debug){
-      LOGLN("DATA SENDDINGS");
-      LOG("network ID: ");LOG(networkID);
-      LOG(" | nodeID: ");LOG(nodeID);
-      LOG(" | Category: ");LOG(category);
-      LOG(" | status: ");LOG(Status);
-      LOG(" | Temperature: ");LOG(temperature);LOG(" ºC");
-      LOG(" | Humidity: ");LOG(humidity);LOG(" %");
-      LOG(" | mbattery: ");LOG(mbattery);LOG(" V");
-      LOG(" | battery: ");LOG(battery);LOG(" V");
-      LOG(" | RSSI: ");LOG(rssi_display);
-      LOGLN();
-    }
-    #ifdef ESP32
-    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &DataSenddings, sizeof(DataSenddings));
-    if (result == ESP_OK) {
-      if(Debug)LOGLN("Sent with success");
-    }
-    else {
-      if(Debug)LOGLN("Error sending the data");
-      //  IOT_DEVICE.MeshBegin();
-    }
-    #endif//def ESP32
-}
-/// Node Sendata to Gateway
-/// @brief Node Send To Gateway
-
-ESPResponseStream espresponse;
-void IoT_Device::NodeDataUpdate(){
-  static uint32_t last_node_update= 0;
-  uint32_t now_node = millis();
-  if (now_node - last_node_update > 30000) {//Node Update after 5000 ms
-        last_node_update = now_node;
-    if(ROLE == Node)sendDataNode();
-    String msg = "";
-    // msg = "Master WS: update";
-    // ESPCOM::println(msg.c_str(), WS_PIPE, &espresponse);
-    ESPCOM::println("Master WEB: update", WEB_PIPE, &espresponse);
-    // msg = "Master SERIAL: update";
-    // ESPCOM::println(msg.c_str(), SERIAL_PIPE, &espresponse);
-    // msg = "Master TCP: update";
-    // ESPCOM::println(msg.c_str(), TCP_PIPE, &espresponse);
-    // LOGLN("Master update");
-  }//if (now_dht - last_dht_update > 5000) {
-}
 /// @brief Node Category
 /// @param cat 
 void IoT_Device::NodeCategoryRead(byte cat){
@@ -858,13 +994,13 @@ if(RunMode == MESHMODE){
     if(cat == GROUP_HT){
       static uint32_t last_dht_update= 0;
       uint32_t now_dht = millis();
-      if (now_dht - last_dht_update > dht.getMinimumSamplingPeriod() *1.2) {
+      if (now_dht - last_dht_update > dht_iot.getMinimumSamplingPeriod() *1.2) {
           last_dht_update = now_dht;
-          humidity = dht.getHumidity();
-          temperature = dht.getTemperature();
+          humidity = dht_iot.getHumidity();
+          temperature = dht_iot.getTemperature();
 
           // Serial.print();
-          if(dht.getStatusString() == "TIMEOUT"){
+          if(dht_iot.getStatusString() == "TIMEOUT"){
               humidity = 0;
               temperature = 0;
           }
@@ -935,7 +1071,7 @@ void IoT_Device::NodeCategoryInit(byte cat)
       pinMode(SWITCHPIN, INPUT_PULLUP);
     }
     else if (cat == GROUP_HT){
-      dht.setup(DHTPin); 
+      dht_iot.setup(DHTPin); 
     }
     else if (cat == GROUP_MOTION){
       pinMode(SWITCHPIN, INPUT_PULLUP);
@@ -966,12 +1102,78 @@ void IoT_Device::NodeCategoryInit(byte cat)
 
 
 #endif////////////////////////////////
+
+void IoT_Device::sendDataNode(){
+    DataSenddings.networkID = networkID;
+    DataSenddings.nodeID = nodeID;
+    DataSenddings.category = category;
+    DataSenddings.status = Status;
+    DataSenddings.temperature = temperature;
+    DataSenddings.humidity = humidity;
+    DataSenddings.mbattery = mbattery;
+    DataSenddings.battery = battery;
+    DataSenddings.RSSI = rssi_display;
+    if(Debug){
+      LOGLN();
+      LOGLN("DATA SENDDINGS");
+      LOG("network ID: ");LOG(networkID);
+      LOG(" | nodeID: ");LOG(nodeID);
+      LOG(" | Category: ");LOG(category);
+      if(category == 9){
+        LOG(" | Tan so: ");LOG(Status);
+        LOG(" | Dien Ap: ");LOG(humidity);LOG("V");
+        LOG(" | Dong dien: ");LOG(temperature);LOG(" A");
+        LOG(" | Cong suat: ");LOG(battery);LOG(" W");
+        LOG(" | Tieu thu: ");LOG(mbattery);LOG(" KWh");
+        LOGLN();
+      }else{
+        LOG(" | status: ");LOG(Status);
+        LOG(" | Temperature: ");LOG(temperature);LOG(" ºC");
+        LOG(" | Humidity: ");LOG(humidity);LOG(" %");
+        LOG(" | mbattery: ");LOG(mbattery);LOG(" V");
+        LOG(" | battery: ");LOG(battery);LOG(" V");
+        LOG(" | RSSI: ");LOG(rssi_display);
+        LOGLN();
+      }
+    }
+    #ifdef ESP32
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &DataSenddings, sizeof(DataSenddings));
+    if (result == ESP_OK) {
+      if(Debug)LOGLN("Sent with success");
+    }
+    else {
+      if(Debug)LOGLN("Error sending the data");
+      //  IOT_DEVICE.MeshBegin();
+    }
+    #endif//def ESP32
+}
+/// Node Sendata to Gateway
+/// @brief Node Send To Gateway
+
+ESPResponseStream espresponse;
+void IoT_Device::NodeDataUpdate(){
+  static uint32_t last_node_update= 0;
+  uint32_t now_node = millis();
+  if (now_node - last_node_update > 30000) {//Node Update after 5000 ms
+        last_node_update = now_node;
+    if(ROLE == Node)sendDataNode();
+    String msg = "";
+    // msg = "Master WS: update";
+    // ESPCOM::println(msg.c_str(), WS_PIPE, &espresponse);
+    ESPCOM::println("Master WEB: update", WEB_PIPE, &espresponse);
+    // msg = "Master SERIAL: update";
+    // ESPCOM::println(msg.c_str(), SERIAL_PIPE, &espresponse);
+    // msg = "Master TCP: update";
+    // ESPCOM::println(msg.c_str(), TCP_PIPE, &espresponse);
+    // LOGLN("Master update");
+  }//if (now_dht - last_dht_update > 5000) {
+}
 //----------------------------------------------------------------
 //-------------------------- Load Config -------------------------
 //----------------------------------------------------------------
 void IoT_Device::getConfig(){
   if(STT)LOGLN()
-  Debug = DEBUG; 
+  Debug = 1; 
   if(CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug)){
     if(Debug && STT)Serial.println("Data");
     if(STT)LOGLN("Read Debug OK, value:" + String((Debug==0)?"Not Debug":"Debug"));
@@ -1010,13 +1212,10 @@ void IoT_Device::getConfig(){
     if(Debug && STT)LOGLN("Read NAME OK, value:" + String(NameBoard));
   }
   CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);
-  if(IOT_DEVICE.RunMode > 2){
-    CONFIG::write_byte (EP_EEPROM_WIFI_MODE, 1); 
-    CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);
-    }
-    if(RunMode == MESHSLAVE){if(Debug && STT)LOGLN("RunMode: Mesh Slave");}
-    if(RunMode == MESHMODE){if(Debug && STT)LOGLN("RunMode: Mesh (Node)");}
-    if(RunMode == WIFIMODE){if(Debug && STT)LOGLN("RunMode: Wifi (Gateway)");}
+  if(RunMode > 2){CONFIG::write_byte (EP_EEPROM_WIFI_MODE, 1);CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);}
+  if(RunMode == MESHSLAVE){if(Debug && STT)LOGLN("RunMode: Mesh Slave");}
+  if(RunMode == MESHMODE){if(Debug && STT)LOGLN("RunMode: Mesh (Node)");}
+  if(RunMode == WIFIMODE){if(Debug && STT)LOGLN("RunMode: Wifi (Gateway)");}
   ButtonUpdateFw = USE;
   if(CONFIG::read_byte (EP_EEPROM_FW_BUTTON, &ButtonUpdateFw)){
     if(Debug && STT)LOGLN("Read FW BUTTON OK, value:" + String((ButtonUpdateFw==0)?"Use":"Not Use"));
@@ -1073,6 +1272,7 @@ void IoT_Device::updateDisplay(){
     // #define GROUP_TEMP            6
     // #define GROUP_VALVE           7
     // #define GROUP_POSITION        8
+    //#define GROUP_POWER_ENERGY    9
     if(incomingCatagory == GROUP_HT){
     dataDisp = "Temperature: " + String(incomingtemperature) + "ºC";
     OLED_DISPLAY::display_text(dataDisp.c_str(), 0, 13, 128);
@@ -1169,28 +1369,29 @@ void IoT_Device::updateDisplay(){
     // display1.display();
   }
   #endif//OLED_SSD1306
-  if(Debug){
-    LOGLN("INCOMING READINGS");
-    LOG("network ID: ");
-    LOG(incomingReadings.networkID);
-    LOG(" | nodeID: ");
-    LOG(incomingReadings.nodeID);
-    LOG(" | Category: ");
-    LOG(incomingReadings.category);
-    LOG(" | status: ");
-    LOG(incomingReadings.status);
-    LOG(" | Temperature: ");
-    LOG(incomingReadings.temperature);
-    LOG(" ºC");
-    LOG(" | Humidity: ");
-    LOG(incomingReadings.humidity);
-    LOG(" | mbattery: ");LOG(incomingReadings.mbattery);LOG(" V");
-    LOG(" | battery: ");LOG(incomingReadings.battery);LOG(" V");
-    LOG(" %");
-    LOG(" | RSSI: ");
-    LOG(incomingReadings.RSSI);
-    LOGLN();
-  }
+
+    if(Debug){
+      LOGLN("DATA SENDDINGS");
+      LOG("network ID: ");LOG(incomingReadings.networkID);
+      LOG(" | nodeID: ");LOG(incomingReadings.nodeID);
+      LOG(" | Category: ");LOG(incomingReadings.category);
+      if(incomingReadings.category == GROUP_POWER_ENERGY){
+        LOG(" | Tan so: ");LOG(incomingReadings.status);
+        LOG(" | Dien Ap: ");LOG(incomingReadings.humidity);LOG("V");
+        LOG(" | Dong dien: ");LOG(incomingReadings.temperature);LOG(" A");
+        LOG(" | Cong suat: ");LOG(incomingReadings.battery);LOG(" W");
+        LOG(" | Tieu thu: ");LOG(incomingReadings.mbattery);LOG(" KWh");
+        LOGLN();
+      }else{
+        LOG(" | status: ");LOG(incomingReadings.status);
+        LOG(" | Temperature: ");LOG(incomingReadings.temperature);LOG(" ºC");
+        LOG(" | Humidity: ");LOG(incomingReadings.humidity);LOG(" %");
+        LOG(" | mbattery: ");LOG(incomingReadings.mbattery);LOG(" V");
+        LOG(" | battery: ");LOG(incomingReadings.battery);LOG(" V");
+        LOG(" | RSSI: ");LOG(incomingReadings.RSSI);
+        LOGLN();
+      }
+    }
   delay(50);
   if(LEDType == 0){strip.setBrightness(0);strip.setPixelColor(0, 0x00ff00);strip.setPixelColor(4, 0x00ff00);strip.show(); }
   else{digitalWrite(PIXEL_PIN,LOW);}
@@ -1395,6 +1596,137 @@ void IoT_Device::theaterChaseRainbow(int wait) {
 
 #ifdef ARDUINO_ARCH_ESP8266
 
+/// @brief Node Category
+/// @param cat 
+void IoT_Device::NodeCategoryRead(byte cat){
+if(RunMode == MESHMODE){
+    if(cat == GROUP_HT){
+      static uint32_t last_dht_update= 0;
+      uint32_t now_dht = millis();
+      if (now_dht - last_dht_update > dht_iot.getMinimumSamplingPeriod() *1.2) {
+          last_dht_update = now_dht;
+          humidity = dht_iot.getHumidity();
+          temperature = dht_iot.getTemperature();
+
+          // Serial.print();
+          if(dht_iot.getStatusString() == "TIMEOUT"){
+              humidity = 0;
+              temperature = 0;
+          }
+
+      }
+    }
+    if(cat == GROUP_TEMP){
+      static uint32_t last_temp_update= 0;
+      uint32_t now_temp = millis();
+      if (now_temp - last_temp_update > 5000) {
+        last_temp_update = now_temp;
+          humidity = sensor[0].getTempCByIndex(0);
+          Serial.print("Temperature for the sensor ");
+          Serial.print(0);
+          Serial.print(" is ");
+          Serial.println(humidity);
+          temperature = sensor[1].getTempCByIndex(0);
+          Serial.print("Temperature for the sensor ");
+          Serial.print(1);
+          Serial.print(" is ");
+          Serial.println(temperature);
+        
+      }
+    } 
+    if(cat == GROUP_SWITCH){
+      if(digitalRead(SWITCHPIN) == 0){
+        Status = true;
+      }
+      else{
+        Status = false;
+      }
+    }
+    if(cat == GROUP_MOTION){
+      if(digitalRead(SWITCHPIN) == 0){
+        Status = true;
+      }
+      else{
+        Status = false;
+      }
+    }
+    if(cat == GROUP_MOISTURE){
+      humidity = 0 ;temperature = 0 ;
+      for(byte i = 0; i < 200; i++){humidity = humidity + analogRead(ANALOGPIN1);}
+      humidity = humidity / 200;
+      temperature = 0;
+    }
+    if(cat == GROUP_RELAY){
+      if(state){digitalWrite(RELAYPIN, HIGH);}
+      else{digitalWrite(RELAYPIN, LOW);}
+      if (state == 0) {
+        digitalWrite(2, LOW);   // Turn the LED on (Note that LOW is the voltage level
+        Status = 0;
+      } 
+      if (state == 1) { 
+        digitalWrite(2, HIGH);  // Turn the LED off by making the voltage HIGH
+        Status = 1;
+      }
+    }
+    if(cat == GROUP_VALVE){
+      if(state){digitalWrite(RELAYPIN, HIGH);}
+      else{digitalWrite(RELAYPIN, LOW);}
+      if(digitalRead(SWITCHPIN1) == 0){Status = 1;}
+      if(digitalRead(SWITCHPIN2) == 0){Status = 0;}
+      if(digitalRead(SWITCHPIN1) == 1 && digitalRead(SWITCHPIN2) == 1){Status = 2;}
+    }
+    if(cat == GROUP_POWER_ENERGY){
+
+      // Read the data from the sensor
+       humidity = pzem.voltage();//voltage
+       temperature = pzem.current();//current
+       battery = pzem.power();//power
+       mbattery = pzem.energy();//energy
+      float frequency = pzem.frequency();
+       Status = byte(frequency);
+      float pf = pzem.pf();
+    }
+  }
+}
+void IoT_Device::NodeCategoryInit(byte cat)
+{
+    if(cat == GROUP_SWITCH){
+      pinMode(SWITCHPIN, INPUT_PULLUP);
+    }
+    else if (cat == GROUP_HT){
+      dht_iot.setup(DHTPin); 
+    }
+    else if (cat == GROUP_MOTION){
+      pinMode(SWITCHPIN, INPUT_PULLUP);
+    }
+    else if (cat == GROUP_RELAY){
+      pinMode(SWITCHPIN, INPUT_PULLUP);
+      pinMode(RELAYPIN, OUTPUT);
+    }
+    else if (cat == GROUP_MOISTURE){
+      pinMode(ANALOGPIN1, INPUT);
+      // pinMode(ANALOGPIN2, INPUT);
+    }
+    else if (cat == GROUP_TEMP){
+        DeviceAddress deviceAddress;
+        for (int i = 0; i < oneWireCount; i++) {
+          sensor[i].setOneWire(&ds18x20[i]);
+          sensor[i].begin();
+          if (sensor[i].getAddress(deviceAddress, 0)) sensor[i].setResolution(deviceAddress, 12);
+        }
+    }
+    else if (cat == GROUP_VALVE){
+      pinMode(SWITCHPIN, INPUT_PULLUP);
+      pinMode(RELAYPIN, OUTPUT);
+      pinMode(ANALOGPIN1, INPUT);
+      // pinMode(ANALOGPIN2, INPUT);
+    }
+    else if(cat == GROUP_POWER_ENERGY){
+      Serial.print("Custom Address:");
+      Serial.println(pzem.readAddress(), HEX);
+    }
+}
+
 void IoT_Device::MeshBegin()
 {
   CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);
@@ -1458,8 +1790,89 @@ void IoT_Device::setup() {
 }
 
 void IoT_Device::loop() {
+  button.Update();
+  button1.Update();
+  if (button1.clicks != 0) function1 = button1.clicks;
+  if (button.clicks != 0) function = button.clicks;
+  //if (button1.clicks != 0)Debug_Ser.println("function:" + String(function1));
+  //if (button.clicks != 0)Debug_Ser.println("function:" + String(function));
 
-}
+  if(( button.clicks == 1 || button1.clicks == 1) && Menu == 0){function = 0;function1 = 0;
+    if(Debug)Debug_Ser.println("Single click");
+    if((category == GROUP_RELAY || category == GROUP_SWITCH || category == GROUP_MOTION )&& RunMode == MESHMODE){state = !state;Status = state;LOGLN("state " + String(Status)); sendDataNode();}
+    // if(RunMode == WIFIMODE){Statement = !Statement;Command("1" ,"1", String(nodeID),String(Statement));LOGLN("(Gateway)state " + String(Status));}
+    // UpdateStatus();
+  }
+  if(( button.clicks == 2 || button1.clicks == 2)  && Menu == 0){function = 0;function1 = 0;
+  if(Debug)Debug_Ser.println("Single click2");
+    if(RunMode < 2){
+      checkFW = !checkFW;if(Debug)Debug_Ser.println("Check FW:" + String(checkFW));
+      if(LEDType == 0){ledFadeToBeat(255,0,255,BRIGHTNESS_HEART);ledFadeToBeat(255,0,0,BRIGHTNESS_HEART);colorWipe(0x000000, 100);}
+      else{LED_Signal(6, 100);}
+    }
+    if(RunMode == WIFIMODE){Command("0" ,"1", String(3), String(4), String(0));LOGLN("(Gateway)Category " + String(4) + " | Time:" + String(0));}
+    
+  }
+  if(( button.clicks == 3 || button1.clicks == 3) && Menu > 0){function = 0;function1 = 0;Menu = 0;OLED_DISPLAY::clear_lcd();
+  if(Debug)Debug_Ser.println("Single click3 Menu 0");}
+  if(( button.clicks == 3 || button1.clicks == 3) && Menu == 0){function = 0;function1 = 0;Menu = 1;OLED_DISPLAY::clear_lcd();
+  if(Debug)Debug_Ser.println("Single click3 Menu 1");}
+  if(( button.clicks == 1 || button1.clicks == 1)  && Menu > 0){function = 0;function1 = 0;Menu++;if(Menu > 3){Menu = 1;}Debug_Ser.println("Single click3 Menu " + String(Menu));OLED_DISPLAY::clear_lcd();}
+  if(( button.clicks == 2 || button1.clicks == 2)  && Menu == 3){checkFW = true;function = 0;function1 = 0;UPDATEFWS.ShowMess("Checking...");if(Debug)Debug_Ser.println("Check FW");}
+
+  // fade if button is held down during single-click
+  if(function == -1 || function1 == -1)
+  {
+    function = 0;function1 = 0;
+      if(Debug)Debug_Ser.println("hold button");
+      if(Menu > 0){Menu = 0;OLED_DISPLAY::clear_lcd();}
+      if(Menu == 0){
+        if(LEDType == 0){ledFadeToBeat(255,0,0,BRIGHTNESS_HEART);colorWipe(0x000000, 100);}
+        else{LED_Signal(2, 100);}
+        if(RunMode > 2){Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, WIFIMODE);delay(3000);ESP.restart();}
+        if(RunMode == 2){Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, WIFIMODE);delay(3000);ESP.restart();}
+        if(RunMode == 1){Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, MESHMODE);delay(3000);ESP.restart();}
+        if(RunMode == 0){Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, WIFIMODE);delay(3000);ESP.restart();}
+      }
+  } 
+  if(function == -2 || function1 == -2)
+  {
+    function = 0;function1 = 0;
+    #ifdef ARDUINO_ARCH_ESP8266
+        WiFi.setPhyMode (WIFI_PHY_MODE_11G);
+    #else
+    if(RunMode == WIFIMODE || RunMode == MESHMODE){if(Debug)LOGLN("MESH Slave (RF gateway)");
+      Result = CONFIG::write_byte (EP_EEPROM_WIFI_MODE, MESHSLAVE);delay(3000);ESP.restart();
+    }
+    #endif//
+  } 
+  if(function == -3 || function1 == -3)
+  {
+    function = 0;function1 = 0;
+    #ifdef ARDUINO_ARCH_ESP8266
+        WiFi.setPhyMode (WIFI_PHY_MODE_11G);
+    #else
+      IOT_DEVICE.check_protocol();
+      esp_wifi_set_protocol(current_wifi_interface, 7);
+      IOT_DEVICE.check_protocol();
+    #endif//
+      if(Debug)Debug_Ser.println("hold button 3");
+      if(Debug)Debug_Ser.println("Wifi on");
+      RunMode = 1;
+    OLED_DISPLAY::clear_lcd();
+    WifiMode();
+    
+  } 
+    // Reset function
+    function = 0;function1 = 0;
+
+
+  if(RunMode == MESHMODE){
+    if(ROLE == Node)NodeCategoryRead(category);
+    if(ROLE == Node)NodeDataUpdate();
+  }
+
+}//loop
 
 #endif////////////////////////////////
 #endif//IOTDEVICE_UI

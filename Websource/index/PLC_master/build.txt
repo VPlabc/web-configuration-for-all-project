@@ -1,0 +1,2 @@
+cd Websource/index/PLC_master 
+tar -czvf index.html.gz index.html

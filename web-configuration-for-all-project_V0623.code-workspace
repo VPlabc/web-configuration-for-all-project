@@ -1,0 +1,47 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../VPlab/OneDrive/work/LoRa_Motor_Controller_Remote_Offical"
+		},
+		{
+			"path": "../ESP/modbus/wsspy_gatewayiot/wsspy_gatewayiot"
+		},
+		{
+			"name": "ESP32C3_Project",
+			"path": "../../../../Documents/PlatformIO/Projects/ESP32C3_Project"
+		},
+		{
+			"name": "Test_Modbus_IO",
+			"path": "../../../../Documents/PlatformIO/Projects/Test_Modbus_IO"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"array": "cpp",
+			"string": "cpp",
+			"string_view": "cpp",
+			"system_error": "cpp",
+			"*.tcc": "cpp",
+			"functional": "cpp",
+			"deque": "cpp",
+			"list": "cpp",
+			"unordered_map": "cpp",
+			"unordered_set": "cpp",
+			"vector": "cpp",
+			"initializer_list": "cpp",
+			"regex": "cpp",
+			"type_traits": "cpp",
+			"cmath": "cpp",
+			"limits": "cpp",
+			"utility": "cpp",
+			"random": "cpp",
+			"istream": "cpp",
+			"ostream": "cpp",
+			"tuple": "cpp",
+			"algorithm": "cpp"
+		}
+	}
+}

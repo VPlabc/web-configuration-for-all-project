@@ -4,6 +4,9 @@
         "string": "cpp",
         "string_view": "cpp",
         "system_error": "cpp",
-        "*.tcc": "cpp"
-    }
+        "*.tcc": "cpp",
+        "functional": "cpp"
+    },
+    "cmake.sourceDirectory": "/Users/mac/Work/Win/Project/web-configuration-for-all-project_V0623/.piolibdeps/esp32cam/AsyncTCP"
 }
+

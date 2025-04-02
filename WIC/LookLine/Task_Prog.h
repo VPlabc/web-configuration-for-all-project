@@ -2,7 +2,7 @@
 #include "7SegModule.h"
 #include "config.h"
 
-#define LoRa_Ser Serial2
+// #define LoRa_Ser Serial2
 
 void Data_Proccess();
 typedef struct TaskPin{
@@ -15,7 +15,7 @@ typedef struct TaskPin{
     uint8_t M1;
 }TaskPin;
 TaskPin taskPin;
-int delayForCounter = 1000;
+// int delayForCounter = 1000;
 int taskPlan = 0;
 int taskResult = 0;
 int  taskCountOT_H = 0;
@@ -45,6 +45,7 @@ int16_t counter5 = 0;
 
 void SetPin(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t SHCP , uint8_t STCP, byte ID, byte NetID, byte Int_Lora_CH, byte Status_LED, byte TimeSent)
 {
+  #ifndef LOOKLINE_MASTER
     taskPin.Data1 = Data1;
     taskPin.Data2 = Data2;
     taskPin.Data3 = Data3;
@@ -63,6 +64,7 @@ void SetPin(uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t SHCP , uint8_t 
     CONFIG::read_byte (EP_EEPROM_AMOUNTNODE , &taskAmountNode);
     CONFIG::read_byte (EP_EEPROM_MODULE_TYPE , &taskModuleType);
     CONFIG::read_buffer (EP_EEPROM_COUNTER_DELAY,  (byte *) &delayForCounter, INTEGER_LENGTH);
+    #endif//LOOKLINE_MASTER
     
 }
 void IncNodeTime()//For Gateway
@@ -91,6 +93,7 @@ void SetValue(int Plan_V, int Result_V, int OTh_V, int OTl_V, bool Run)
 }
 void TaskDisplay(byte mode)
 {
+#ifndef LOOKLINE_MASTER
   int TIMES = 10000;
 #ifdef AutoRunStop
   DateTime now = rtc.now();
@@ -129,7 +132,7 @@ void TaskDisplay(byte mode)
   {
     digitalWrite(Lookline_PROG.Startus_LED, HIGH);
   }
-#endif                 //TEST_MODE \
+#endif                 //TEST_MODE 
                        ///*
   switch (mode) //0 main display||1 test||2 setting||3 ConFi||4 Read ID||
   {
@@ -495,7 +498,8 @@ void TaskDisplay(byte mode)
     //////////////////////////////////////////////////////////////////////////////////////////////////////
   } //switch
   //*/
-}
+  #endif//LOOKLINE_MASTER
+}//void TaskDisplay(byte mode)
 
 
 
@@ -663,8 +667,8 @@ void TaskDisplay(byte mode)
 void MeshCommu()
 {
   #ifdef Mesh_Network
-  if(taskComMode == MESH){
-  MeshLoop();
+  if(ComMode == MESH){
+    
   }
   #endif//def Mesh_Network
 }
@@ -735,14 +739,20 @@ void gatewayProtocol()
 
 int counter = 0;//boot hardware
 int counterHold = 0;//boot hardware
-int counter2Pin = 0;// 2 pin resetting
+int counter2Pin = 0;// 2 pin resetting counterBoot
+int counterBoot = 0;// counterBoot
+int counterSetMode = 0;// 2 pin resetting
 int minValue = 500;
 int maxValue = 2000;
 int p = 0;
 int o = 0;
 bool LogOnce = true;
+
+int function = 0;
+
 void TaskInPut()
 {
+  #ifndef LOOKLINE_MASTER
   /*
   if(digitalRead(0) == 0){
     while(digitalRead(0) == 0){delay(10);
@@ -761,7 +771,8 @@ void TaskInPut()
 #ifndef Develop
 #ifndef Gateway
 
-if(taskRole == NODE){
+
+if((taskRole == NODE || taskRole == REPEARTER) && counterBoot < 500 ){
   ///*
   //////////////////////////////////////////////////////////////////////
   if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;}
@@ -781,43 +792,38 @@ if(taskRole == NODE){
   {
       while(analogRead(X0) <= minValue || analogRead(X4) <= minValue){delay(10);
       // if(LogOnce){LogOnce = false;LOGLN("X0:" + String(analogRead(X0)) + "|X4:" + String(analogRead(X4)));}
-          counter2Pin++;
-        if(counter2Pin > 700){//5S
-          DispMode = Main;//Confi 
-          TaskDisplay(DispMode);
-          // TaskDisplay();
-          // TaskSerial();
-          // TaskServerpro();
-          // Gateway = true;taskModuleType = ModGateway;
-          // WriteRebootValue();
-          // delay(1000);
-          // ESP.restart();
-          break;
+          counter2Pin++;counterBoot++;
+          if(counterBoot > 500){break;}
+            if(Lookline_PROG.GetDebug())LOGLN("boot:" + String(counterBoot));
+        if(counterBoot > 1000){//5S
+          CONFIG::write_byte(EP_EEPROM_ROLE, GATEWAY);
+          CONFIG::write_byte(EP_EEPROM_MODULE_TYPE, GATEWAY);
+          delay(1000);
+          ESP.restart();
         }
-        if(counter2Pin > 500 && counter2Pin < 700){//5S
+        if(counter2Pin > 500 && Lookline_PROG.GetRun()  == false){
+
           DispMode = ConFi;//Confi 
+          LOGLN("Config");
           TaskDisplay(DispMode);
-          }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-          DispMode = CLEAR;//Clear 
-          TaskDisplay(DispMode);
+          if(ComMode != MESH){
+          CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);}
+          else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);}
+          delay(1000);
+          ESP.restart();
+        }
+
+        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun()  == true){//3S
+            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);counter2Pin = 0;
+            DispMode = CLEAR;//Clear 
+            TaskDisplay(DispMode);
+            LOGLN();
+            LOGLN("Clear");
         }
       }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);counter2Pin = 0;
-            DispMode = Main;//Confi 
-        }
-        if(counter2Pin > 500 && counter2Pin < 700){//5S
-          DispMode = ConFi;//Confi 
-          //LOGLN("online");UDF = true;WCF = true;APC = true;
-          // Lookline_PROG.Mode = 2;WriteRebootValue();LOG("AP Config");delay(3000);ESP.restart();
-          }
-          if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
-            Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);
-          }
-        if(counter2Pin < 500){// under 5S
-        if(Lookline_PROG.Run == true){
-          Lookline_PROG.Run = false;counter2Pin = 0;
+        if(counter2Pin < 300){// under 5S
+        if(Lookline_PROG.GetRun() == 1){
+          Lookline_PROG.SetRun(0);counter2Pin = 0;
           // WriteValue();
 #ifdef DEBUG_
           LOGLN("Stop");
@@ -825,7 +831,7 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
         }
         else{
-          Lookline_PROG.Run = true;counter2Pin = 0;
+          Lookline_PROG.SetRun(1);counter2Pin = 0;
           // totalInterruptCounter = 0;
           // WriteValue();
 #ifdef DEBUG_
@@ -843,15 +849,18 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
     }  //if(o > delayForCounter/3){
   }
+  
   //////////////////////////////////////////////////////////////////////
   if (analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue)
   {
     o++;if(o > 6000)o=6000;
+    
     if (o == delayForCounter/3)
     {
       int taskResultSet = 0;
       CONFIG::read_buffer(EP_EEPROM_RESULT_SET,(byte *) &taskResultSet, INTEGER_LENGTH);
       taskResult = taskResult + taskResultSet;Lookline_PROG.SetResult(taskResult);
+      Serial.println("Result :" + String(taskResult));
       if(taskResult % 10 == 9)CONFIG::write_buffer(EP_EEPROM_RESULT,(byte *) &taskResult, INTEGER_LENGTH);
     }
   }
@@ -905,4 +914,5 @@ if(taskRole == NODE){
 #endif//Gateway
 }//if(Gateway == false){
 #endif//Develop
+#endif//LOOKLINE_MASTER
 }//task input

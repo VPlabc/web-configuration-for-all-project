@@ -66,6 +66,7 @@
 #endif
 #include <WiFiClient.h>
 
+
 #include "FirmwareUpdate.h"
 UpdateFW MainUDFW;
 
@@ -105,7 +106,7 @@ LightTimer light;
 CircuitTest CIRCUITTEST;
 #endif // CircuitTesting_UI
 #ifdef Gyro_UI
-#include "GyroDatalog/Gyro_Datalog.h"
+#include "GyroDatalog/Gyro_Datalog.h" 
 GyroDatalog GyLog;
 
 #include <ClickButton.h>
@@ -129,6 +130,9 @@ Mesh_Com meshcom;
 #include "Moto/Moto.h"
 Moto MOTO;
 byte ModeRun = 0;
+
+TaskHandle_t Task1;
+TaskHandle_t Task2;
 #endif //
 
 #ifdef IOTDEVICE_UI
@@ -143,16 +147,38 @@ Auto_Device AutoitGW;
 #include "LookLine/LookLine.h"
 LOOKLINE_PROG lookline_prog;
 #endif // LOOKLINE_UI
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER PLC_MASTER_Prog;
+#endif // PLC_MASTER_UI
 // Contructor
 CONFIG conf;
 
 byte RunMode = 0;
+bool looklineDebug = false;
+bool looklineWifi = false;
+bool onece = true;
+bool onece1 = true;
+bool onece2 = true;
+bool onece_mb = 1;
+bool CheckFWonce = false;
+byte resent = 0;
+bool Init_UI = false;
+
+// TaskHandle_t Task1;
+// TaskHandle_t Task2;
+// TaskHandle_t Task3;
+
+// #include "Tsk1.h"
+// #include "Tsk2.h"
+// #include "Tsk3.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef TIMER_INTER_FEATURES
 ////////////////////////////////////////// TIMER INTERUPT ///////////////////////////////////
 volatile int interruptCounter;
 int totalInterruptCounter; 
+#ifdef ESP32
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 void IRAM_ATTR onTimer() {
@@ -161,31 +187,132 @@ void IRAM_ATTR onTimer() {
   totalInterruptCounter++;
   portEXIT_CRITICAL_ISR(&timerMux);
 }
+#else//ESP8266
+// Select a Timer Clock
+#define USING_TIM_DIV1                false           // for shortest and most accurate timer
+#define USING_TIM_DIV16               false           // for medium time and medium accurate timer
+#define USING_TIM_DIV256              true            // for longest timer but least accurate. Default
+
+#include "ESP8266TimerInterrupt.h"
+
+volatile uint32_t lastMillis = 0;
+
+#define TIMER_INTERVAL_MS       1000
+
+ESP8266Timer ITimer;
+//=======================================================================
+void IRAM_ATTR TimerHandlers()
+{
+//   static bool started = false;
+
+//   if (!started)
+//   {
+//     started = true;
+//     pinMode(BUILTIN_LED, OUTPUT);
+//   }
+
+//   digitalWrite(BUILTIN_LED, statusLed);  //Toggle LED Pin
+//   statusLed = !statusLed;
+  portENTER_CRITICAL_ISR(&timerMux);
+  interruptCounter++;
+  totalInterruptCounter++;
+  portEXIT_CRITICAL_ISR(&timerMux);
+#if (TIMER_INTERRUPT_DEBUG > 0)
+  Serial.println("Delta ms = " + String(millis() - lastMillis));
+  lastMillis = millis();
+#endif
+}
+#endif//ESP32
 #endif// TIMER_INTER_FEATURES
+
+#ifdef LOOKLINE_UI
+byte COMMODE = 0;
+#endif//LOOKLINE_UI
+
+#ifdef Moto_UI
+byte WFSTARTUP = 0;
+#endif//Moto_UI
 
 WIC::WIC()
 {
 }
 
+bool SetupDone = false;
+#ifdef Moto_UI_V2
+//Task1code: blinks an LED every 1000 ms
+void Task1code( void * pvParameters ){
+  Serial.print("Task1 running on core ");
+  Serial.println(xPortGetCoreID());
+
+  for(;;){
+   if(SetupDone){ MOTO.Temp_update();}
+  } 
+}
+
+//Task2code: blinks an LED every 700 ms
+void Task2code( void * pvParameters ){
+  Serial.print("Task2 running on core ");
+  Serial.println(xPortGetCoreID());
+
+  for(;;){
+    if(SetupDone){ MOTO.loop();}
+  }
+}
+#endif//Moto_UI
+
 // Begin which setup everything
 void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 {
+    
+#if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
+            CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
+            delay(2000);
+            LOG("\r\nDebug Serial set\r\n")
+#endif
+
+    LOG("Setup Begin\r\n");
+#ifdef ESP_OLED_FEATURE
+            OLED_DISPLAY::begin();
+#endif
 #ifdef TIMER_INTER_FEATURES
+#ifdef ESP32
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 100000, true);
+  timerAlarmWrite(timer, 100000, true);//100ms
   timerAlarmEnable(timer);
+  LOGLN();LOGLN("Setup Timer");LOGLN();
+#else//ESP8266
+  // Interval in microsecs
+  if (ITimer.attachInterruptInterval(TIMER_INTERVAL_MS * 1000, TimerHandler))
+  {
+    lastMillis = millis();
+    Serial.print(F("Starting Timer OK, millis() = ")); Serial.println(lastMillis);
+  }
+  else
+    Serial.println(F("Can't set ITimer correctly. Select another freq. or interval"));
+#endif//ESP32
 #endif//TIMER_INTER
 #ifdef Moto_UI
     // ModeRun = 0;CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &ModeRun);
     if (ModeRun == 1)
     {
 #ifdef Moto_UI
+
+        OLED_DISPLAY::BigDisplay("VPlab", 15, 10);
+        OLED_DISPLAY::setCursor(0, 42);
+        String txt = "  Ver:" + String(MainUDFW.FirmwareVer);
+        ESPCOM::print(txt.c_str(), OLED_PIPE);
         MOTO.setup();
 #endif //
     }
     else
     {
+        OLED_DISPLAY::BigDisplay("VPlab", 15, 10);
+        OLED_DISPLAY::setCursor(0, 42);
+        String txt = "  Ver:" + String(MainUDFW.FirmwareVer);
+        ESPCOM::print(txt.c_str(), OLED_PIPE);
+        MOTO.setup();
+
 #endif // Moto_UI
 #ifdef MESHCOM_UI
         byte dataReaded = 0;
@@ -206,16 +333,9 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
             WiFi.disconnect();
             WiFi.mode(WIFI_OFF);
             // check EEPROM Version
-#if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
-            CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
-            delay(2000);
-            LOG("\r\nDebug Serial set\r\n")
-#endif
+
             CONFIG::adjust_EEPROM_settings();
             CONFIG::InitOutput();
-#ifdef ESP_OLED_FEATURE
-            OLED_DISPLAY::begin();
-#endif
             bool breset_config = false;
             web_interface = NULL;
 #ifdef TCP_IP_DATA_FEATURE
@@ -319,8 +439,21 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     }
                     file.close();
                 }
-            }
-
+            } 
+#ifdef LOOKLINE_UI
+CONFIG::read_byte(EP_EEPROM_COM_MODE, &COMMODE);
+LOGLN("COMMODE: " + String(COMMODE));
+if(COMMODE == LoRa || COMMODE == MQTT){
+#endif// LOOKLINE_UI
+#ifdef IOTDEVICE_UI
+// CONFIG::read_byte (EP_EEPROM_WIFI_MODE, &RunMode);
+// if(RunMode == WIFIMODE){
+#endif// IOTDEVICE_UI
+#ifdef Moto_UI
+// CONFIG::read_byte(EP_EEPROM_WIFISTARTUP, &WFSTARTUP);
+// LOGLN("WFSTARTUP: " + String(WFSTARTUP));
+// if(WFSTARTUP){
+ #endif//Moto_UI
             // setup wifi according settings
             if (!wifi_config.Setup())
             {
@@ -339,6 +472,19 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     LOG("Safe mode 2");
                 }
             }
+#ifdef Moto_UI
+// }//Setup wifi in startup
+ #endif//Moto_UI
+#ifdef IOTDEVICE_UI
+// }
+// else{
+//     WiFi.disconnect();  // disconnect
+// }
+#endif// IOTDEVICE_UI
+#ifdef LOOKLINE_UI
+}
+#endif// LOOKLINE_UI
+
             delay(100);
             // setup servers
             if (!wifi_config.Enable_servers())
@@ -394,9 +540,9 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
             button1.multiclickTime = 250; // Time limit for multi clicks
             button1.longClickTime = 1000; // time until "held-down clicks" register
 #endif                                    // Gyro_UI
-#ifdef Moto_UI
-            MOTO.setup();
-#endif //
+// #ifdef Moto_UI
+//             MOTO.setup();
+// #endif //
 #ifdef ASYNCWEBSERVER
             if (WiFi.getMode() != WIFI_AP)
             {
@@ -410,9 +556,70 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 // }
 #endif // IOTDEVICE_UI
 #ifdef Moto_UI
+#ifdef Moto_UI_V2
+SetupDone = true;
+        xTaskCreatePinnedToCore(
+                    Task1code,   /* Task function. */
+                    "Task1",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    0);          /* pin task to core 0 */                  
+  delay(500); 
+
+  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  xTaskCreatePinnedToCore(
+                    Task2code,   /* Task function. */
+                    "Task2",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task2,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 1 */
+    delay(500); 
+#endif//Moto_UI_V2
     }
 #endif // if(stateS == 1){
+    //------------------------------------------------------------------------
+  //Task1 :
+//   xTaskCreatePinnedToCore(
+//     Task1code,   /* Task function. */
+//     "Task1",     /* name of task. */
+//     10000,       /* Stack size of task */
+//     NULL,        /* parameter of the task */
+//     1,           /* priority of the task*/
+//     &Task1,      /* Task handle to keep track of created task */
+//     0);          /* pin task to core x */
+//   delay(500);
+//   //------------------------------------------------------------------------
+//   //Task2 :
+//   xTaskCreatePinnedToCore(
+//     Task2code,   /* Task function. */
+//     "Task2",     /* name of task. */
+//     10000,       /* Stack size of task */
+//     NULL,        /* parameter of the task */
+//     1,           /* priority of the task*/
+//     &Task2,      /* Task handle to keep track of created task */
+//     1);          /* pin task to core x */
+//   delay(500);
+//   //------------------------------------------------------------------------
+
+
+//   //Task3 :
+//   xTaskCreatePinnedToCore(
+//     Task3code,   /* Task function. */
+//     "Task3",     /* name of task. */
+//     10000,       /* Stack size of task */
+//     NULL,        /* parameter of the task */
+//     1,           /* priority of the task*/
+//     &Task3,      /* Task handle to keep track of created task */
+//     1);          /* pin task to core x */
+//   delay(500);
+//   //------------------------------------------------------------------------
+
     LOG("Setup Done\r\n");
+
 #ifdef AUTOITGW_UI
     AutoitGW.setup();
     LOG("AutoIT Setup\r\n");
@@ -421,31 +628,85 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
     IOT_DEVICE.setup();
     IOT_DEVICE.MeshBegin();
     LOG("IoT Device Setup\r\n");
+
+    CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
+    if(RunMode >= 2){CONFIG::write_byte(EP_EEPROM_WIFI_MODE, WIFIMODE);}
 #endif // IOTDEVICE_UI
 #ifdef LOOKLINE_UI
     lookline_prog.setup();
+    // CONFIG::read_byte(EP_EEPROM_RUN, &RunMode);
+    // if(RunMode >= 2){CONFIG::write_byte(EP_EEPROM_RUN, 1);}
+ ////////////// MODBUS ///////////////
+    if (onece_mb){
+#ifdef ModbusCom
+    MODBUS.modbus_setup();
+    LOG("Modbus Start!!");
+  //////////////////////////////////////
+#endif//ModbusCom 
+    }
 #endif // LOOKLINE_UI
-    CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
-    if(RunMode >= 2){CONFIG::write_byte(EP_EEPROM_WIFI_MODE, WIFIMODE);}
-}
+#ifdef PLC_MASTER_UI
 
-bool onece = true;
-bool onece1 = true;
-bool onece2 = true;
-bool CheckFWonce = false;
-byte resent = 0;
+PLC_MASTER_Prog.setup();
+#endif//PLC_MASTER_UI
+}//begin look
 
+#ifdef LOOKLINE_MASTER
+String Auths = "";
+void WIC::Set_Init_UI(String auths){LOGLN("Set_Init_UI " + auths);
+                    byte role_ = 0;
+                    CONFIG::read_byte(EP_EEPROM_ROLE, &role_);
+                    if(role_ == 1){socket_server->broadcastTXT("ROLE: 1");}
+                    else{socket_server->broadcastTXT("ROLE: 0");}
+                    socket_server->broadcastTXT(auths);
+                    }
+#endif// lookline_master
 #ifdef LOOKLINE_UI
 void WIC::checkFW(){
     CheckFWonce = true;LOGLN("CheckFW");
 }
+#ifndef LOOKLINE_MASTER 
+String Auths = "";
+void WIC::Set_Init_UI(String auths){LOGLN("Set_Init_UI " + auths);
+                    byte role_ = 0;
+                    CONFIG::read_byte(EP_EEPROM_ROLE, &role_);
+                    if(role_ == 1){socket_server->broadcastTXT("ROLE: 1");}
+                    else{socket_server->broadcastTXT("ROLE: 0");}
+                    socket_server->broadcastTXT(auths);
+                    }
+#endif//LOOKLINE_UI
+// void sendMessage(String message) {
+//     socket_server->broadcastTXT(message);
+//     ESPCOM::println (message, WEB_PIPE);
+// }
 void WIC::OnceCheckFW(){
     CheckFWonce = true;LOGLN("CheckFW Once");
+}
+#endif// LOOKLINE_UI
+#ifdef LOOKLINE_UI
+// void WIC::Set_Init_UI(String auths){LOGLN("Set_Init_UI " + auths);socket_server->broadcastTXT(auths);}
+
+void WIC::SetDebug(bool state){
+    looklineDebug = state;LOGLN("looklineDebug " + String(state));
+}
+void WIC::SetWifiMode(bool ste){
+    looklineWifi = ste;LOGLN("looklineWifi " + String(ste));
+    onece1 = true;
+    onece2 = true;
 }
 #endif// LOOKLINE_UI
 // Process which handle all input
 void WIC::process()
 {
+      ////////////// MODBUS ////////////////
+#ifdef ModbusCom
+#ifdef LOOKLINE_UI
+if(lookline_prog.GetStatus() == 0 || lookline_prog.GetStatus() == 2){
+    if (onece_mb){onece_mb = false;LOG("\nModbus Run\n");}
+    MODBUS.modbus_loop();
+}
+#endif//Lookline_UI
+#endif//ModbusCom 
 #ifdef Moto_UI
     if (ModeRun == 1)
     {
@@ -516,22 +777,31 @@ void WIC::process()
 // LOG("Mode: " + String(meshcom.getMode()) + "\n");
 #endif // MESHCOM_UI
 #ifdef LOOKLINE_UI
-                lookline_prog.loop();
-                CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
-                if (RunMode > 2 || RunMode <= 0){
-                    RunMode = 1;
-                    CONFIG::write_byte(EP_EEPROM_WIFI_MODE, 1);
+                
+                    lookline_prog.loop();
+                //}
+                // CONFIG::read_byte(EP_EEPROM_RUN, &RunMode);
+                // if (RunMode > 2 || RunMode < 0){
+                //     RunMode = 1;
+                //     CONFIG::write_byte(EP_EEPROM_RUN, 1);
+                // }
+                if (onece1){CONFIG::read_byte(EP_EEPROM_COM_MODE, &COMMODE);
+                    LOGLN("COMMODE:" + String(COMMODE));
+                    if (COMMODE == MESH){onece1 = false;}
                 }
-                // LOGLN("RunMode:" + String(RunMode));
-                if (RunMode == WIFIMODE){
+                if (COMMODE == LoRa){
                     if (onece1)
                     {
                         onece1 = false;
+                        LOGLN();
                         LOG("\nWifi Server Working...\n");
+                        LOGLN();
                     }
+                }
 #endif // LOOKLINE_UI
 #ifdef IOTDEVICE_UI
-                    // if(onece){onece = false;LOG("\nRun Mode:"+String(IOT_DEVICE.RunMode)+"\n");}
+
+                    CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
                     if (RunMode == WIFIMODE)
                     {
                         if (onece1)
@@ -567,11 +837,15 @@ void WIC::process()
     portEXIT_CRITICAL_ISR(&timerMux);
   }
   #endif//#ifdef TIMER_INTER_FEATURES
-                }
+                
 #endif // LOOKLINE_UI
 #ifdef MESHCOM_UI
 #endif // MESHCOM_UI
 #endif
+
+#ifdef PLC_MASTER_UI
+PLC_MASTER_Prog.loop();
+#endif//PLC_MASTER_UI
                 // be sure wifi is on to proceed wifi function
 
 #ifdef MESHCOM_UI
@@ -584,6 +858,7 @@ void WIC::process()
                         if (WiFi.getMode() != WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
                         {
                             dnsServer.processNextRequest();
+                            
 #ifdef Switch_UI
                             if (onece1)
                             {
@@ -605,10 +880,12 @@ void WIC::process()
                                 LOG("\nWifi Portal Working...\n");
                             }
 #endif // AUTOITGW_UI
-if (onece1)
+                            if (onece1)
                             {
                                 onece1 = false;
-                                LOG("\nWifi Portal Working...\n");
+                                LOGLN();
+                                LOGLN("\nWifi Portal Working...\n");
+                                LOGLN();
                             }
                         }
 #endif
@@ -705,6 +982,48 @@ if (onece1)
         }
 #endif
 
+            static uint32_t last_fw_update = 0;
+            uint32_t now_fw = millis();
+            if (now_fw - last_fw_update > (5 * 1000))
+            {
+                // byte role_ = 0;
+                // CONFIG::read_byte(EP_EEPROM_ROLE, &role_);
+                // if(role_ == 1){socket_server->broadcastTXT("ROLE: 1");}
+                // else{socket_server->broadcastTXT("ROLE: 0");}
+                // socket_server->broadcastTXT("AUTH: 0");
+                if(CheckFWonce){resent++;if(resent > 30)CheckFWonce = false;
+                    String s = "STATUS: New version";
+                   // LOGLN(s);
+                    socket_server->broadcastTXT(s);
+                } 
+                #ifndef Moto_UI
+                #ifdef LOOKLINE_UI
+                if(Init_UI) {
+                    LOGLN("Init UI " + Auths);
+                    // resent++;if(resent > 5)
+                    Init_UI = false;
+                    byte role_ = 0;
+                    CONFIG::read_byte(EP_EEPROM_ROLE, &role_);
+                    if(role_ == 1){socket_server->broadcastTXT("ROLE: 1");}
+                    else{socket_server->broadcastTXT("ROLE: 0");}
+                    socket_server->broadcastTXT(Auths);
+                }
+                #endif//LOOKLINE_UI
+                #endif//#ifndef Moto_UI
+            }
+  #ifdef LOOKLINE_UI
+if(lookline_prog.GetStatus() == 1 && COMMODE == LoRa){
+    static uint32_t last_dht_update = 0;
+    uint32_t now_dht = millis();
+    if (now_dht - last_dht_update > (3 * 1000))
+    {
+        last_dht_update = now_dht;
+        // if(WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA){LOG("\nWifi Portal Working...\n");}
+        // if(WiFi.getMode() == WIFI_STA){LOG("\nWifi STA Server Working...\n");}
+        
+    }
+}
+#endif//LOOKLINE_UI
 #ifdef DHT_FEATURE
         if (CONFIG::DHT_type != 255)
         {
@@ -712,13 +1031,7 @@ if (onece1)
             uint32_t now_dht = millis();
             if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000))
             {
-                if(CheckFWonce){resent++;if(resent > 30)CheckFWonce = false;
-                    // if(MainUDFW.FirmwareVersionCheck() == 0){
-                        String s = "STATUS: New version";
-                        // LOGLN(s);
-                        socket_server->broadcastTXT(s);
-                    // }
-                }
+        
                 last_dht_update = now_dht;
                 float humidity = dht.getHumidity();
                 float temperature = dht.getTemperature();
@@ -828,7 +1141,10 @@ if (onece1)
 #ifdef IOTDEVICE_UI
 // }
 #endif // #ifdef IOTDEVICE_UI
-}
+
+
+  //////////////////////////////////////
+}//proccess
 
 #ifdef ServerUpdateFW
 

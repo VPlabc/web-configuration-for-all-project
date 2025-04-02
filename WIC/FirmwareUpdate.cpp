@@ -127,7 +127,9 @@ const long interval = 10000;
 const long mini_interval = 1000;
 void FirmwareUpdate();
 bool UDFOnce = true;
+bool UDFOnce1 = true;
 byte UFWDebug = 0;
+byte counters = 0;
 void setClock() {
   if(UDFOnce){UDFOnce = false;
     if(CONFIG::read_byte (EP_EEPROM_DEBUG, &UFWDebug)){
@@ -138,16 +140,16 @@ void setClock() {
   configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
   time_t now = time(nullptr);
   LOG("Waiting for NTP time sync: ");LOG(String(now) + "\n");
-  while (now < 8 * 3600 * 2) {
+  while (now < 8 * 3600 * 2 && UDFOnce1 == 1) {
     delay(500);
-    LOG(".");
+    LOG(".");counters++;if(counters > 20){UDFOnce1 = false;}
     now = time(nullptr);
   }
 }
 bool FWonce = true; //
  void UpdateFW::repeatedCall(){
   
-  if(FWonce){LOG("Check FW Working...\n");FWonce = false;LookLine_prog.DebugOut("Check FW Working...\n", OUPUT);}
+  if(FWonce){LOG("Check FW Working...\n");FWonce = false;}
      unsigned long currentMillis = millis();
     if ((currentMillis - FW_previousMillis) >= interval) 
      {

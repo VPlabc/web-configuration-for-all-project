@@ -1,30 +1,188 @@
-{"EEPROMLL":[
-    {"F":"network","P":"1355","T":"B","V":"255","H":"ON/OFF","O":[{"ON":"1"},{"OFF":"0"}]},
-    {"F":"network","P":"1107","T":"B","V":"0","H":"Run/Stop","O":[{"Run":"1"},{"Stop":"0"}]},
-    {"F":"network","P":"1123","T":"I","V":"1919889008","H":"Plan","S":"9999","M":"0"},
-    {"F":"network","P":"1347","T":"I","V":"-1","H":"Plan set","S":"9999","M":"0"},
-    {"F":"network","P":"1127","T":"I","V":"-65433","H":"Result","S":"9999","M":"0"},
-    {"F":"network","P":"1351","T":"I","V":"-1","H":"Result set","S":"9999","M":"0"},
-    {"F":"network","P":"1131","T":"I","V":"-1","H":"Plan max value","S":"9999","M":"0"},
-    {"F":"network","P":"1135","T":"I","V":"-1","H":"pcs/shift","S":"9999","M":"0"},
-    {"F":"network","P":"1139","T":"I","V":"-1","H":"Time increase of plan","S":"9999","M":"0"},
-    {"F":"network","P":"1143","T":"I","V":"-1","H":"Cycle time sent","S":"9999","M":"0"},
-    {"F":"network","P":"1111","T":"I","V":"0","H":"Amount node","S":"255","M":"1"},
-    {"F":"network","P":"1091","T":"I","V":"1","H":"Board ID","S":"200","M":"1"},
-    {"F":"network","P":"1095","T":"I","V":"0","H":"Network ID","S":"200","M":"1"},
-    {"F":"network","P":"1099","T":"I","V":"35","H":"Chanel","S":"31","M":"0"},
-    {"F":"network","P":"0","T":"B","V":"2","H":"Wifi mode","O":[{"AP":"1"},{"STA":"2"}]},
-    {"F":"network","P":"1","T":"S","V":"Huu Dai 2.4GHz","S":"32","H":"Station SSID","M":"1"},
-    {"F":"network","P":"34","T":"S","V":"********","S":"64","H":"Station Password","M":"0"},
-    {"F":"network","P":"218","T":"S","V":"Lookline","S":"32","H":"Device name","M":"1"},
-    {"F":"printer","P":"1356","T":"I","V":"200","H":"Delay for counter(ms)","S":"9999","M":"0"},
-    {"F":"printer","P":"1103","T":"B","V":"0","H":"Device Role","O":[{"Node":"0"},{"Gateway":"1"},{"Repeater":"2"}]},
-    {"F":"printer","P":"1115","T":"B","V":"46","H":"Com mode","O":[{"LoRa":"0"},{"Mesh Wifi":"1"},{"MQTT":"2"},{"RS485":"3"}]},
-    {"F":"printer","P":"1119","T":"B","V":"3","H":"Module type","O":[{"Auto Detect":"0"},{"Lookline Gateway V14":"1"},{"LED7 seg Board V13.0":"4"},{"LED7 seg Board V14.0":"2"},{"LED7 seg Board V14.1":"3"}]},
-    {"F":"printer","P":"1087","T":"B","V":"1","H":"Device debug","O":[{"Debug":"1"},{"NoDebug":"0"}]},
-    {"F":"printer","P":"1083","T":"B","V":"1","H":"Update Mode","O":[{"Check FW":"1"},{"None":"0"}]},
-    {"F":"printer","P":"1147","T":"S","V":"�������������������������������������������������������������������0.pool.ntp.org","S":"100","H":"URL Version","M":"1"},
-    {"F":"printer","P":"1247","T":"S","V":"�������������������������������������������������������������������","S":"100","H":"URL Firmware","M":"1"},
-    {"F":"network","P":"112","T":"I","V":"115200","H":"Baud Rate","O":[{"9600":"9600"},{"19200":"19200"},{"38400":"38400"},{"57600":"57600"},{"115200":"115200"},{"230400":"230400"},{"250000":"250000"},{"500000":"500000"},{"921600":"921600"}]},
-    {"F":"printer","P":"129","T":"F","V":"0","H":"Output msg","O":[{"M117":"1"},{"Serial":"4"},{"Web Socket":"8"}]}
-    ]}
+RG174 Dây Nối Ăng Ten Đầu SMA Đực-Cái Dài 2M Type-A
+
+{"Data":0,,"Regs":[{"RegID":1,"RegAddr":0,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":1,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":2,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":3,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":4,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":5,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":6,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":7,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":8,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":9,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":10,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":11,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":12,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":13,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":14,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":15,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":16,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":17,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":18,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":19,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":20,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":21,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":22,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":23,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":24,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":25,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":26,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":27,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":28,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":29,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":30,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":31,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":32,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":33,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":34,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":35,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":36,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":37,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":38,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":39,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":40,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":41,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":42,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":43,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":44,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":45,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":46,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":47,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":48,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":49,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":50,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":51,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":52,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":53,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":54,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":55,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":56,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":57,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":58,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":59,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":60,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":61,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":62,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":63,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":64,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":65,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":66,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":67,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":68,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":69,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":70,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":71,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":72,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":73,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":74,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":75,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":76,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":77,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":78,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":79,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":80,"RegType":1,"RegValue":0}
+,{"RegID":1,"RegAddr":81,"RegType":1,"RegValue":0}
+],"RegsList":[{"regs":0}
+,{"regs":1}
+,{"regs":2}
+,{"regs":3}
+,{"regs":4}
+,{"regs":5}
+,{"regs":6}
+,{"regs":7}
+,{"regs":8}
+,{"regs":9}
+,{"regs":10}
+,{"regs":11}
+,{"regs":12}
+,{"regs":13}
+,{"regs":14}
+,{"regs":15}
+,{"regs":16}
+,{"regs":17}
+,{"regs":18}
+,{"regs":19}
+,{"regs":20}
+,{"regs":21}
+,{"regs":22}
+,{"regs":23}
+,{"regs":24}
+,{"regs":25}
+,{"regs":26}
+,{"regs":27}
+,{"regs":28}
+,{"regs":29}
+,{"regs":30}
+,{"regs":31}
+,{"regs":32}
+,{"regs":33}
+,{"regs":34}
+,{"regs":35}
+,{"regs":36}
+,{"regs":37}
+,{"regs":38}
+,{"regs":39}
+,{"regs":40}
+,{"regs":41}
+,{"regs":42}
+,{"regs":43}
+,{"regs":44}
+,{"regs":45}
+,{"regs":46}
+,{"regs":47}
+,{"regs":48}
+,{"regs":49}
+,{"regs":50}
+,{"regs":51}
+,{"regs":52}
+,{"regs":53}
+,{"regs":54}
+,{"regs":55}
+,{"regs":56}
+,{"regs":57}
+,{"regs":58}
+,{"regs":59}
+,{"regs":60}
+,{"regs":61}
+,{"regs":62}
+,{"regs":63}
+,{"regs":64}
+,{"regs":65}
+,{"regs":66}
+,{"regs":67}
+,{"regs":68}
+,{"regs":69}
+,{"regs":70}
+,{"regs":71}
+,{"regs":72}
+,{"regs":73}
+,{"regs":74}
+,{"regs":75}
+,{"regs":76}
+,{"regs":77}
+,{"regs":78}
+,{"regs":79}
+,{"regs":80}
+,{"regs":81}
+],"IDList":[{"id":0}
+,{"id":1}
+,{"id":2}
+,{"id":3}
+,{"id":4}
+,{"id":5}
+,{"id":6}
+,{"id":7}
+,{"id":8}
+,{"id":9}
+],"NETList":[{"id":0}
+,{"id":1}
+,{"id":2}
+,{"id":3}
+,{"id":4}
+,{"id":5}
+,{"id":6}
+,{"id":7}
+,{"id":8}
+,{"id":9}
+]}
+

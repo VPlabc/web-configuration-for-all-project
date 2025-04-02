@@ -31,6 +31,7 @@
 
 
 
+    // extern void sendMessage(String message);
 
 class WIC
 {
@@ -44,13 +45,23 @@ public:
     void performUpdate(Stream &updateSource, size_t updateSize);
     void CheckFWloop();
 #endif//ServerUpdateFW
-
+    
     WIC();
     void begin(uint16_t startdelayms = 1000, uint16_t recoverydelayms = 1000);
     void process();
     #ifdef LOOKLINE_UI
+    void SetDebug(bool state);
+    void SetWifiMode(bool state);
+    #endif//LooklineUI
+    #ifdef LOOKLINE_MASTER
+    #ifndef LOOKLINE_UI
+    void Set_Init_UI(String Auths);
+    #endif//#ifndef LOOKLINE_UI
+    #endif//Lookline_MASTER
+    #ifdef LOOKLINE_UI
     void checkFW();
     void OnceCheckFW();
+    void Set_Init_UI(String Auths);
     #endif//LooklineUI
 
 
