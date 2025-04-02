@@ -469,6 +469,7 @@ if(COMMODE == LoRa || COMMODE == MQTT){
                     ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
                     wifi_config.Safe_Setup();
 #endif //
+                    wifi_config.Safe_Setup();
                     LOG("Safe mode 2");
                 }
             }

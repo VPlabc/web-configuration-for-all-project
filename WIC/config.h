@@ -28,13 +28,13 @@
 // #define IOTDEVICE_UI
 // #define AUTOITGW_UI
 // #define Moto_UI
-// #define LOOKLINE_UI
+#define LOOKLINE_UI
 // #define LOOKLINE_MASTER
 // #define Switch_UI
-#define PLC_MASTER_UI
+// #define PLC_MASTER_UI
 // #define Basic_UI
 
-    #define ModbusCom
+    // #define ModbusCom
 
 #ifdef LOOKLINE_MASTER
 #define USE_SERIAL_0
@@ -58,7 +58,7 @@
 #ifndef  LOOKLINE_MASTER
 #define USE_SERIAL_0
 
-#define Mesh_Network
+// #define Mesh_Network
 // #define USE_LORA
 // #define TIMER_INTER_FEATURES
 #define TIMESTAMP_FEATURE

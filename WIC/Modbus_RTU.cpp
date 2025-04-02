@@ -50,7 +50,7 @@ unsigned long previousMillis_update = 0;
 // #define WifiConnect
 // #define Modbus_Serial
 // #define Master
-#define SerialPort
+// #define SerialPort
 #define TEST
 
 #define  ledPin  2 // onboard led 
@@ -177,7 +177,7 @@ enum{Slave, Master};
 #define TXD2 17
 
 /// @brief /// Register address
-bool role = Master;
+// bool role = Master;
 
 uint8_t coils[100];
 uint8_t discreteInputs[100];

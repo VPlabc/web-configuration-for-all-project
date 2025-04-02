@@ -6,7 +6,7 @@
 #include <Arduino.h>
 #include "config.h"
 #ifdef LOOKLINE_UI
-
+#define MeshModule
 
 
 // #include "wificonf.h"
@@ -157,6 +157,7 @@ char buffer[250];
 bool LookLineOnce = true;
 bool LookLineOnce1 = true;
   int Time = 10;
+#ifdef ModbusCom
 
 String SettingName[17] = {
     "NodeID",\
@@ -224,6 +225,7 @@ int ROM_Address[] ={
 int SlaveParameter[HOLDING_REGS_SIZE];
 int HOLDING_REGS_ReadData[HOLDING_REGS_SIZE];
 int HOLDING_REGS_WriteData[HOLDING_REGS_SIZE];
+#endif//ModbusCom
 //#include "MeshNetwork.h"
 #include "MQTT.h"
 #include "LoRa.h"
@@ -768,7 +770,7 @@ void LOOKLINE_PROG::UpdateLookLineData(){
   // CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
   BoardIDs = 0;
   CONFIG::read_byte (EP_EEPROM_ROLE, &role);
-
+#ifdef ModbusCom
 #ifdef SLAVE_MODBUS
 
   CONFIG::read_byte(EP_EEPROM_NETID, &NetIDs);
@@ -787,6 +789,7 @@ void LOOKLINE_PROG::UpdateLookLineData(){
 
   CONFIG::read_buffer(EP_EEPROM_COUNTER_DELAY,(byte *) &delayForCounter, INTEGER_LENGTH);
   if(role == NODE || role == REPEARTER){ 
+    
           HOLDING_REGS_ReadData[BOARDID] = BoardIDs;
           HOLDING_REGS_ReadData[NETID] = NetIDs;
           HOLDING_REGS_ReadData[RUNSTOP] =NodeRun;
@@ -801,13 +804,13 @@ void LOOKLINE_PROG::UpdateLookLineData(){
           HOLDING_REGS_ReadData[DELAYCOUNTER] =  delayForCounter;
           HOLDING_REGS_ReadData[COMMODE] = ComMode;
           HOLDING_REGS_ReadData[TYPE] =  ModuleType;
+#ifdef Mesh_Network          
           HOLDING_REGS_ReadData[_RSSI] =  rssi_display;
+#endif//Mesh_Network
           HOLDING_REGS_ReadData[ROLE] =  role;
           HOLDING_REGS_ReadData[ONWIFI] =  WiFiMode;
           HOLDING_REGS_ReadData[CMD] =  1;
-    #ifdef ModbusCom
           LLModbusCom.modbus_read_update(HOLDING_REGS_ReadData);UpdateParamOnce = true;
-    #endif//ModbusCom
           for(byte i=0;i < HOLDING_REGS_SIZE; i++){SlaveParameter[i] = HOLDING_REGS_ReadData[i];}
     }
     if(role == GATEWAY){ 
@@ -825,12 +828,12 @@ void LOOKLINE_PROG::UpdateLookLineData(){
           HOLDING_REGS_ReadData[DELAYCOUNTER] = 0;
           HOLDING_REGS_ReadData[COMMODE] = ComMode;
           HOLDING_REGS_ReadData[TYPE] =  ModuleType;
+#ifdef Mesh_Network          
           HOLDING_REGS_ReadData[_RSSI] =  DataLookline.RSSI;
+#endif//Mesh_Network
           HOLDING_REGS_ReadData[ROLE] =  role;
           HOLDING_REGS_ReadData[ONWIFI] =  WiFiMode;
           HOLDING_REGS_ReadData[CMD] =  1;
-          
-    #ifdef ModbusCom
           LLModbusCom.modbus_read_update(HOLDING_REGS_ReadData);UpdateParamOnce = true;
     #endif//MODBUSCOM 
           for(byte i=0;i < HOLDING_REGS_SIZE; i++){SlaveParameter[i] = HOLDING_REGS_ReadData[i];}
@@ -1232,7 +1235,11 @@ if(TEST){
     }
   }//if(ComMode == LoRa){
       UpdateLookLineData();
-            if(ComMode == MESH){ monitor += "Communica: MESH |";MeshLookLineSetup();}
+            if(ComMode == MESH){ monitor += "Communica: MESH |";
+#ifdef Mesh_Network              
+              MeshLookLineSetup();
+#endif//Mesh_Network
+}
             if(ComMode == MQTT){ monitor += "Communica: MQTT |";}
             if(ComMode == LoRa){ monitor += "Communica: Lora |";}
             if(ComMode == RS485com){ monitor += "Communica: RS485 |";}
@@ -1464,7 +1471,53 @@ void LOOKLINE_PROG::SetParameter(int Plan, int taskPLanSet, int Result, int Resu
 }
 
 #define TempDisplay
+#ifdef MeshModule
+struct DataPacket {
+  int ID;
+  int netId;
+  uint8_t data[200];
+};
+void sendDataLookline() {
+  // Tạo struct DataPacket
+  DataPacket packet;
+  packet.ID = DataLookline.nodeID;
+  packet.netId = DataLookline.networkID;
 
+  // Gán dữ liệu từ DataLookline vào mảng data
+  packet.data[0] = (DataLookline.PLAN >> 8) & 0xFF;
+  packet.data[1] = DataLookline.PLAN & 0xFF;
+  packet.data[2] = (DataLookline.RESULT >> 8) & 0xFF;
+  packet.data[3] = DataLookline.RESULT & 0xFF;
+  packet.data[4] = DataLookline.state & 0xFF;
+  packet.data[5] = DataLookline.RSSI & 0xFF;
+  packet.data[6] = DataLookline.Com & 0xFF;
+  packet.data[7] = DataLookline.WiFi & 0xFF;
+  packet.data[8] = DataLookline.type & 0xFF;
+  packet.data[9] = DataLookline.Cmd & 0xFF;
+
+  // Điền các giá trị còn lại trong mảng data bằng 0
+  for (int i = 10; i < 200; i++) {
+      packet.data[i] = 0;
+  }
+
+  // Gửi struct qua Serial2
+  Serial2.begin(115200, SERIAL_8N1, 17, 16);
+  Serial2.write((uint8_t*)&packet, sizeof(packet)); // Gửi toàn bộ struct
+  Serial2.flush();
+
+  if (LooklineDebug) {
+      LOGLN("DataPacket sent via Mesh");
+      LOG("ID: " + String(packet.ID));
+      LOGLN(" | NetID: " + String(packet.netId));
+      // LOGLN("Data: ");
+      // for (int i = 0; i < 200; i++) {
+      //   LOG(String(packet.data[i]));
+      //   LOG(" | ");
+      // }
+      LOGLN();
+  }
+}
+#endif//MeshModule
 bool OnceCheck = true;
 int totalInterruptCounterLookline = 0; 
 int TimeCacu = 0;
@@ -1578,6 +1631,9 @@ void LOOKLINE_PROG::TimerPlanInc()
         //digitalWrite(Signal_LED, digitalRead(Signal_LED) ^ 1);
         #ifdef SLAVE_MODBUS
         PLAN_ = PLAN_ + PLanSet;//MODBUS_Write();
+        #ifdef MeshModule
+        sendDataLookline();
+        #endif//MeshModule
         #else//MASTER_MODBUS
         PLAN = mtPLAN;
         RESULT = mtRESULT;
@@ -1620,8 +1676,10 @@ void LOOKLINE_PROG::TimerPlanInc()
         DataLookline.RESULT = RESULT;
         DataLookline.state =NodeRun;
         #ifdef SLAVE_MODBUS
+#ifdef Mesh_Network        
         DataLookline.RSSI = rssi_display;
-        #endif//SLAVE_MODBUS
+#endif//Mesh_Network
+#endif//SLAVE_MODBUS
         DataLookline.Com = ComMode;
         DataLookline.WiFi = WiFiMode;
         DataLookline.type = ModuleType - 2;
@@ -1636,10 +1694,11 @@ void LOOKLINE_PROG::TimerPlanInc()
         if(ComMode == MESH && ReSent){
           if(config == 1 || config == 2){
         #ifdef SLAVE_MODBUS
-
+#ifdef Mesh_Network
             // esp_wifi_set_protocol(current_wifi_interface, WIFI_PROTOCOL_LR);
             esp_now_send(broadcastAddress, (uint8_t *) &DataLookline, sizeof(DataLookline));if(LooklineDebug)LOGLN("Monitor Mesh send data");
-          #endif//SLAVE_MODBUS
+#endif//Mesh_Network
+#endif//SLAVE_MODBUS
             // esp_wifi_set_protocol(current_wifi_interface, 6);
             }
           // esp_now_send(broadcastAddress, (const uint8_t *)Log.c_str(), Log.length());
@@ -1980,7 +2039,10 @@ void LOOKLINE_PROG::SerDisplay()
         #ifdef ESP32
         Log +=(temprature_sens_read() - 32) / 1.8;
         #endif//ESp32
-        Log +=" C | Rssi:" + String(rssi_display);
+        Log +=" C ";
+        #ifdef Mesh_Network
+        Log += "| Rssi:" + String(rssi_display);
+        #endif//Mesh_Network
          
         if(LooklineDebug)LOGLN(Log);
         // if(TEST)broadcast("Node: " + String(BoardID));
@@ -1989,7 +2051,9 @@ void LOOKLINE_PROG::SerDisplay()
         DataLookline.PLAN = PLAN_;
         DataLookline.RESULT = RESULT;
         DataLookline.state =NodeRun;
+        #ifdef Mesh_Network
         DataLookline.RSSI = rssi_display;
+        #endif//Mesh_Network
         DataLookline.Com =ComMode;
         DataLookline.WiFi =0;
         #ifdef Mesh_Network 
@@ -2000,6 +2064,7 @@ void LOOKLINE_PROG::SerDisplay()
         #endif//#ifdef Mesh_Network 
         // ShowParameters();
         if(role == NODE || role == REPEARTER){ 
+#ifdef ModbusCom
           HOLDING_REGS_ReadData[BOARDID] = BoardIDs;
           HOLDING_REGS_ReadData[NETID] = NetIDs;
           HOLDING_REGS_ReadData[RUNSTOP] =NodeRun;
@@ -2014,15 +2079,17 @@ void LOOKLINE_PROG::SerDisplay()
           HOLDING_REGS_ReadData[DELAYCOUNTER] =  delayForCounter;
           HOLDING_REGS_ReadData[COMMODE] = ComMode;
           HOLDING_REGS_ReadData[TYPE] =  ModuleType;
+          #ifdef Mesh_Network
           HOLDING_REGS_ReadData[_RSSI] =  rssi_display;
+          #endif//Mesh_Network
           HOLDING_REGS_ReadData[ROLE] =  role;
           HOLDING_REGS_ReadData[ONWIFI] =  WiFiMode;
           HOLDING_REGS_ReadData[CMD] =  1;
-    #ifdef ModbusCom
+
           LLModbusCom.modbus_read_update(HOLDING_REGS_ReadData);UpdateParamOnce = true;
-    #endif
+
           for(byte i=0;i < HOLDING_REGS_SIZE; i++){SlaveParameter[i] = HOLDING_REGS_ReadData[i];}
-          
+          #endif//ModbusCom    
         }
         #endif//SLAVE_MODBUS
         #ifdef MASTER_MODBUS
@@ -2143,31 +2210,31 @@ typedef struct sensor_data {
 int sensors_saved = 0;
 sensor_data     sensors[NUM_SENSORS];
 
-void handleLooklineRaw() {
-  sensors_saved = 4;
-   for (int i = 0; i < sensors_saved; i++) {
-    sensors[i].boardid = i;
-    sensors[i].networkid = 1;
-    sensors[i].status = random(1);
-    sensors[i].plan = random(9999);
-    sensors[i].result = random(9999);
-    sensors[i].timestamp = random(9999);
-    sensors[i].RSSI = random(100);
-  }
-  LOG ("/raw" + '\n');
-  String raw;
-  for (int i = 0; i < sensors_saved; i++) {
-    raw += String(sensors[i].boardid) + ",";
-    raw += String(sensors[i].networkid) + ",";
-    raw += String(sensors[i].status) + ",";
-    raw += String(sensors[i].plan) + ",";
-    raw += String(sensors[i].result) + ",";
-    raw += String(sensors[i].timestamp) + ",";
-    raw += String(sensors[i].RSSI);
-    if ( i < sensors_saved - 1) raw += '\n';
-  }
-  web_interface->web_server.send(200, "text/plain", raw);
-}
+// void handleLooklineRaw() {
+//   sensors_saved = 4;
+//    for (int i = 0; i < sensors_saved; i++) {
+//     sensors[i].boardid = i;
+//     sensors[i].networkid = 1;
+//     sensors[i].status = random(1);
+//     sensors[i].plan = random(9999);
+//     sensors[i].result = random(9999);
+//     sensors[i].timestamp = random(9999);
+//     sensors[i].RSSI = random(100);
+//   }
+//   LOG ("/raw" + '\n');
+//   String raw;
+//   for (int i = 0; i < sensors_saved; i++) {
+//     raw += String(sensors[i].boardid) + ",";
+//     raw += String(sensors[i].networkid) + ",";
+//     raw += String(sensors[i].status) + ",";
+//     raw += String(sensors[i].plan) + ",";
+//     raw += String(sensors[i].result) + ",";
+//     raw += String(sensors[i].timestamp) + ",";
+//     raw += String(sensors[i].RSSI);
+//     if ( i < sensors_saved - 1) raw += '\n';
+//   }
+//   web_interface->web_server.send(200, "text/plain", raw);
+// }
 
 ///////////////////////////////////////////////// monitor
 byte LOOKLINE_PROG::GetStart(){
@@ -2194,7 +2261,10 @@ void LOOKLINE_PROG::SetConfig(bool CONFIG){config = CONFIG;
     #ifdef MASTER_MODBUS
     ComMode = LoRa;
     #else
-    MeshLookLineSetup();LOGLN("MeshLooklineSetup");ComMode = MESH;
+#ifdef Mesh_Network
+    MeshLookLineSetup();LOGLN("MeshLooklineSetup");
+#endif//Mesh_Network
+    ComMode = MESH;
     #endif//MASTER_MODBUS
     CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);
   }
