@@ -38,9 +38,10 @@ extern "C" {
 
 #ifdef ESP8266
 #include <Hash.h>
-#elif defined(ESP32)
+#elif defined(ESP32) && __has_include(<hwcrypto/sha.h>)
 #include <hwcrypto/sha.h>
 #else
+// #include "libsha1/libsha1.h"
 
 extern "C" {
 #include "libsha1/libsha1.h"
@@ -482,20 +483,20 @@ void WebSockets::handleWebsocketPayloadCb(WSclient_t * client, bool ok, uint8_t 
  * @param clientKey String
  * @return String Accept Key
  */
+// filepath: /Users/mac/Work/Win/Project/web-configuration-for-all-project_V0623/libraries/arduinoWebSockets/src/WebSockets.cpp
+#include "mbedtls/sha1.h" // Thêm dòng này ở đầu file
+
 String WebSockets::acceptKey(String & clientKey) {
     uint8_t sha1HashBin[20] = { 0 };
-#ifdef ESP8266
-    sha1(clientKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", &sha1HashBin[0]);
-#elif defined(ESP32)
     String data = clientKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-    esp_sha(SHA1, (unsigned char*)data.c_str(), data.length(), &sha1HashBin[0]);
-#else
-    clientKey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-    SHA1_CTX ctx;
-    SHA1Init(&ctx);
-    SHA1Update(&ctx, (const unsigned char*)clientKey.c_str(), clientKey.length());
-    SHA1Final(&sha1HashBin[0], &ctx);
-#endif
+
+    // Sử dụng mbedtls để tính toán SHA1
+    mbedtls_sha1_context ctx;
+    mbedtls_sha1_init(&ctx);
+    mbedtls_sha1_starts_ret(&ctx);
+    mbedtls_sha1_update_ret(&ctx, (const unsigned char*)data.c_str(), data.length());
+    mbedtls_sha1_finish_ret(&ctx, sha1HashBin);
+    mbedtls_sha1_free(&ctx);
 
     String key = base64_encode(sha1HashBin, 20);
     key.trim();

@@ -671,12 +671,13 @@ typedef enum {
 #define EP_EEPROM_RESULT_SET    1351// 4 bytes
 #define EP_EEPROM_ON_OFF        1355// 1 bytes
 #define EP_EEPROM_COUNTER_DELAY 1356// 4 bytes
+#define EP_MQTT_PORT            1360// 4 bytes
 
-#define LAST_EEPROM_ADDRESS 1360
+#define LAST_EEPROM_ADDRESS 1364
 #define TIMESTAMP_FEATURE
 // #define MQTT_Mode
 // #define Mesh_Network
-#define USE_LORA
+// #define USE_LORA
 #endif//LOOKLINE_UI
 //default values
 #define DEFAULT_WIFI_MODE           AP_MODE

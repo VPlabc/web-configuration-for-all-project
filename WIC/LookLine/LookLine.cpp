@@ -40,6 +40,7 @@ TaskPin taskPins;
 
 bool newFWdetec = false;
 byte Debug = true;
+byte config = 0; // config = 1 đag kết nối với điện thoại 
 
 int CountOT_m=0;
 int CountOT_Hm=0;
@@ -100,6 +101,71 @@ bool LookLineOnce1 = true;
 #ifdef __cplusplus
 }
 #endif
+
+byte LooklineDebug = true;
+uint8_t current_protocol;
+int rssi_display = 0;
+#include "esp_wifi.h"
+#include <WiFi.h>
+
+esp_interface_t current_esp_interface;
+wifi_interface_t current_wifi_interface;
+
+typedef struct {
+  unsigned frame_ctrl: 16;
+  unsigned duration_id: 16;
+  uint8_t addr1[6]; /* receiver address */
+  uint8_t addr2[6]; /* sender address */
+  uint8_t addr3[6]; /* filtering address */
+  unsigned sequence_ctrl: 16;
+  uint8_t addr4[6]; /* optional */
+} wifi_ieee80211_mac_hdr_t;
+
+typedef struct {
+  wifi_ieee80211_mac_hdr_t hdr;
+  uint8_t payload[0]; /* network data ended with 4 bytes csum (CRC32) */
+} wifi_ieee80211_packet_t;
+//La callback que hace la magia
+void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
+  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
+  if (type != WIFI_PKT_MGMT)
+    return;
+
+  const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
+  const wifi_ieee80211_packet_t *ipkt = (wifi_ieee80211_packet_t *)ppkt->payload;
+  const wifi_ieee80211_mac_hdr_t *hdr = &ipkt->hdr;
+
+  int rssi = ppkt->rx_ctrl.rssi;
+  rssi_display = rssi;
+}
+int check_protocol()
+{
+  CONFIG::read_byte (EP_EEPROM_DEBUG, &LooklineDebug);
+    char error_buf1[100];
+  if(LooklineDebug){
+    LOGLN();
+    LOGLN("Lookline_________________________");
+    LOGLN();
+     esp_err_t error_code = esp_wifi_get_protocol(current_wifi_interface, &current_protocol);
+     esp_err_to_name_r(error_code,error_buf1,100);
+     LOG("esp_wifi_get_protocol error code: ");
+     LOGLN(error_buf1);
+    LOGLN("Code: " + String(current_protocol));
+    if ((current_protocol&WIFI_PROTOCOL_11B) == WIFI_PROTOCOL_11B)
+      LOGLN("Protocol is WIFI_PROTOCOL_11B");
+    if ((current_protocol&WIFI_PROTOCOL_11G) == WIFI_PROTOCOL_11G)
+      LOGLN("Protocol is WIFI_PROTOCOL_11G");
+    if ((current_protocol&WIFI_PROTOCOL_11N) == WIFI_PROTOCOL_11N)
+      LOGLN("Protocol is WIFI_PROTOCOL_11N");
+    if ((current_protocol&WIFI_PROTOCOL_LR) == WIFI_PROTOCOL_LR)
+      LOGLN("Protocol is WIFI_PROTOCOL_LR");
+    LOGLN("___________________________________");
+    LOGLN();
+    LOGLN();
+  }
+    return current_protocol;
+}
+
 void LOOKLINE_PROG::caculaOT()
 {
   float nums = 0;
@@ -142,7 +208,9 @@ void LOOKLINE_PROG::UpdateLookLineData(){
   CONFIG::read_byte (EP_EEPROM_ROLE, &role);
   CONFIG::read_byte (EP_WIFI_MODE, &WiFiMode);
   CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug);
+  #ifdef USE_LORA
   SetChanel(Lora_CH);
+  #endif//USE_LORA
   if(Debug)LOGLN("Update Data");
 }
 
@@ -161,7 +229,11 @@ if(pos == EP_EEPROM_RUN){if(Debug)LOGLN("Run set is :" + String(Mode));NodeRun =
     caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
   }
 if(pos == EP_EEPROM_ON_OFF){if(Debug)LOGLN("On/Off set is :" + String(Mode));}
-if(pos == EP_EEPROM_CHANELS){if(Debug)LOGLN("Chanel set is :" + String(Mode));SetChanel(Mode);Lora_CH = Mode;}
+if(pos == EP_EEPROM_CHANELS){if(Debug)LOGLN("Chanel set is :" + String(Mode));
+  #ifdef USE_LORA
+  SetChanel(Mode);
+  #endif//USE_LORA
+  Lora_CH = Mode;}
 if(pos == EP_EEPROM_MODULE_TYPE){if(Debug)LOGLN("Set Module type :" + String(Mode));PinMapInit();LookLineOnce1 = true;}
 if(pos == EP_EEPROM_TIMESENT){if(Debug)LOGLN("Time Sent :" + String(Mode));}
 if(pos == EP_EEPROM_DEBUG){if(Debug)LOGLN("Debuf Mode:" + String(Mode));}
@@ -258,6 +330,7 @@ void LOOKLINE_PROG::SetRun(byte SetRuns){
   if(SetRuns < 2){
   NodeRun = SetRuns;if(Debug)LOGLN("Run/Stop Lookline");
   LOG("Run:"+ String(NodeRun));
+  CONFIG::write_byte (EP_EEPROM_RUN, NodeRun);
   }
   if(SetRuns == 2){
     if(Debug)LOGLN("On/Off Lookline");
@@ -269,12 +342,14 @@ void LOOKLINE_PROG::SetRun(byte SetRuns){
 void LOOKLINE_PROG::SetDone(){
   done = true;
 }
+bool LOOKLINE_PROG::GetConfigState(){return config;}
+void LOOKLINE_PROG::Set_Init_UI(String auths){if(LooklineDebug)LOGLN("Set_Init_UI " + auths);socket_server->broadcastTXT(auths);}
 
 
 
 void LOOKLINE_PROG::setup() {
   Serial.begin(112500);
-  Serial2.begin(9600);
+  // Serial2.begin(9600);
   UpdateLookLineData();PinMapInit();
         // if(Debug)LOGLN("Main Data1--" + String(DATA1));//2
         // if(Debug)LOGLN("Main Data2--" + String(DATA2));//15
@@ -283,8 +358,10 @@ void LOOKLINE_PROG::setup() {
         // if(Debug)LOGLN("Main SHCP--" + String(SHCP));//25
   SetPin(DATA1, DATA2, DATA3, SHCP, STCP, BoardIDs, NetIDs, Lora_CH, Startus_LED, TimeSent);
   PrintSeg(Seg[0], Seg[0], Seg1[0]);latch();
+  #ifdef USE_LORA
   SetPinLoRa( M0,  M1,  16,  17);
   ReadLoRaConfig();
+  #endif//USE_LORA
   if(ModuleType != ModGateway){ SetPin7Seg(DATA1, DATA2, DATA3, SHCP, STCP);}
   // #if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
   //           // CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
@@ -334,7 +411,7 @@ caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
 #endif//not dev
 SerDisplay();
 
-  Serial2.begin(9600);
+  // Serial2.begin(9600);
 }
 /* ############################ Loop ############################################# */
 
@@ -431,7 +508,51 @@ void LOOKLINE_PROG::SetParameter(int Plan, int taskPLanSet, int Result, int Resu
 }
 
 #define TempDisplay
+struct DataPacket {
+  int ID;
+  int netId;
+  uint8_t data[200];
+};
+void LOOKLINE_PROG::sendDataLookline() {
+  // Tạo struct DataPacket
+  DataPacket packet;
+  packet.ID = BoardIDs;
+  packet.netId = NetIDs;
 
+  // Gán dữ liệu từ DataLookline vào mảng data
+  packet.data[0] = (PLAN >> 8) & 0xFF;
+  packet.data[1] = PLAN & 0xFF;
+  packet.data[2] = (RESULT >> 8) & 0xFF;
+  packet.data[3] = RESULT & 0xFF;
+  packet.data[4] = NodeRun & 0xFF;
+  packet.data[5] = 0;//RSSI & 0xFF;
+  packet.data[6] = ComMode & 0xFF;
+  packet.data[7] = WiFiMode & 0xFF;
+  packet.data[8] = ModuleType & 0xFF;
+  packet.data[9] = 0;//Cmd & 0xFF;
+
+  // Điền các giá trị còn lại trong mảng data bằng 0
+  for (int i = 10; i < 200; i++) {
+      packet.data[i] = 0;
+  }
+
+  // Gửi struct qua Serial2
+  Serial2.begin(115200, SERIAL_8N1, 17, 16);
+  Serial2.write((uint8_t*)&packet, sizeof(packet)); // Gửi toàn bộ struct
+  Serial2.flush();
+
+  if (LooklineDebug) {
+      LOGLN("DataPacket sent via Mesh");
+      LOG("ID: " + String(packet.ID));
+      LOGLN(" | NetID: " + String(packet.netId));
+      // LOGLN("Data: ");
+      // for (int i = 0; i < 200; i++) {
+      //   LOG(String(packet.data[i]));
+      //   LOG(" | ");
+      // }
+      LOGLN();
+  }
+}
 bool OnceCheck = true;
 int totalInterruptCounterLookline = 0; 
 void LOOKLINE_PROG::TimerPlanInc()
@@ -522,7 +643,7 @@ totalInterruptCounterLookline++;
         counter2 = 0;
         //digitalWrite(Signal_LED, digitalRead(Signal_LED) ^ 1);
         PLAN = PLAN + PLanSet;//MODBUS_Write();
-        caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);SerDisplay();
+        caculaOT(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);//SerDisplay();
         if(PLAN % 10 == 9){
                 if (!CONFIG::write_buffer (EP_EEPROM_PLAN, (const byte *) &PLAN, INTEGER_LENGTH) ) {
                   LOG("save Plan failed");
@@ -532,6 +653,7 @@ totalInterruptCounterLookline++;
         
         if (PLAN > PlanLimit)
         {
+
           PLAN = PlanLimit;
         }
         //
@@ -552,6 +674,7 @@ totalInterruptCounterLookline++;
       
     // if(Debug)LOGLN("TimerPlanInc | Role:" + String(role));
     SerDisplay();
+    if (role == NODE || role == REPEARTER ){sendDataLookline();}
     if(MonitorMode == Main){
     #ifdef TempDisplay
       // SerDisplay();
@@ -859,6 +982,18 @@ void LOOKLINE_PROG::SerDisplay()
         Log +="  |Temp: ";
         Log +=(temprature_sens_read() - 32) / 1.8;
         Log +=" C |";
+
+        unsigned long runtimeMillis = millis();
+        unsigned long seconds = (runtimeMillis / 1000) % 60;
+        unsigned long minutes = (runtimeMillis / (1000 * 60)) % 60;
+        unsigned long hours = (runtimeMillis / (1000 * 60 * 60)) % 24;
+        unsigned long days = runtimeMillis / (1000 * 60 * 60 * 24);
+
+        Log += "Runtime: ";
+        Log += String(days) + "d ";
+        Log += String(hours) + "h ";
+        Log += String(minutes) + "m ";
+        Log += String(seconds) + "s |";
         if(Debug)LOGLN(Log);
         // ShowParameters();
       }

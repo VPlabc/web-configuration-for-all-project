@@ -93,11 +93,14 @@ void TimerPlanInc();
 void UpdateLookLineData();
 void caculaOT();
 void displayMode(byte Mode);
+bool GetConfigState();
 void SetParameter(int taskPlan, int taskPLanSet, int taskResult, int taskResultSet, int taskTime, int taskpcsInShift, int taskPass, int taskDotIn);
 void SetPlan(int SetPlans);
 void SetResult(int SetResults);
 void SetRun(byte SetRuns);
 void SetDone();
+void sendDataLookline();
+void Set_Init_UI(String auths);
 
   int delayForCounter = 1000;
   int SetupForBegin = 0;

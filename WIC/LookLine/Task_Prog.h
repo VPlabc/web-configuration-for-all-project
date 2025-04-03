@@ -817,7 +817,7 @@ if(taskRole == NODE){
           }
         if(counter2Pin < 500){// under 5S
         if(Lookline_PROG.Run == true){
-          Lookline_PROG.Run = false;counter2Pin = 0;
+          Lookline_PROG.SetRun(0);Lookline_PROG.sendDataLookline();counter2Pin = 0;
           // WriteValue();
 #ifdef DEBUG_
           LOGLN("Stop");
@@ -825,7 +825,7 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
         }
         else{
-          Lookline_PROG.Run = true;counter2Pin = 0;
+          Lookline_PROG.SetRun(1);Lookline_PROG.sendDataLookline();counter2Pin = 0;
           // totalInterruptCounter = 0;
           // WriteValue();
 #ifdef DEBUG_
