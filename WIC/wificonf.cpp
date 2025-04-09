@@ -79,8 +79,14 @@ extern "C" {
 #else
 #include "syncwebserver.h"
 #endif
+#ifdef LOOKLINE_UI
+#include "LookLine/LookLine.h"
+//  Command cmdLookLine;
+ LOOKLINE_PROG cmdLookline_PROG;
+#endif//LOOKLINE_UI
 
 bool WiFiOnce1 = true; //
+bool debug = true;
 #include "WIC.h"
 WIC wic;
 #if defined(TIMESTAMP_FEATURE) && defined(ARDUINO_ARCH_ESP8266)
@@ -211,6 +217,11 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif
         break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
+
+    #ifdef LOOKLINE_UI
+    cmdLookline_PROG.SetStart(0);
+    if(debug)LOG("Disconnected");
+#endif//LOOKLINE_UI
     #ifndef Moto_UI 
         ESPCOM::println (F ("Disconnected"), PRINTER_PIPE);
     #endif//Moto_UI
@@ -227,6 +238,7 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif//
 #endif
         break;
+    
     case WIFI_EVENT_STAMODE_GOT_IP:
 #ifdef ESP_OLED_FEATURE    
 #ifndef MKS_TFT_FEATURE
@@ -251,11 +263,14 @@ void onWiFiEvent(WiFiEvent_t event)
         break;
     case WIFI_EVENT_SOFTAPMODE_STACONNECTED:
         ESPCOM::println (F ("New client"), PRINTER_PIPE);
+        cmdLookline_PROG.SetStart(1);
         #ifdef Switch_UI
         wic.Manual = true;
         LOG("Manual Mode\n");
         LOG("\nManual On\n");
         #endif//Switch_UI
+
+        // cmdLookline_PROG.SetConfig(0);
         break;
 #ifdef ARDUINO_ARCH_ESP32
     case SYSTEM_EVENT_STA_LOST_IP:
@@ -398,7 +413,19 @@ bool WIFI_CONFIG::Setup (bool force_ap)
         MOTO.WiFi_on = true;
         #endif//Moto_UI 
         delay (50);
-        WiFi.softAP (sbuf, pwd);
+        IPAddress local_ip (DEFAULT_IP_VALUE[0], DEFAULT_IP_VALUE[1], DEFAULT_IP_VALUE[2], DEFAULT_IP_VALUE[3]);
+        IPAddress gateway (DEFAULT_GATEWAY_VALUE[0], DEFAULT_GATEWAY_VALUE[1], DEFAULT_GATEWAY_VALUE[2], DEFAULT_GATEWAY_VALUE[3]);
+        IPAddress subnet (DEFAULT_MASK_VALUE[0], DEFAULT_MASK_VALUE[1], DEFAULT_MASK_VALUE[2], DEFAULT_MASK_VALUE[3]);
+        String ssid = FPSTR (DEFAULT_AP_SSID);
+        String pwd = FPSTR (DEFAULT_AP_PASSWORD);
+
+            String sbuf = "";
+            byte b_ID = 0;
+            CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
+            CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
+            String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+            WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
+        // WiFi.softAP (sbuf, pwd);
 #ifdef ESP_OLED_FEATURE
 #ifndef Moto_UI 
         OLED_DISPLAY::display_signal(100);

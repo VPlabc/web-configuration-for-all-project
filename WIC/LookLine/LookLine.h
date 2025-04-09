@@ -65,6 +65,7 @@
 #define GATEWAY     1
 #define REPEARTER   2
 
+#define         NUM_LOOKLINES 20
 
 
 typedef struct Command{
@@ -75,6 +76,21 @@ typedef struct Command{
     byte request = 4;
     byte updateFw = 5;
 }Command;
+
+typedef struct struct_Parameter_message {
+  byte networkID;       //1
+  byte nodeID;          //1
+  int PLAN;             //4
+  int RESULT;           //4
+  byte state;           //1
+  byte Mode;            //1
+  byte RSSI;            //1
+  byte Com;            //1
+  byte WiFi;            //1
+  byte Cmd;            //1
+  byte type;            //1
+  int Nodecounter;
+} struct_Parameter_message;
 
 class LOOKLINE_PROG
 {
@@ -98,9 +114,16 @@ void SetParameter(int taskPlan, int taskPLanSet, int taskResult, int taskResultS
 void SetPlan(int SetPlans);
 void SetResult(int SetResults);
 void SetRun(byte SetRuns);
+void SetStart(byte START);
+void SetConfig(bool CONFIG);
 void SetDone();
 void sendDataLookline();
 void Set_Init_UI(String auths);
+byte GetRun();
+byte GetDebug();
+bool GetFW();
+
+
 
   int delayForCounter = 1000;
   int SetupForBegin = 0;

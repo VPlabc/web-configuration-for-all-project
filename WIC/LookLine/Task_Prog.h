@@ -1,7 +1,7 @@
 #include "LookLine.h"
 #include "7SegModule.h"
 #include "config.h"
-
+#define Develop
 #define LoRa_Ser Serial2
 
 void Data_Proccess();
@@ -108,20 +108,20 @@ void TaskDisplay(byte mode)
   {
     if (now.hour() == WorkTime[j][0] & now.minute() == WorkTime[j][1] & now.second() == WorkTime[j][2])
     {
-      Lookline_PROG.Run = false;
+      Lookline_PROG.GetRun() = false;
     }
     if (now.hour() == WorkTime[j][3] & now.minute() == WorkTime[j][4] & now.second() == WorkTime[j][5])
     {
-      Lookline_PROG.Run = true;
+      Lookline_PROG.GetRun() = true;
     }
   }
 #endif //ifdef AutoLookline_PROG.RunStop
 #ifdef TEST_MODE
-  if (Lookline_PROG.Run == true & Lookline_PROG.DispMode == Main)
+  if (Lookline_PROG.GetRun() == true & Lookline_PROG.DispMode == Main)
   {
     digitalWrite(Lookline_PROG.Startus_LED, LOW);
   }
-  if (Lookline_PROG.Run == false & Lookline_PROG.DispMode == Main)
+  if (Lookline_PROG.GetRun() == false & Lookline_PROG.DispMode == Main)
   {
     digitalWrite(Lookline_PROG.Startus_LED, HIGH);
   }
@@ -798,12 +798,12 @@ if(taskRole == NODE){
           DispMode = ConFi;//Confi 
           TaskDisplay(DispMode);
           }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
+        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun() == false){//3S
           DispMode = CLEAR;//Clear 
           TaskDisplay(DispMode);
         }
       }
-        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
+        if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun() == false){//3S
             Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);counter2Pin = 0;
             DispMode = Main;//Confi 
         }
@@ -812,11 +812,11 @@ if(taskRole == NODE){
           //LOGLN("online");UDF = true;WCF = true;APC = true;
           // Lookline_PROG.Mode = 2;WriteRebootValue();LOG("AP Config");delay(3000);ESP.restart();
           }
-          if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.Run == false){//3S
+          if(counter2Pin > 300 && counter2Pin < 500 && Lookline_PROG.GetRun() == false){//3S
             Lookline_PROG.SetPlan(0);Lookline_PROG.SetResult(0);
           }
         if(counter2Pin < 500){// under 5S
-        if(Lookline_PROG.Run == true){
+        if(Lookline_PROG.GetRun() == 1){
           Lookline_PROG.SetRun(0);Lookline_PROG.sendDataLookline();counter2Pin = 0;
           // WriteValue();
 #ifdef DEBUG_
