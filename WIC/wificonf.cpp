@@ -176,7 +176,7 @@ void  WIFI_CONFIG::Safe_Setup()
         byte b_ID = 0;
         CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
         CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V15.0.0.5" ;
         WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
     #else
     WiFi.softAP (ssid.c_str(), pwd.c_str() );
@@ -423,7 +423,7 @@ bool WIFI_CONFIG::Setup (bool force_ap)
             byte b_ID = 0;
             CONFIG::read_string (EP_AP_SSID, sbuf, MAX_SSID_LENGTH) ;
             CONFIG::read_byte (EP_EEPROM_ID, &b_ID);
-            String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+            String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V15.0.0.5" ;
             WiFi.softAP(AP_NAME.c_str(), pwd.c_str());
         // WiFi.softAP (sbuf, pwd);
 #ifdef ESP_OLED_FEATURE
@@ -773,7 +773,7 @@ bool WIFI_CONFIG::Enable_servers()
         if (!CONFIG::read_byte (EP_EEPROM_ID, &b_ID)) {
             return false;
         }
-        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V14.9.9" ;
+        String AP_NAME = String(sbuf) + "(" + String(b_ID) + ")|Ver:V15.0.0.5" ;
         WiFi.softAP(AP_NAME.c_str(), pwds.c_str());
         #endif//LOOKLINE_UI
         dnsServer.setErrorReplyCode (DNSReplyCode::NoError);

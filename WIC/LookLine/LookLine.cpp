@@ -375,10 +375,27 @@ void LOOKLINE_PROG::SetRun(byte SetRuns){
   CONFIG::write_byte (EP_EEPROM_RUN, NodeRun);
   }
   if(SetRuns == 2){
-    if(Debug)LOGLN("On/Off Lookline");
-    SetValue(10,  10,  10,  10, 0);
+    if(role == NODE|| role == REPEARTER){
+      if(LooklineDebug)LOGLN("Off Lookline");
+      if(DispMode == Main){DispMode = SLEEP;}else{DispMode = Main;}
+    }
+    if(role == GATEWAY){
+      // if(ComMode != MESH){
+          // CONFIG::write_byte(EP_EEPROM_COM_MODE, MESH);
+          // MeshLookLineSetup();ComMode = MESH;if(LooklineDebug)ESPCOM::println(F("Mesh Lookline Setup"), PRINTER_PIPE);
+          // }
+          // else{CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);
+          // delay(1000);
+          // ESP.restart();
+          // }
+    }
   }
-
+  if(SetRuns == 5){ PLAN = RESULT = 0;
+    CONFIG::write_buffer (EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+    CONFIG::write_buffer (EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+    CONFIG::read_buffer(EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+    CONFIG::read_buffer(EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+  }
 }
 void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,int savePlan,int saveResult,byte Type,byte saveCom,byte saveWifi) ;
 

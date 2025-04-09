@@ -173,7 +173,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #ifdef TIMER_INTER_FEATURES
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 100000, true);
+  timerAlarmWrite(timer, 10000, true);
   timerAlarmEnable(timer);
 #endif//TIMER_INTER
 #ifdef Moto_UI

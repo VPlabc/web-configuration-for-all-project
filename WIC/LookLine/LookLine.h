@@ -92,6 +92,15 @@ typedef struct struct_Parameter_message {
   int Nodecounter;
 } struct_Parameter_message;
 
+typedef struct struct_Parameter_messageOld {
+  byte networkID;       //1
+  byte nodeID;          //1
+  int PLAN;             //4
+  int RESULT;           //4
+  byte state;           //1
+  byte Mode;            //1
+} struct_Parameter_messageOld;
+
 class LOOKLINE_PROG
 {
 public:

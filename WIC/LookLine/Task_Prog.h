@@ -1,7 +1,7 @@
 #include "LookLine.h"
 #include "7SegModule.h"
 #include "config.h"
-#define Develop
+// #define Develop
 #define LoRa_Ser Serial2
 
 void Data_Proccess();
