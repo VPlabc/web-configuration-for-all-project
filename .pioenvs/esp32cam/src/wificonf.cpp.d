@@ -252,4 +252,6 @@
  /Users/mac/.platformio/packages/framework-arduinoespressif32@3.20006.221224/tools/sdk/esp32/include/mbedtls/port/include/aes/esp_aes.h \
  /Users/mac/.platformio/packages/framework-arduinoespressif32@3.20006.221224/tools/sdk/esp32/include/hal/include/hal/aes_types.h \
  /Users/mac/.platformio/packages/framework-arduinoespressif32@3.20006.221224/tools/sdk/esp32/include/mbedtls/mbedtls/include/mbedtls/error.h \
- WIC/WIC.h
+ WIC/LookLine/LookLine.h libraries/ArduinoJson/src/ArduinoJson.h \
+ libraries/ArduinoJson/src/ArduinoJson.hpp \
+ libraries/ArduinoJson/src/ArduinoJson/Configuration.hpp WIC/WIC.h

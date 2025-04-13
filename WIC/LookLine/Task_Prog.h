@@ -764,6 +764,7 @@ void TaskInPut()
 if(taskRole == NODE){
   ///*
   //////////////////////////////////////////////////////////////////////
+#ifdef USE_X0_X4  
   if (analogRead(X0) > maxValue && analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue && analogRead(X4) > maxValue){LogOnce = true;}
   if (analogRead(X0) > maxValue || analogRead(X4) > maxValue)
   {
@@ -843,6 +844,9 @@ if(taskRole == NODE){
 #endif //#if DEBUG_
     }  //if(o > delayForCounter/3){
   }
+#endif//USE_X0_X4
+  //////////////////////////////////////////////////////////////////////
+  
   //////////////////////////////////////////////////////////////////////
   if (analogRead(X1) > maxValue && analogRead(X2) > maxValue && analogRead(X3) > maxValue)
   {
@@ -857,12 +861,12 @@ if(taskRole == NODE){
   }
   else{
       if(LogOnce){LogOnce = false;LOGLN("X1:" + String(analogRead(X1)) + "|X2:" + String(analogRead(X2)) + "|X3:" + String(analogRead(X3)));}
-      counter++;if(counter > 100){counter = 0;counterHold++;LOGLN(counterHold);
-      }delay(10);
-      if(counterHold > 60){counterHold = 0;
-      LOGLN("gateway detect");
-        CONFIG::write_byte(EP_EEPROM_MODULE_TYPE,1); delay(3000);ESP.restart();
-      }
+      // counter++;if(counter > 100){counter = 0;counterHold++;LOGLN(counterHold);
+      // }delay(10);
+      // if(counterHold > 60){counterHold = 0;
+      // LOGLN("gateway detect");
+      //   CONFIG::write_byte(EP_EEPROM_MODULE_TYPE,1); delay(3000);ESP.restart();
+      // }
   }
   ///////////////////////////////////////////////////////////////////////
   if (analogRead(X1) <= minValue)

@@ -202,7 +202,7 @@ void onWiFiEvent(WiFiEvent_t event)
 {
 
     switch (event) {
-    case WIFI_EVENT_STAMODE_CONNECTED:
+    case WIFI_EVENT_STA_MODE_CONNECTED:
 #ifndef MKS_TFT_FEATURE
 #ifndef Moto_UI 
         ESPCOM::println (F ("Connected"), PRINTER_PIPE);
@@ -216,7 +216,7 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif//        
 #endif
         break;
-    case WIFI_EVENT_STAMODE_DISCONNECTED:
+    case WIFI_EVENT_STA_MODE_DISCONNECTED:
 
     #ifdef LOOKLINE_UI
     cmdLookline_PROG.SetStart(0);
@@ -238,8 +238,12 @@ void onWiFiEvent(WiFiEvent_t event)
 #endif//
 #endif
         break;
-    
-    case WIFI_EVENT_STAMODE_GOT_IP:
+        case WIFI_EVENT_AP_MODE_DISCONNECTED:
+            if(debug)ESPCOM::println (F ("(AP)Disconnected"), PRINTER_PIPE);
+        #ifdef LOOKLINE_UI
+            cmdLookline_PROG.SetStart(0);
+        #endif//LOOKLINE_UI
+    case WIFI_EVENT_STA_MODE_GOT_IP:
 #ifdef ESP_OLED_FEATURE    
 #ifndef MKS_TFT_FEATURE
     if (WiFi.getMode() == WIFI_AP) {

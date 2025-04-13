@@ -51,6 +51,9 @@ public:
     #ifdef LOOKLINE_UI
     void checkFW();
     void OnceCheckFW();
+
+    bool GetSetup();
+    void SetSetup(bool state);
     #endif//LooklineUI
 
 

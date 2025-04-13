@@ -216,6 +216,7 @@ void LOOKLINE_PROG::UpdateLookLineData(){
   CONFIG::read_byte (EP_EEPROM_ROLE, &role);
   CONFIG::read_byte (EP_WIFI_MODE, &WiFiMode);
   CONFIG::read_byte (EP_EEPROM_DEBUG, &Debug);
+  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
   #ifdef USE_LORA
   SetChanel(Lora_CH);
   #endif//USE_LORA
@@ -330,12 +331,12 @@ void LOOKLINE_PROG::displayMode(byte Mode){
 
 void LOOKLINE_PROG::SetPlan(int SetPlans){
   PLAN = SetPlans;
-  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);TaskDisplay(DispMode);
 }
 
 void LOOKLINE_PROG::SetResult(int SetResults){
   RESULT = SetResults;
-  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);
+  caculaOT();SerDisplay(); SetValue(PLAN,  RESULT,  CountOT_Hm,  CountOT_Lm, NodeRun);TaskDisplay(DispMode);
 }
 void LoRaLooklineSetup()
 {
@@ -349,8 +350,10 @@ void LoRaLooklineSetup()
     CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);//2 station mode // 1 AP mode
     if (wifiMode == 1 && config == 0)
     {
-      // WiFi.disconnect();
-      // WiFi.mode(WIFI_OFF);delay(100);
+
+      WiFi.disconnect();
+      WiFi.disconnect(true); // Ngắt kết nối và xóa cấu hình trước đó
+      WiFi.mode(WIFI_OFF);delay(100);
       WiFi.mode(WIFI_AP);
       esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PHY_MODE_11G);
       if (!wifi_config.Setup())
@@ -395,6 +398,7 @@ void LOOKLINE_PROG::SetRun(byte SetRuns){
     CONFIG::write_buffer (EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
     CONFIG::read_buffer(EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
     CONFIG::read_buffer(EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+    Lookline_PROG.SetResult(0);Lookline_PROG.SetPlan(0);TaskDisplay(DispMode);
   }
 }
 void saveLooklineData(byte saveRSSI,byte saveID,byte saveNetID,byte saveState,int savePlan,int saveResult,byte Type,byte saveCom,byte saveWifi) ;
@@ -486,6 +490,18 @@ SerDisplay();
 
   // Serial2.begin(9600);
 }
+String ConvBinUnits(int bytes, int resolution) {
+  if      (bytes < 1024)                 {
+    return String(bytes) + " B";
+  }
+  else if (bytes < 1024 * 1024)          {
+    return String((bytes / 1024.0), resolution) + " KB";
+  }
+  else if (bytes < (1024 * 1024 * 1024)) {
+    return String((bytes / 1024.0 / 1024.0), resolution) + " MB";
+  }
+  else return "";
+}
 /* ############################ Loop ############################################# */
 
 
@@ -494,6 +510,7 @@ SerDisplay();
 
   void LoRaCommu();
 
+  String strIn = "";
 
 void LOOKLINE_PROG::loop()
 {
@@ -522,16 +539,43 @@ void LOOKLINE_PROG::loop()
   if(ComMode == MESH){}
   #endif//Mesh_Network
 
-  digitalWrite(M0, LOW);digitalWrite(M1, LOW);
-  // if (millis() - OnWifiAutoMillis >= 63000 && start == 0 ) { OnWifiAutoMillis = millis();
-  //   LoRaLooklineSetup();
-  //   if(LooklineDebug)LOGLN("Wifi setup");
-  // }
-  // if (millis() - OnWifiAutoMillis > 60000 && millis() - OnWifiAutoMillis < 62000 ) {
-  //   start = 0;
-  // }
+  // digitalWrite(M0, LOW);digitalWrite(M1, LOW);
+  if (millis() - OnWifiAutoMillis >= (60000*60)*5 && start == 0 ) { OnWifiAutoMillis = millis();
+    
+    // LoRaLooklineSetup();
+    if(LooklineDebug){LOGLN("Lookline Reset");Serial.flush();}
+    // ESP.restart();
+  }
+  static unsigned long OnWifiAutoMillisReset = 0;
+  if (millis() - OnWifiAutoMillisReset > 240000) {OnWifiAutoMillisReset = millis();
+    start = 0;
+  }
 
-  
+  if (Serial.available()>1) {
+    char charin = (char)Serial.read();
+    strIn += charin;
+    if(strIn == "Wifi"){LOGLN("On Wifi ok!!");
+        check_protocol();
+        esp_wifi_set_protocol(current_wifi_interface, 3);
+        check_protocol();
+        CONFIG::write_byte(EP_EEPROM_COM_MODE, LoRa);
+        delay(1000);ESP.restart();
+        strIn = "";
+    }
+    
+    if(strIn == "RESET"){LOGLN("Reset ok!!");
+       CONFIG::reset_config();
+       CONFIG::write_buffer (EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+       CONFIG::write_buffer (EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+       CONFIG::read_buffer(EP_EEPROM_PLAN, (byte *) &PLAN, INTEGER_LENGTH);
+       CONFIG::read_buffer(EP_EEPROM_RESULT, (byte *) &RESULT, INTEGER_LENGTH);
+       Lookline_PROG.SetResult(0);Lookline_PROG.SetPlan(0);TaskDisplay(DispMode);
+       LOGLN("Restarting... Free heap: "+ String(ESP.getFreeHeap()));
+       delay(3000);ESP.restart();
+    strIn = "";
+    }
+    if(charin == '\n'){LOG(strIn);strIn = "";}
+  }
   /////////////////////////////////// Gateway mode ///////////////////////////
   if(LookLineOnce1){LookLineOnce1 = false; ShowParameters();}
   if(role == GATEWAY && AmountNode > 0 && ModuleType == ModGateway){
@@ -624,8 +668,8 @@ void LOOKLINE_PROG::sendDataLookline() {
 
   if (LooklineDebug) {
       LOGLN("DataPacket sent via Mesh");
-      LOG("ID: " + String(packet.ID));
-      LOGLN(" | NetID: " + String(packet.netId));
+      // LOG("ID: " + String(packet.ID));
+      // LOGLN(" | NetID: " + String(packet.netId));
       // LOGLN("Data: ");
       // for (int i = 0; i < 200; i++) {
       //   LOG(String(packet.data[i]));
@@ -1070,24 +1114,26 @@ void LOOKLINE_PROG::SerDisplay()
           if(DispMode == Online){Log +="Disp: Online ";}
           if(DispMode == SLEEP){Log +="Disp: SLEEP ";}
           if(DispMode == CLEAR){Log +="Disp: Clear ";}
-          Log +="|Plan: ";Log +=PLAN;
+          Log +="\nPlan: ";Log +=PLAN;
           Log +="|  Result: ";Log +=RESULT;
           Log +="|  O.T: ";Log +=CountOT_Hm;Log +="."; Log +=CountOT_Lm;   
-          Log +="| Startus_LED pin:" + String(Startus_LED) + "(" + digitalRead(Startus_LED) + ")";
+          Log +="\n Startus_LED pin:" + String(Startus_LED) + "(" + digitalRead(Startus_LED) + ")";
         } else{
           Log += "| Amount node: " + String(AmountNode);
         }
-        Log +="  |Temp: ";
+        Log +="\nTemp: ";
         Log +=(temprature_sens_read() - 32) / 1.8;
         Log +=" C |";
-
+        LOG("WiFi Status: " + String(WiFi.status()));
+        LOG(" | RSSI: " + String(WiFi.RSSI()));
+        LOGLN(" | Free heap: " + String(ESP.getFreeHeap()));
         unsigned long runtimeMillis = millis();
         unsigned long seconds = (runtimeMillis / 1000) % 60;
         unsigned long minutes = (runtimeMillis / (1000 * 60)) % 60;
         unsigned long hours = (runtimeMillis / (1000 * 60 * 60)) % 24;
         unsigned long days = runtimeMillis / (1000 * 60 * 60 * 24);
 
-        Log += "Runtime: ";
+        Log += "\nRuntime: ";
         Log += String(days) + "d ";
         Log += String(hours) + "h ";
         Log += String(minutes) + "m ";

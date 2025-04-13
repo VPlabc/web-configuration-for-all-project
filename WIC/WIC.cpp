@@ -148,6 +148,7 @@ CONFIG conf;
 
 byte RunMode = 0;
 
+bool looklineDebug = true;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef TIMER_INTER_FEATURES
 ////////////////////////////////////////// TIMER INTERUPT ///////////////////////////////////
@@ -162,11 +163,22 @@ void IRAM_ATTR onTimer() {
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 #endif// TIMER_INTER_FEATURES
+#ifdef USE_TSK
 
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+// TaskHandle_t Task3;
+
+#include "Tsk1.h"
+#include "Tsk2.h"
+#endif//USE_TSK
 WIC::WIC()
 {
 }
+bool SetupDone = false;
 
+bool WIC::GetSetup(){ return SetupDone;}
+void WIC::SetSetup(bool state){  SetupDone = state;}
 // Begin which setup everything
 void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 {
@@ -425,8 +437,31 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #ifdef LOOKLINE_UI
     lookline_prog.setup();
 #endif // LOOKLINE_UI
-    CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
+#ifdef USE_TSK
+CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
     if(RunMode >= 2){CONFIG::write_byte(EP_EEPROM_WIFI_MODE, WIFIMODE);}
+    xTaskCreatePinnedToCore(
+                    Task1code,   /* Task function. */
+                    "Task1",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task1,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 0 */                  
+  delay(500); 
+
+  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  xTaskCreatePinnedToCore(
+                    Task2code,   /* Task function. */
+                    "Task2",     /* name of task. */
+                    10000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    1,           /* priority of the task */
+                    &Task2,      /* Task handle to keep track of created task */
+                    1);          /* pin task to core 1 */
+    delay(500); 
+#endif//USE_TSK
+SetupDone = true;
 }
 
 bool onece = true;
@@ -517,6 +552,8 @@ void WIC::process()
 #endif // MESHCOM_UI
 #ifdef LOOKLINE_UI
                 lookline_prog.loop();
+                #ifndef USE_TSK
+
                 CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
                 if (RunMode > 2 || RunMode <= 0){
                     RunMode = 1;
@@ -568,6 +605,7 @@ void WIC::process()
   }
   #endif//#ifdef TIMER_INTER_FEATURES
                 }
+                #endif//USE_TSK
 #endif // LOOKLINE_UI
 #ifdef MESHCOM_UI
 #endif // MESHCOM_UI
@@ -581,6 +619,8 @@ void WIC::process()
                     if (WiFi.getMode() != WIFI_OFF)
                     {
 #ifdef CAPTIVE_PORTAL_FEATURE
+#ifndef USE_TSK
+
                         if (WiFi.getMode() != WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
                         {
                             dnsServer.processNextRequest();
@@ -611,6 +651,7 @@ if (onece1)
                                 LOG("\nWifi Portal Working...\n");
                             }
                         }
+                        #endif//USE_TSK
 #endif
                         // TODO use config
                         CONFIG::wait(0);
