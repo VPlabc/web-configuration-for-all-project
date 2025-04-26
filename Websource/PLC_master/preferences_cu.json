@@ -1,0 +1,20 @@
+[
+ {
+  "language": "en",
+  "enable_camera": "false",
+  "auto_load_camera": "false",
+  "app_data": "{\"Application\":[{\"app\":\"0,0,7,0,4,Máy ép nhựa 20,0,2,1,3,4,5,6\"},{\"app\":\"1,0,7,1,4,Máy ép nhựa 22,7,9,8,10,11,12,13\"},{\"app\":\"2,0,7,2,4,Máy ép nhựa 24,14,16,15,17,18,19,20\"},{\"app\":\"3,0,7,3,4,Máy ép nhựa 26,21,23,22,24,25,26,27\"}]}",
+  "Pass_staff": "123",
+  "Pass_admin": "27xuanquynh",
+  "enable_DHT": "false",
+  "enable_lock_UI": "false",
+  "enable_ping": "false",
+  "enable_files_panel": "false",
+  "has_TFT_SD": "false",
+  "has_TFT_USB": "false",
+  "f_filters": "",
+  "enable_autoscroll": "false",
+  "enable_verbose_mode": "false",
+  "enable_commands_panel": "false"
+ }
+]

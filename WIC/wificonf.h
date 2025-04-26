@@ -50,7 +50,7 @@ public:
     int sleep_mode;
     int32_t getSignal (int32_t RSSI);
     bool wifiMode;
-    bool Setup (bool force_ap = false);
+    bool Setup (bool force_ap,byte LED_Pin, int8_t invert);
     bool GetWifiMode(); 
     void Safe_Setup();
     bool Enable_servers();

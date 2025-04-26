@@ -68,6 +68,12 @@ typedef struct
 
 typedef struct
 {
+    char char1;
+    char char2;
+} RespondChar;
+
+typedef struct
+{
     //boolean SetValve;
     union
     {
@@ -116,12 +122,38 @@ typedef struct
         return ret;
     }
 
+
+    uint16_t EncodeWord(byte byte1, byte byte2)
+    {
+        int ret = 0;
+        ret = byte1;
+        ret = ret << 8;
+        ret = ret | byte2;
+        return ret;
+    }
+
+    RespondChar DecodeWord(uint16_t  _data)
+    {
+        RespondChar ret;
+        ret.char1 = _data & B11111111;
+        ret.char2 = (_data >> 8) & B11111111;
+        return ret;
+    }
     RespondByte DecodeInt(unsigned int _data)
     {
         RespondByte ret;
         ret.Byte2 = _data & B11111111;
         ret.Byte1 = (_data >> 8) & B11111111;
 
+        return ret;
+    }
+
+    uint32_t Encodeuint32(uint16_t byte1, uint16_t byte2)
+    {
+        uint32_t ret = 0;
+        ret = byte1;
+        ret = ret << 16;
+        ret = ret | byte2;
         return ret;
     }
 

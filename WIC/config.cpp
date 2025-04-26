@@ -40,6 +40,18 @@ extern "C" {
 #include <time.h>
 #endif
 
+#ifdef FILECONFIG
+#include "FileConfig.h"
+ NetworkFileConfig netconfig;
+ RespondNetworkData NetworkDatas;
+#endif//FILE_CONFIG
+#include "RealTimeClock.h"
+repondTime ConfigretTime;
+repondRTC ConfigretTimeRTC;
+
+#include "DataTransfer/data_transfer.h"
+
+ CFRespondNetworkData NetworkDataCF;
 #ifdef DHT_FEATURE
 #include "DHTesp.h"
 extern DHTesp dht;
@@ -61,6 +73,55 @@ byte CONFIG::GyroStates = DEFAULT_GYRO_STATE;
 #include <SD.h>
 #endif//SDCARD_FEATURE
 
+#ifdef USE_LORA
+#include "LoRa.h"
+void CONFIG::SetLoRaValue(){byte BoardIDs;byte Lora_CH;
+  CONFIG::read_byte(EP_EEPROM_ID, &BoardIDs);
+  #ifdef USE_LORA
+  CONFIG::read_byte(EP_EEPROM_CHANELS, &Lora_CH);
+  WriteLoRaConfig(Lora_CH, BoardIDs);ReadLoRaConfig();
+  #endif//  #ifdef USE_LORA
+}
+//   LOG("LoRa chanel:" + Str_Lora_CH);
+//   LOG("| LoRa Air rate:" + Air_Rate);
+//   LOG("| LoRa baudrate:" + Baud_Rate);
+//   LOGLN("| LoRa Power:" + Lora_PWR);
+String CONFIG::getLoRaChanel(){return Str_Lora_CH;}
+String CONFIG::getLoRaAirate(){return Air_Rate;}
+String CONFIG::getLoRaPower(){return Lora_PWR;}
+void CONFIG::SetPinForLoRa(uint8_t _M0, uint8_t _M1, uint8_t _TX , uint8_t _RX ){SetPinLoRa( _M0,  _M1,  _TX,  _RX );}
+#endif//USE_LORA
+
+#ifdef MCP_USE
+#include "MCP_DAC.h"
+// MCP4921 MCP(19, 18);  //  SW SPI
+MCP4921 MCP0;  //  HW SPI
+MCP4921 MCP1;  //  HW SPI
+volatile int x;
+uint32_t start, stop;
+#endif//MCP_USE
+
+
+#ifdef LOOKLINE_UI
+const int DEFAULT_PLAN =          0;
+const int DEFAULT_PLANSET =       1;
+const int DEFAULT_RESULT =        0;
+const int DEFAULT_RESULTSET =     1;
+const int DEFAULT_TIMEPLAN =      10;
+const int DEFAULT_PLANLIMIT =     9999;
+const int DEFAULT_PCS      =      100;
+
+byte DEFAULT_TIMESENT =      15;
+const int DEFAULT_COUNTER_DELAY = 200;
+byte DEFAULT_AMOUNTNODE =    5;
+byte DEFAULT_BOARDID =       1;
+byte DEFAULT_NETID  =        1;
+byte DEFAULT_CHANEL =        0;
+#define DEFAULT_ROLE           0//NODE
+#define DEFAULT_COMMODE        0//LoRa
+#define DEFAULT_MODULETYPE     1//GATEWAY
+
+#endif//LOOKLINE_UI
 
 uint8_t CONFIG::FirmwareTarget = UNKNOWN_FW;
 byte CONFIG::output_flag = DEFAULT_OUTPUT_FLAG;
@@ -178,6 +239,87 @@ bool CONFIG::GetState()
 }
 #endif//Gyro_UI
 
+        
+#ifdef MCP_USE
+void analogWrite_test()
+{
+  Serial.println();
+  Serial.println(__FUNCTION__);
+    for (uint16_t value = 0; value < MCP0.maxValue(); value += 10)
+    {
+      MCP0.fastWriteA(value);
+      MCP0.fastWriteB(value);
+      MCP1.fastWriteA(value);
+      MCP1.fastWriteB(value);
+      Serial.println(value);
+      delay(100);
+    }
+}
+
+
+void performance_test()
+{
+  Serial.println();
+  Serial.println(__FUNCTION__);
+
+  start = micros();
+  for (uint16_t value = 0; value < MCP0.maxValue(); value++)
+  {
+    x = MCP0.write(value, 0);
+  }
+  stop = micros();
+  Serial.print(MCP0.maxValue());
+  Serial.print(" x MCP0.write():\t");
+  Serial.print(stop - start);
+  Serial.print("\t");
+  Serial.println((stop - start) / (MCP0.maxValue() + 1.0) );
+  delay(10);
+
+  start = micros();
+  for (uint16_t value = 0; value < MCP0.maxValue(); value++)
+  {
+    MCP0.fastWriteA(value);
+  }
+  stop = micros();
+  Serial.print(MCP0.maxValue());
+  Serial.print(" x MCP0.fastWriteA():\t");
+  Serial.print(stop - start);
+  Serial.print("\t");
+  Serial.println((stop - start) / (MCP0.maxValue() + 1.0) );
+  delay(10); 
+}
+void CONFIG::Init_MCP(byte test){
+  #ifdef MCP_USE
+  SPI.begin(SCLK, MISO, MOSI);
+  MCP0.begin(4);
+  MCP1.begin(26);
+  Serial.print("MCP_DAC_LIB_VERSION: ");
+  Serial.println(MCP_DAC_LIB_VERSION);
+  Serial.println();
+  Serial.print("CHANNELS:\t");
+  Serial.println(MCP0.channels());
+  Serial.print("MAXVALUE:\t");
+  Serial.println(MCP0.maxValue());
+  delay(100);
+
+  if(test == 1 || test == 3)performance_test();
+  if(test == 2 || test == 3)analogWrite_test();
+      MCP0.fastWriteA(0);
+      MCP0.fastWriteB(0);
+      MCP1.fastWriteA(0);
+      MCP1.fastWriteB(0);
+  #endif// MCP_USE
+}
+void CONFIG::MCP_Set(byte Channel, uint16_t Value) {
+LOG ("Pin:"+ String(Channel) + " | Value:"+ String(Value) + "\r\n");
+if(Channel == 0){MCP0.fastWriteA(Value);}
+if(Channel == 1){MCP0.fastWriteB(Value);}
+if(Channel == 2){MCP1.fastWriteA(Value);}
+if(Channel == 3){MCP1.fastWriteB(Value);}
+}
+#endif//MCP_USE
+
+
 void CONFIG::InitFirmwareTarget()
 {
     CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ;
@@ -206,6 +348,7 @@ bool  CONFIG::is_locked(byte flag)
 void CONFIG::InitDirectSD()
 {
     #ifdef SDCARD_FEATURE
+        SPI.begin(SCLK, MISO, MOSI);
         if (!SD.begin(SDCard_CS)) {
             Serial.println("SD not found!");
             CONFIG::write_byte (EP_PRIMARY_SD, DEFAULT_PRIMARY_SD);
@@ -267,10 +410,13 @@ bool CONFIG::InitBaudrate(long value)
     if (Serial.baudRate() != baud_rate) {
 #ifdef ARDUINO_ARCH_ESP8266
         Serial.begin (baud_rate);
-#else
-        Serial.begin (baud_rate, ESP_SERIAL_PARAM, ESP_RX_PIN, ESP_TX_PIN);
 #endif
-
+#if defined(ESP32)
+        Serial.begin (baud_rate);
+#endif
+#if defined(esp32s2)
+    // MySerial0.begin(baud_rate, SERIAL_8N1, rxPin, txPin);
+#endif
     }
 #endif
 #ifdef USE_SERIAL_1
@@ -370,37 +516,66 @@ void  CONFIG::InitPins()
 #if defined(TIMESTAMP_FEATURE)
 void CONFIG::init_time_client()
 {
-    String s1, s2, s3;
-    int8_t t1;
-    byte d1;
-    if (!CONFIG::read_string (EP_TIME_SERVER1, s1, MAX_DATA_LENGTH) ) {
-        s1 = FPSTR (DEFAULT_TIME_SERVER1);
-    }
-    if (!CONFIG::read_string (EP_TIME_SERVER2, s2, MAX_DATA_LENGTH) ) {
-        s2 = FPSTR (DEFAULT_TIME_SERVER2);
-    }
-    if (!CONFIG::read_string (EP_TIME_SERVER3, s3, MAX_DATA_LENGTH) ) {
-        s3 = FPSTR (DEFAULT_TIME_SERVER3);
-    }
-    if (!CONFIG::read_byte (EP_TIMEZONE, (byte *) &t1 ) ) {
-        t1 = DEFAULT_TIME_ZONE;
-    }
-    if (!CONFIG::read_byte (EP_TIME_ISDST, &d1 ) ) {
-        d1 = DEFAULT_TIME_DST;
-    }
-    configTime (3600 * (t1), d1 * 3600, s1.c_str(), s2.c_str(), s3.c_str() );
-    time_t now = time(nullptr);
-    if (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) {
-        int nb = 0;
-        while ((now < 8 * 3600 * 2) && (nb < 6)) {
-            wait(500);
-            nb++;
-            now = time(nullptr);
-        }
-    }
+    RTC_Setup();
 }
-#endif
 
+CFrepondTime CONFIG::Get_Time(){
+    CFrepondTime repondTimeCF;
+//   LOGLN("Time Init ________________________________________");
+// SetupTime();
+if(WiFi.status() == WL_CONNECTED){
+// updateTime();
+//   LOGLN("File Init ________________________________________");
+    ConfigretTime = updateTime();
+    repondTimeCF.day = ConfigretTime.day;
+    repondTimeCF.hour = ConfigretTime.hour;
+    repondTimeCF.min = ConfigretTime.min;
+    repondTimeCF.sec = ConfigretTime.sec;
+    repondTimeCF.month = ConfigretTime.month;
+    repondTimeCF.year = ConfigretTime.year;
+    repondTimeCF.epochTime = ConfigretTime.epochTime;
+  // String FileName = "DataLog_20_03_24.csv";
+  // if(!SD.exists(FileName)){writeFile(SD, FileName, "Creat file");LOGLN("File Created ");}
+}else{LOGLN("Not Init Time => Get RTC");
+byte hourG = 25;
+byte fail = 0;
+while(hourG > 24){
+    ConfigretTimeRTC = GetTime();
+    repondTimeCF.day = ConfigretTimeRTC.day;
+    repondTimeCF.hour = ConfigretTimeRTC.hour;
+    repondTimeCF.min = ConfigretTimeRTC.min;
+    repondTimeCF.sec = ConfigretTimeRTC.sec;
+    repondTimeCF.month = ConfigretTimeRTC.month;
+    repondTimeCF.year = ConfigretTimeRTC.year;
+    repondTimeCF.epochTime = ConfigretTimeRTC.epochTime;
+    hourG = repondTimeCF.hour;if(fail++ > 50)break;
+    }
+    LOGLN( String(repondTimeCF.hour) + ":" + String(repondTimeCF.min) + ":" + String(repondTimeCF.sec) + " | " + String(repondTimeCF.epochTime));
+    }
+  return repondTimeCF;
+}
+
+#endif
+CFRespondNetworkData CONFIG::init_Network_config()
+{
+  #ifdef FILECONFIG
+  NetworkDatas = localStorageExport();
+        NetworkDataCF.ipAdress = NetworkDatas.ipAdress;
+        NetworkDataCF.getway = NetworkDatas.getway;
+        NetworkDataCF.subnet = NetworkDatas.subnet;
+        NetworkDataCF.primaryDNS = NetworkDatas.primaryDNS;
+        NetworkDataCF.secondaryDNS = NetworkDatas.secondaryDNS;
+        NetworkDataCF.EthPort = NetworkDatas.EthPort;
+        NetworkDataCF.MQhost = NetworkDatas.MQhost;
+        NetworkDataCF.MQport = NetworkDatas.MQport;
+        NetworkDataCF.MQuser = NetworkDatas.MQuser;
+        NetworkDataCF.MQpass = NetworkDatas.MQpass;
+        NetworkDataCF.wssid = NetworkDatas.wssid;
+        NetworkDataCF.wpass = NetworkDatas.wpass;
+
+  #endif//FILECONFIG
+  return NetworkDataCF;
+}
 bool CONFIG::is_direct_sd = false;
 
 
@@ -597,11 +772,11 @@ char * CONFIG::mac2str (uint8_t mac [WL_MAC_ADDR_LENGTH])
 bool CONFIG::set_EEPROM_version(uint8_t v)
 {
     byte byte_buffer[6];
-    byte_buffer[0]='E';
-    byte_buffer[1]='S';
-    byte_buffer[2]='P';
-    byte_buffer[3]='3';
-    byte_buffer[4]='D';
+    byte_buffer[0]='V';
+    byte_buffer[1]='P';
+    byte_buffer[2]='L';
+    byte_buffer[3]='a';
+    byte_buffer[4]='b';
     byte_buffer[5]=v;
     return CONFIG::write_buffer (EP_EEPROM_VERSION, byte_buffer, 6);
 }
@@ -664,11 +839,11 @@ bool CONFIG::adjust_EEPROM_settings()
 bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == 0 ||  pos + size_max + 1 > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_max == 0 ||  pos + size_max + 1 > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read string\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     byte b = 13; // non zero for the while loop below
     int i = 0;
 
@@ -691,7 +866,7 @@ bool CONFIG::read_string (int pos, char byte_buffer[], int size_max)
 bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 {
     //check if parameters are acceptable
-    if (size_max == -1 ||  pos + size_max + 1 > EEPROM_SIZE ) {
+    if (size_max == -1 ||  pos + size_max + 1 > LAST_EEPROM_ADDRESS ) {
         LOG ("Error read string\r\n")
         return false;
     }
@@ -699,7 +874,7 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
     int i = 0;
     sbuffer = "";
 
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //read until max size is reached or \0 is found
     while (i < size_max && b != 0) {
         b = EEPROM.read (pos + i);
@@ -717,12 +892,12 @@ bool CONFIG::read_string (int pos, String & sbuffer, int size_max)
 bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 {
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error read buffer\r\n")
         return false;
     }
     int i = 0;
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //read until max size is reached
     while (i < size_buffer ) {
         byte_buffer[i] = EEPROM.read (pos + i);
@@ -736,11 +911,11 @@ bool CONFIG::read_buffer (int pos, byte byte_buffer[], int size_buffer)
 bool CONFIG::read_byte (int pos, byte * value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 > LAST_EEPROM_ADDRESS) {
         LOG ("Error read byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     value[0] = EEPROM.read (pos);
     EEPROM.end();
     return true;
@@ -755,8 +930,9 @@ bool CONFIG::write_string (int pos, const __FlashStringHelper *str)
 //write a string (array of byte with a 0x00  at the end)
 bool CONFIG::write_string (int pos, const char * byte_buffer)
 {
+// 
     int size_buffer;
-    int maxsize = EEPROM_SIZE;
+    int maxsize = LAST_EEPROM_ADDRESS;
     size_buffer = strlen (byte_buffer);
     //check if parameters are acceptable
     switch (pos) {
@@ -766,11 +942,37 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         break;
     case EP_AP_SSID:
     case EP_STA_SSID:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.wssid = String(byte_buffer);
+        NetworkDatas.wssid = NetworkDataCF.wssid;
+        #endif//FILECONFIG
         maxsize = MAX_SSID_LENGTH;
         break;
     case EP_AP_PASSWORD:
     case EP_STA_PASSWORD:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.wpass = String(byte_buffer);
+        NetworkDatas.wpass = NetworkDataCF.wpass;
+        #endif//FILECONFIG
         maxsize = MAX_PASSWORD_LENGTH;
+        break;
+    case EP_MQTT_BROKER:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQhost = String(byte_buffer);
+        NetworkDatas.MQhost = NetworkDataCF.MQhost;
+        #endif//FILECONFIG
+        break;
+    case EP_MQTT_USER:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQuser = String(byte_buffer);
+        NetworkDatas.MQuser = NetworkDataCF.MQuser;
+        #endif//FILECONFIG
+        break;
+    case EP_MQTT_PASS:
+    #ifdef FILE_CONFIG
+        NetworkDataCF.MQpass = String(byte_buffer);
+        NetworkDatas.MQpass = NetworkDataCF.MQpass;
+        #endif//FILECONFIG
         break;
     case EP_HOSTNAME:
         maxsize = MAX_HOSTNAME_LENGTH;
@@ -788,10 +990,10 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
         maxsize = MAX_NOTIFICATION_SETTINGS_LENGTH;
         break;
     default:
-        maxsize = EEPROM_SIZE;
+        maxsize = LAST_EEPROM_ADDRESS;
         break;
     }
-    if ( pos + size_buffer + 1 > EEPROM_SIZE || size_buffer > maxsize  ) {
+    if ( pos + size_buffer + 1 > LAST_EEPROM_ADDRESS || size_buffer > maxsize  ) {
         LOG ("Error write string\r\n")
         return false;
     }
@@ -802,8 +1004,9 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
             return false;
         }
     }
+    // saveLocalStorage(NetworkDatas);
     //copy the value(s)
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
     }
@@ -818,18 +1021,37 @@ bool CONFIG::write_string (int pos, const char * byte_buffer)
 //write a buffer
 bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 {
+    
+ DataTransfer data_transfer;
     //check if parameters are acceptable
-    if (size_buffer == 0 ||  pos + size_buffer > EEPROM_SIZE || byte_buffer == NULL) {
+    if (size_buffer == 0 ||  pos + size_buffer > LAST_EEPROM_ADDRESS || byte_buffer == NULL) {
         LOG ("Error write buffer\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    switch (pos) {
+        #ifdef MQTT_USE
+    case EP_MQTT_PORT:
+        static uint16_t int16 = data_transfer.EncodeWord(byte_buffer[1],byte_buffer[0]);
+        NetworkDataCF.MQport = String(int16);
+        NetworkDatas.MQport = NetworkDataCF.MQport;
+        LOGLN("MQTT PORT: " +  NetworkDataCF.MQport);
+    #endif//MQTT_USE
+        break;
+    case ESP_NOTIFICATION_SETTINGS:
+        break;
+    default:
+        break;
+    }
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     //copy the value(s)
     for (int i = 0; i < size_buffer; i++) {
         EEPROM.write (pos + i, byte_buffer[i]);
     }
     EEPROM.commit();
     EEPROM.end();
+    #ifdef DataLog
+    saveLocalStorage(NetworkDatas);
+    #endif//DataLog
     return true;
 }
 
@@ -837,11 +1059,11 @@ bool CONFIG::write_buffer (int pos, const byte * byte_buffer, int size_buffer)
 bool CONFIG::write_byte (int pos, const byte value)
 {
     //check if parameters are acceptable
-    if (pos + 1 > EEPROM_SIZE) {
+    if (pos + 1 > LAST_EEPROM_ADDRESS) {
         LOG ("Error write byte\r\n")
         return false;
     }
-    EEPROM.begin (EEPROM_SIZE);
+    EEPROM.begin (LAST_EEPROM_ADDRESS);
     EEPROM.write (pos, value);
     EEPROM.commit();
     EEPROM.end();
@@ -850,132 +1072,43 @@ bool CONFIG::write_byte (int pos, const byte value)
 
 bool CONFIG::reset_config()
 {
-    if (!CONFIG::write_byte (EP_WIFI_MODE, DEFAULT_WIFI_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_BAUD_RATE, (const byte *) &DEFAULT_BAUD_RATE, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_string (EP_AP_SSID, FPSTR (DEFAULT_AP_SSID) ) ) {
-        return false;
-    }
-    if (!CONFIG::write_string (EP_AP_PASSWORD, FPSTR (DEFAULT_AP_PASSWORD) ) ) {
-        return false;
-    }
-    if (!CONFIG::write_string (EP_STA_SSID, FPSTR (DEFAULT_STA_SSID) ) ) {
-        return false;
-    }
-    if (!CONFIG::write_string (EP_STA_PASSWORD, FPSTR (DEFAULT_STA_PASSWORD) ) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_AP_IP_MODE, DEFAULT_AP_IP_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_STA_IP_MODE, DEFAULT_STA_IP_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_STA_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_STA_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_STA_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_STA_PHY_MODE, DEFAULT_PHY_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_AP_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_AP_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_AP_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_AP_PHY_MODE, DEFAULT_PHY_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_SLEEP_MODE, DEFAULT_SLEEP_MODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_CHANNEL, DEFAULT_CHANNEL) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_AUTH_TYPE, DEFAULT_AUTH_TYPE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_SSID_VISIBLE, DEFAULT_SSID_VISIBLE) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_WEB_PORT, (const byte *) &DEFAULT_WEB_PORT, INTEGER_LENGTH) ) {
-        return false;
-    }
-    if (!CONFIG::write_buffer (EP_DATA_PORT, (const byte *) &DEFAULT_DATA_PORT, INTEGER_LENGTH) ) {
-        return false;
-    }
+    if (!CONFIG::write_byte (EP_WIFI_MODE, DEFAULT_WIFI_MODE) ) {return false;}
+    if (!CONFIG::write_buffer (EP_BAUD_RATE, (const byte *) &DEFAULT_BAUD_RATE, INTEGER_LENGTH) ) {return false;}
+    if (!CONFIG::write_string (EP_AP_SSID, FPSTR (DEFAULT_AP_SSID) ) ) {return false;}
+    if (!CONFIG::write_string (EP_AP_PASSWORD, FPSTR (DEFAULT_AP_PASSWORD) ) ) {return false;}
+    if (!CONFIG::write_string (EP_STA_SSID, FPSTR (DEFAULT_STA_SSID) ) ) {return false;}
+    if (!CONFIG::write_string (EP_STA_PASSWORD, FPSTR (DEFAULT_STA_PASSWORD) ) ) {return false;}
+    if (!CONFIG::write_byte (EP_AP_IP_MODE, DEFAULT_AP_IP_MODE) ) {return false;}
+    if (!CONFIG::write_byte (EP_STA_IP_MODE, DEFAULT_STA_IP_MODE) ) {return false;}
+    if (!CONFIG::write_buffer (EP_STA_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_STA_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_STA_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_byte (EP_STA_PHY_MODE, DEFAULT_PHY_MODE) ) {return false;}
+    if (!CONFIG::write_buffer (EP_AP_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_AP_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_AP_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_byte (EP_AP_PHY_MODE, DEFAULT_PHY_MODE) ) {return false;}
+    if (!CONFIG::write_byte (EP_SLEEP_MODE, DEFAULT_SLEEP_MODE) ) {return false;}
+    if (!CONFIG::write_byte (EP_CHANNEL, DEFAULT_CHANNEL) ) {return false;}
+    if (!CONFIG::write_byte (EP_AUTH_TYPE, DEFAULT_AUTH_TYPE) ) {return false;}
+    if (!CONFIG::write_byte (EP_SSID_VISIBLE, DEFAULT_SSID_VISIBLE) ) {return false;}
+    if (!CONFIG::write_buffer (EP_WEB_PORT, (const byte *) &DEFAULT_WEB_PORT, INTEGER_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_DATA_PORT, (const byte *) &DEFAULT_DATA_PORT, INTEGER_LENGTH) ) {return false;}
+    if (!CONFIG::write_string (EP_HOSTNAME, wifi_config.get_default_hostname() ) ) {return false;}
+    if (!CONFIG::write_string (EP_ADMIN_PWD, FPSTR (DEFAULT_ADMIN_PWD) ) ) {return false;}
+    if (!CONFIG::write_string (EP_USER_PWD, FPSTR (DEFAULT_USER_PWD) ) ) {return false;}
+    if (!CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ) {return false;}
+    #ifdef PLC_MASTER_UI
+    if (!CONFIG::write_buffer (EP_MODBUS_IP_VALUE, DEFAULT_IP_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_MODBUS_MASK_VALUE, DEFAULT_MASK_VALUE, IP_LENGTH) ) {return false;}
+    if (!CONFIG::write_buffer (EP_MODBUS_GATEWAY_VALUE, DEFAULT_GATEWAY_VALUE, IP_LENGTH) ) {return false;}
 
-    if (!CONFIG::write_string (EP_HOSTNAME, wifi_config.get_default_hostname() ) ) {
-        return false;
-    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE , DEFAULT_ROLE))  { return false;}
+    
+    if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {return false;}
 
-    if (!CONFIG::write_string (EP_ADMIN_PWD, FPSTR (DEFAULT_ADMIN_PWD) ) ) {
-        return false;
-    }
-    if (!CONFIG::write_string (EP_USER_PWD, FPSTR (DEFAULT_USER_PWD) ) ) {
-        return false;
-    }
-
-    if (!CONFIG::write_byte (EP_TARGET_FW, LOOKLINE) ) {
-        return false;
-    }
-#if defined(LOOKLINE_UI)
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN, DEFAULT_PLAN) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PLAN_SET, DEFAULT_PLANSET) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT, DEFAULT_RESULT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_RESULT_SET, DEFAULT_RESULTSET) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PLANMAX, DEFAULT_PLANLIMIT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIME_PLAN, DEFAULT_TIMEPLAN) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT, DEFAULT_TIMESENT) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_PCS, DEFAULT_PCS) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE, DEFAULT_AMOUNTNODE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ID, DEFAULT_BOARDID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_NETID, DEFAULT_NETID) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_CHANELS, DEFAULT_CHANEL) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_ROLE, DEFAULT_ROLE) ) {
-        return false;
-    }
-    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE, DEFAULT_MODULETYPE) ) {
-        return false;
-    }
-
-#endif//LOOKLINE_UI
+    if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {return false;}
+#endif//PLC_MASTER_UI
 #if defined(TIMESTAMP_FEATURE)
     if (!CONFIG::write_byte (EP_TIMEZONE, DEFAULT_TIME_ZONE) ) {
         return false;
@@ -994,6 +1127,24 @@ bool CONFIG::reset_config()
     }
 
     if (!CONFIG::write_string (EP_TIME_SERVER3, FPSTR (DEFAULT_TIME_SERVER3) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_MQTT_BROKER, FPSTR (DEFAULT_MQTT_BROKER) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_MQTT_PORT, FPSTR (DEFAULT_MQTT_PORT) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_MQTT_USER, FPSTR (DEFAULT_MQTT_USER) ) ) {
+        return false;
+    }
+    if (!CONFIG::write_string (EP_MQTT_PASS, FPSTR (DEFAULT_MQTT_PASS) ) ) {
         return false;
     }
 #endif
@@ -1018,6 +1169,56 @@ bool CONFIG::reset_config()
 #ifdef LOOKLINE_UI
 
 
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN,(const byte *) &DEFAULT_PLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PLAN_SET,(const byte *) &DEFAULT_PLANSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT,(const byte *) &DEFAULT_RESULT, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_RESULT_SET ,(const byte *) &DEFAULT_RESULTSET, INTEGER_LENGTH) ) {
+        return false;
+    }
+
+
+    if (!CONFIG::write_buffer (EP_EEPROM_PLANMAX ,(const byte *) &DEFAULT_PLANLIMIT, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_PCS ,(const byte *) &DEFAULT_PCS, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_TIME_PLAN ,(const byte *) &DEFAULT_TIMEPLAN, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_buffer (EP_EEPROM_COUNTER_DELAY ,(const byte *) &DEFAULT_COUNTER_DELAY, INTEGER_LENGTH) ) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ROLE , DEFAULT_ROLE))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_AMOUNTNODE , DEFAULT_AMOUNTNODE)) {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_TIMESENT , DEFAULT_TIMESENT))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_ID , DEFAULT_BOARDID))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_NETID , DEFAULT_NETID))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_CHANELS , DEFAULT_CHANEL))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_COM_MODE , DEFAULT_COMMODE))  {
+        return false;
+    }
+    if (!CONFIG::write_byte (EP_EEPROM_MODULE_TYPE , DEFAULT_MODULETYPE))  {
+        return false;
+    }
 
     if (!CONFIG::write_string (EP_EEPROM_URL_FW, FPSTR (DEFAULT_FIRMWARE_HOST) ) ) {
         return false;
@@ -1026,6 +1227,7 @@ bool CONFIG::reset_config()
     if (!CONFIG::write_string (EP_EEPROM_URL_VER, FPSTR (DEFAULT_FW_VERSION_HOST) ) ) {
         return false;
     }
+    
 #endif//LOOKLINE_UI
 #ifdef NOTIFICATION_FEATURE
     if (!CONFIG::write_byte (ESP_NOTIFICATION_TYPE, DEFAULT_NOTIFICATION_TYPE) ) {
@@ -1047,6 +1249,8 @@ bool CONFIG::reset_config()
 
     return set_EEPROM_version(EEPROM_CURRENT_VERSION);
 }
+
+
 
 void CONFIG::print_config (tpipe output, bool plaintext, ESPResponseStream  *espresponse)
 {

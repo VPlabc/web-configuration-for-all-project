@@ -60,6 +60,10 @@
 //ButtonUpdateFw
 #define USE 1
 
+#define MESHWIFI 0
+#define MQTT     1
+#define RS485    2
+
 class IoT_Device
 {
 public:
@@ -71,6 +75,7 @@ byte LEDType = 0;
 byte RunMode = 0;
 byte Debug = 0;
 byte ROLE = 0;
+byte COMMODE = 0;
 byte current_status = 0;      // 0=offline , 1=online    ,2=OTA
 void setup();
 void loop();

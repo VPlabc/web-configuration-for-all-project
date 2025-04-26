@@ -48,11 +48,11 @@ WiFiClient            wifiClient;
   // int LEDStatus = IOT_DEVICE.LEDButton
   // #endif//Moto_UI
 
-#define   PRGM_VERSION         "2.0.3"
+// #define   PRGM_VERSION         "14.9.9.1"
 /* this info will be read by the python script */
 String hosts = "https://raw.githubusercontent.com/";
-String URL_fw_Bin = "VPlabc/AutoIT/main/firmware.bin";
-String URL_fw_Version = "VPlabc/AutoIT/main/version.txt";
+String URL_fw_Bin = "VPlabc/web-configuration-for-all-project/main/.pioenvs/esp32cam/firmware.bin";
+String URL_fw_Version = "VPlabc/web-configuration-for-all-project/main/.pioenvs/esp32cam/version.txt";
 const char* host = "raw.githubusercontent.com";
 const int httpsPort = 443;
 /* end of script data */
@@ -127,27 +127,31 @@ const long interval = 10000;
 const long mini_interval = 1000;
 void FirmwareUpdate();
 bool UDFOnce = true;
+bool UDFOnce1 = true;
 byte UFWDebug = 0;
+byte counters = 0;
 void setClock() {
   if(UDFOnce){UDFOnce = false;
+#ifdef LOOKLINE_UI
     if(CONFIG::read_byte (EP_EEPROM_DEBUG, &UFWDebug)){
     LOGLN("UDF Debug:" + String((UFWDebug==0)?"Not Debug":"Debug"));
     }
+#endif// LOOKLINE_UI
   }
    // Set time via NTP, as required for x.509 validation
   configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
   time_t now = time(nullptr);
   LOG("Waiting for NTP time sync: ");LOG(String(now) + "\n");
-  while (now < 8 * 3600 * 2) {
+  while (now < 8 * 3600 * 2 && UDFOnce1 == 1) {
     delay(500);
-    LOG(".");
+    LOG(".");counters++;if(counters > 20){UDFOnce1 = false;}
     now = time(nullptr);
   }
 }
 bool FWonce = true; //
  void UpdateFW::repeatedCall(){
   
-  if(FWonce){LOG("Check FW Working...\n");FWonce = false;LookLine_prog.DebugOut("Check FW Working...\n", OUPUT);}
+  if(FWonce){LOG("Check FW Working...\n");FWonce = false;}
      unsigned long currentMillis = millis();
     if ((currentMillis - FW_previousMillis) >= interval) 
      {
@@ -267,6 +271,12 @@ void UpdateFW::FirmwareUpdate()
   #ifdef IOTDEVICE_UI
   httpUpdate.setLedPin(IOT_DEVICE_FW.LEDButton, LOW);
   #endif//Moto_UI
+  #ifdef LOOKLINE_UI
+    CONFIG::read_string(EP_EEPROM_URL_FW,URL_fw_Bin, MAX_URL_FW_LENGTH );
+  #endif//LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+    CONFIG::read_string(EP_EEPROM_URL_FW,URL_fw_Bin, MAX_URL_FW_LENGTH );
+  #endif// LOOKLINE_UI
   t_httpUpdate_return ret = httpUpdate.update(client, hosts+URL_fw_Bin);
 
   switch (ret) {
@@ -275,6 +285,9 @@ void UpdateFW::FirmwareUpdate()
       if(UFWDebug)Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
     #endif//#ifdef IOTDEVICE_UI
     
+    #ifdef PLC_MASTER_UI
+      LOGLN("Update Faild!!\n");
+    #endif// PLC_MASTER_UI
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("Update Faild!!\n", OUPUT);
     #endif// LOOKLINE_UI
@@ -290,6 +303,9 @@ void UpdateFW::FirmwareUpdate()
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("No Update!!\n", OUPUT);
     #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("No Update!!\n");
+    #endif// PLC_MASTER_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("No Update!!");
       #endif//ESP_OLED_FEATURE
@@ -301,6 +317,9 @@ void UpdateFW::FirmwareUpdate()
     #endif//#ifdef IOTDEVICE_UI
     #ifdef LOOKLINE_UI
       LookLine_prog.DebugOut("Update OK!!\n", OUPUT);
+    #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("Update OK!!\n");
     #endif// LOOKLINE_UI
       #ifdef ESP_OLED_FEATURE
       FWUPD.ShowMess("Update OK!!");
@@ -320,8 +339,14 @@ void UpdateFW::FirmwareUpdate()
 #ifndef ARDUINO_ARCH_ESP8266
  byte UpdateFW::FirmwareVersionCheck(void) {
   String payload;
-  int HttpCode;
+  int HttpCodes;
   String fwurl = "";
+  #ifdef LOOKLINE_UI
+    CONFIG::read_string(EP_EEPROM_URL_VER,URL_fw_Version, MAX_URL_VER_LENGTH );
+  #endif// LOOKLINE_UI
+  #ifdef PLC_MASTER_UI
+    CONFIG::read_string(EP_EEPROM_URL_VER,URL_fw_Version, MAX_URL_VER_LENGTH );
+  #endif// LOOKLINE_UI
   fwurl += hosts+URL_fw_Version;
   fwurl += "?";
   fwurl += String(rand());
@@ -344,29 +369,36 @@ void UpdateFW::FirmwareUpdate()
       #endif//#ifdef IOTDEVICE_UI
       // start connection and send HTTP header
       delay(100);
-      HttpCode = https.GET();
+      HttpCodes = https.GET();
       delay(100);
-      if (HttpCode == HTTP_CODE_OK) // if version received
+      if (HttpCodes == HTTP_CODE_OK) // if version received
       {
         payload = https.getString(); // save received version
       } else {
         #ifdef IOTDEVICE_UI
         if(UFWDebug)Serial.print("error in downloading version file:");
-        if(UFWDebug)Serial.println(HttpCode);
+        if(UFWDebug)Serial.println(HttpCodes);
         #endif//#ifdef IOTDEVICE_UI
     #ifdef LOOKLINE_UI
-      LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCode) + "\n", OUPUT);
+      LookLine_prog.DebugOut("error in downloading version file:" + String(HttpCodes) + "\n", OUPUT);
     #endif// LOOKLINE_UI
+    #ifdef PLC_MASTER_UI
+      LOGLN("error in downloading version file:" + String(HttpCodes) + "\n");
+    #endif// PLC_MASTER_UI
       }
       https.end();
     }
     delete client;
   }
       
-  if (HttpCode == HTTP_CODE_OK) // if version received
+  if (HttpCodes == HTTP_CODE_OK) // if version received
   {
     payload.trim();
     if (payload.equals(FirmwareVer)) {
+      
+      #ifdef PLC_MASTER_UI
+      LOGLN("Firmware detected ver:" + String(payload));
+      #endif//#ifdef PLC_MASTER_UI   
       #ifdef LOOKLINE_UI
       LOGLN("Firmware detected ver:" + String(payload));
       #endif//#ifdef LOOKLINE_UI    
@@ -381,6 +413,9 @@ void UpdateFW::FirmwareUpdate()
     else 
     {
       
+      #ifdef PLC_MASTER_UI
+      LOGLN("New firmware detected ver:" + String(payload));
+      #endif//#ifdef PLC_MASTER_UI 
       #ifdef LOOKLINE_UI
       LOGLN("New firmware detected ver:" + String(payload));
       #endif//#ifdef LOOKLINE_UI      

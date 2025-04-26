@@ -127,10 +127,10 @@ void OLEDDisplayUi::setIndicatorPosition(IndicatorPosition pos) {
 void OLEDDisplayUi::setIndicatorDirection(IndicatorDirection dir) {
   this->indicatorDirection = dir;
 }
-void OLEDDisplayUi::setActiveSymbol(const uint8_t* symbol) {
+void OLEDDisplayUi::setActiveSymbol(const byte* symbol) {
   this->activeSymbol = symbol;
 }
-void OLEDDisplayUi::setInactiveSymbol(const uint8_t* symbol) {
+void OLEDDisplayUi::setInactiveSymbol(const byte* symbol) {
   this->inactiveSymbol = symbol;
 }
 

@@ -24,6 +24,9 @@
     Main author: luc lebosse
 
 */
+// #define LOOKLINE_UI
+
+
 #include <Arduino.h>
 #include "WIC.h"
 #include <EEPROM.h>
@@ -73,6 +76,7 @@ UpdateFW MainUDFW;
 #include <DNSServer.h>
 extern DNSServer dnsServer;
 #endif
+
 
 #ifndef FS_NO_GLOBALS
 #define FS_NO_GLOBALS
@@ -143,11 +147,16 @@ Auto_Device AutoitGW;
 #include "LookLine/LookLine.h"
 LOOKLINE_PROG lookline_prog;
 #endif // LOOKLINE_UI
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER PLC_MASTER_Prog;
+#endif // PLC_MASTER_UI
 // Contructor
 CONFIG conf;
+  bool SetupDone = false;
 
 byte RunMode = 0;
-
+bool looklineDebug = true;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef TIMER_INTER_FEATURES
 ////////////////////////////////////////// TIMER INTERUPT ///////////////////////////////////
@@ -163,17 +172,28 @@ void IRAM_ATTR onTimer() {
 }
 #endif// TIMER_INTER_FEATURES
 
+TaskHandle_t Task1;
+TaskHandle_t Task2;
+TaskHandle_t Task3;
+// TaskHandle_t Task3;
+
+#include "Tsk1.h"
+#include "Tsk2.h"
+#include "Tsk3.h"
+
 WIC::WIC()
 {
 }
 
+bool WIC::GetSetup(){ return SetupDone;}
+void WIC::SetSetup(bool state){  SetupDone = state;}
 // Begin which setup everything
 void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 {
 #ifdef TIMER_INTER_FEATURES
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 100000, true);
+  timerAlarmWrite(timer, 10, true);
   timerAlarmEnable(timer);
 #endif//TIMER_INTER
 #ifdef Moto_UI
@@ -200,16 +220,15 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
         {
             LOG("RF Mode: Wifi\n");
 #endif // MESHCOM_UI
-
             Auto = true;
             // init:
             WiFi.disconnect();
             WiFi.mode(WIFI_OFF);
             // check EEPROM Version
 #if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
-            CONFIG::InitBaudrate(DEFAULT_BAUD_RATE);
+            CONFIG::InitBaudrate(9600);
             delay(2000);
-            LOG("\r\nDebug Serial set\r\n")
+            if(looklineDebug)LOG("\r\nDebug Serial set\r\n")
 #endif
             CONFIG::adjust_EEPROM_settings();
             CONFIG::InitOutput();
@@ -246,9 +265,12 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #endif // Moto_UI
 #else
     delay(startdelayms);
-#endif
+#endif//ESP_OLED_FEATURE
             CONFIG::InitDirectSD();
             CONFIG::InitPins();
+            #ifdef MCP_USE 
+            CONFIG::Init_MCP(0); 
+            #endif//MCP_USE
 #ifdef RECOVERY_FEATURE
             delay(recoverydelayms);
             // check if reset config is requested
@@ -290,7 +312,7 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                 CONFIG::esp_restart();
             } // if (breset_config) {
 #if defined(DEBUG_WIC) && defined(DEBUG_OUTPUT_SERIAL)
-            LOG("\r\n");
+            if(looklineDebug)LOG("\r\n");
             delay(500);
             ESPCOM::flush(DEFAULT_PRINTER_PIPE);
 #endif
@@ -320,25 +342,49 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
                     file.close();
                 }
             }
-
+            
+            CONFIG::init_Network_config();
+    byte ID;
+    CONFIG::read_byte (EP_EEPROM_ID, &ID);
+    if(ID == 255){CONFIG::write_byte (EP_EEPROM_ID, IDfix);}
+#ifdef LOOKLINE_UI
+byte wifiMode = 0;
+CONFIG::read_byte(EP_EEPROM_COM_MODE, &RunMode);
+CONFIG::read_byte(EP_WIFI_MODE, &wifiMode);
+// RunMode = MESH;
+// if(RunMode != MESH){
+#endif// lookline_ui
+#ifdef PLC_MASTER_UI
+CONFIG::read_byte(EP_WIFI_MODE, &RunMode);
+LOGLN("Wifi Mode: " + String(RunMode));
+#ifdef DataLog
+RunMode = 2;
+#endif//Datalog
+if(RunMode == 2){
+    byte Retry = 3;
+    while(Retry > 0 && WiFi.status() != WL_CONNECTED){Retry--;wifi_config.Setup(false, LED_STATUS, 1);if(WiFi.status() == WL_CONNECTED)break;}
+#endif//PLC_MASTER_UI
             // setup wifi according settings
-            if (!wifi_config.Setup())
+// wifi_config.Setup(true, LED_STATUS, 1);
+#ifdef LOOKLINE_UI
+            if (wifiMode == 2)//2 station mode // 1 AP mode
             {
-#ifdef ESP3D_UI
-                OLED_DISPLAY::setCursor(0, 11);
-                ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
-#endif // Moto
+                wifi_config.Setup(false, LED_STATUS, 1);
+// #ifdef ESP3D_UI
+//                 OLED_DISPLAY::setCursor(0, 11);
+// #endif // Moto
        // try again in AP mode
-                LOG("Safe mode 1");
-                if (!wifi_config.Setup(true))
-                {
-#ifdef ESP3D_UI
-                    ESPCOM::println(F("Safe mode 2"), PRINTER_PIPE);
-                    wifi_config.Safe_Setup();
-#endif //
-                    LOG("Safe mode 2");
-                }
-            }
+                if(looklineDebug)ESPCOM::println(F("Safe mode 1"), PRINTER_PIPE);
+                    // LOGLN("Safe mode 1");
+            // }
+#endif// lookline_ui
+        #ifdef LOOKLINE_UI
+        }else{if (!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        #endif// lookline_ui
+        #ifdef PLC_MASTER_UI
+        if(!wifi_config.Setup(false, LED_STATUS, 1)){ if(!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}}
+        else{if(!wifi_config.Setup(true, LED_STATUS, 1)){wifi_config.Safe_Setup();}}
+        #endif//PLC_MASTER_UI
             delay(100);
             // setup servers
             if (!wifi_config.Enable_servers())
@@ -376,7 +422,9 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
             //         OLED_DISPLAY::setCursor(0, 0);
             //         ESPCOM::print(WiFi.localIP().toString().c_str(), OLED_PIPE);
             // #endif//#ifdef ESP_OLED_FEATURE
-
+#if defined(TIMESTAMP_FEATURE)
+CONFIG::init_time_client();
+#endif
 #ifdef Valve_UI
             valves.valve_setup();
 // time_t nows = time(nullptr);
@@ -412,7 +460,8 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
 #ifdef Moto_UI
     }
 #endif // if(stateS == 1){
-    LOG("Setup Done\r\n");
+    if(looklineDebug) ESPCOM::println(F("Setup Done"), PRINTER_PIPE);
+    // LOG("Setup Done\r\n");
 #ifdef AUTOITGW_UI
     AutoitGW.setup();
     LOG("AutoIT Setup\r\n");
@@ -421,12 +470,54 @@ void WIC::begin(uint16_t startdelayms, uint16_t recoverydelayms)
     IOT_DEVICE.setup();
     IOT_DEVICE.MeshBegin();
     LOG("IoT Device Setup\r\n");
-#endif // IOTDEVICE_UI
-#ifdef LOOKLINE_UI
-    lookline_prog.setup();
-#endif // LOOKLINE_UI
+
     CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
     if(RunMode >= 2){CONFIG::write_byte(EP_EEPROM_WIFI_MODE, WIFIMODE);}
+#endif // IOTDEVICE_UI
+#ifdef LOOKLINE_UI
+    lookline_prog.setup();   
+#endif // LOOKLINE_UI
+
+#ifdef PLC_MASTER_UI
+PLC_MASTER_Prog.setup();
+#endif//PLC_MASTER_UI
+
+//------------------------------------------------------------------------
+  //Task1 :
+  xTaskCreatePinnedToCore(
+    Task1code,   /* Task function. */
+    "Task1",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task1,      /* Task handle to keep track of created task */
+    0);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  //Task2 :
+  xTaskCreatePinnedToCore(
+    Task2code,   /* Task function. */
+    "Task2",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task2,      /* Task handle to keep track of created task */
+    1);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  //Task3 :
+  xTaskCreatePinnedToCore(
+    Task3code,   /* Task function. */
+    "Task3",     /* name of task. */
+    10000,       /* Stack size of task */
+    NULL,        /* parameter of the task */
+    1,           /* priority of the task*/
+    &Task3,      /* Task handle to keep track of created task */
+    1);          /* pin task to core x */
+  delay(500);
+  //------------------------------------------------------------------------
+  SetupDone = true;
+  
 }
 
 bool onece = true;
@@ -434,18 +525,17 @@ bool onece1 = true;
 bool onece2 = true;
 bool CheckFWonce = false;
 byte resent = 0;
+bool Init_UI = false;
 
 #ifdef LOOKLINE_UI
-void WIC::checkFW(){
-    CheckFWonce = true;LOGLN("CheckFW");
-}
-void WIC::OnceCheckFW(){
-    CheckFWonce = true;LOGLN("CheckFW Once");
+// void WIC::Set_Init_UI(String auths){LOGLN("Set_Init_UI " + auths);socket_server->broadcastTXT(auths);}
+
+void WIC::SetDebug(bool state){
+    looklineDebug = state;//LOGLN("looklineDebug " + String(state));
 }
 #endif// LOOKLINE_UI
 // Process which handle all input
-void WIC::process()
-{
+void WIC::process(){
 #ifdef Moto_UI
     if (ModeRun == 1)
     {
@@ -479,7 +569,6 @@ void WIC::process()
         else
         {
 #endif // MESHCOM_UI
-
 #ifdef Gyro_UI
 #ifdef FC_Gyro
             GyroWifiOn = true;
@@ -487,11 +576,9 @@ void WIC::process()
             if (GyroWifiOn)
             {
 #endif // Gyro_UI
-
 #ifdef AUTOITGW_UI
                 AutoitGW.loop();
 #endif // AUTOITGW_UI
-
 #ifdef IOTDEVICE_UI
                 IOT_DEVICE.loop();
 // if(IOT_DEVICE.RunMode == WWIFIMODE){
@@ -504,7 +591,6 @@ void WIC::process()
 // }
 // else{
 #endif // IOTDEVICE_UI
-
 #ifdef ARDUINO_ARCH_ESP8266
 #ifdef MDNS_FEATURE
                 wifi_config.mdns.update();
@@ -517,57 +603,29 @@ void WIC::process()
 #endif // MESHCOM_UI
 #ifdef LOOKLINE_UI
                 lookline_prog.loop();
-                CONFIG::read_byte(EP_EEPROM_WIFI_MODE, &RunMode);
-                if (RunMode > 2 || RunMode <= 0){
-                    RunMode = 1;
-                    CONFIG::write_byte(EP_EEPROM_WIFI_MODE, 1);
-                }
                 // LOGLN("RunMode:" + String(RunMode));
-                if (RunMode == WIFIMODE){
-                    if (onece1)
-                    {
-                        onece1 = false;
-                        LOG("\nWifi Server Working...\n");
-                    }
+                //  if (RunMode != MESH){
+                    // if (onece1){onece1 = false;ESPCOM::println(F("Wifi Server Working..."), PRINTER_PIPE);}
 #endif // LOOKLINE_UI
 #ifdef IOTDEVICE_UI
+
                     // if(onece){onece = false;LOG("\nRun Mode:"+String(IOT_DEVICE.RunMode)+"\n");}
-                    if (RunMode == WIFIMODE)
-                    {
-                        if (onece1)
-                        {
-                            onece1 = false;
-                            LOG("\nWifi Server Working...\n");
-                        }
+                    if (RunMode == WIFIMODE){
+                        if (onece1){onece1 = false;LOG("\nWifi Server Working...\n");}
 #endif // IOTDEVICE_UI
 #ifdef AUTOITGW_UI
                         // if(onece){onece = false;LOG("\nRun Mode:"+String(IOT_DEVICE.RunMode)+"\n");}
-                        if (onece1)
-                        {
-                            onece1 = false;
-                            LOG("\nWifi Server Working...\n");
-                        }
+                        if (onece1){onece1 = false;LOG("\nWifi Server Working...\n");}
+                    if (onece1){onece1 = false;LOG("\nWifi Server Working...\n");}
 #endif // AUTOITGW_UI
-                        web_interface->web_server.handleClient();
-                        socket_server->loop();
+                    // if (onece1){onece1 = false;ESPCOM::println(F("Wifi Server Working..."), PRINTER_PIPE);}
+                        // web_interface->web_server.handleClient();
+                        // socket_server->loop();
 #ifdef IOTDEVICE_UI
                     } // if(IOT_DEVICE.RunMode == WIFIMODE)
 #endif                // IOTDEVICE_UI
 #ifdef LOOKLINE_UI
- ///////////////////////////////////////////////////////////////////////////////////
-  #ifdef TIMER_INTER_FEATURES
-    if (interruptCounter > 0) {
-    lookline_prog.TimerPlanInc();
-    
-    //for(byte node = 0 ; node < 100 ; node++){Data[3][node]++;}
-    // if(ComMode == MQTT){countermqtt++;if(countermqtt > 50){countermqtt = 55;}}
-
-    portENTER_CRITICAL_ISR(&timerMux);
-    interruptCounter--;
-    portEXIT_CRITICAL_ISR(&timerMux);
-  }
-  #endif//#ifdef TIMER_INTER_FEATURES
-                }
+                //  }// if (RunMode == MESH){
 #endif // LOOKLINE_UI
 #ifdef MESHCOM_UI
 #endif // MESHCOM_UI
@@ -578,43 +636,31 @@ void WIC::process()
                 if (meshcom.WiFi_on == 1)
                 {
 #endif // MESHCOM_UI
-                    if (WiFi.getMode() != WIFI_OFF)
-                    {
+                    if (WiFi.getMode() != WIFI_OFF){
 #ifdef CAPTIVE_PORTAL_FEATURE
-                        if (WiFi.getMode() != WIFI_STA || WiFi.getMode() == WIFI_AP_STA)
+                        if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
                         {
-                            dnsServer.processNextRequest();
+                            // dnsServer.processNextRequest();
 #ifdef Switch_UI
-                            if (onece1)
-                            {
-                                onece1 = false;
-                                LOG("\nWifi Portal Working...\n");
-                            }
+                            if (onece2){onece2 = false;LOG("\nWifi Portal Working...\n");}
 #endif // Switch_UI Auto_Device
 #ifdef IOTDEVICE_UI
-                            if (onece2)
-                            {
-                                onece2 = false;
-                                LOG("\nWifi Portal Working...\n");
-                            }
+                            if (onece2){onece2 = false;LOG("\nWifi Portal Working...\n");}
 #endif // IOTDEVICE_UI
 #ifdef AUTOITGW_UI
-                            if (onece2)
-                            {
-                                onece2 = false;
-                                LOG("\nWifi Portal Working...\n");
-                            }
+                            if (onece2){onece2 = false;LOG("\nWifi Portal Working...\n");}
 #endif // AUTOITGW_UI
-if (onece1)
-                            {
-                                onece1 = false;
-                                LOG("\nWifi Portal Working...\n");
-                            }
-                        }
+    
+                            // if (onece2){onece2 = false;ESPCOM::println(F("Wifi Portal Working..."), PRINTER_PIPE);}
+                            // static unsigned long previousMillis = 0;
+                            // static unsigned long count = 0;
+                            // if (millis() - previousMillis >= 300 ) {digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));previousMillis = millis();}
+                            
+                        }//if (WiFi.getMode() == WIFI_AP || WiFi.getMode() == WIFI_AP_STA)
 #endif
                         // TODO use config
                         CONFIG::wait(0);
-                    }
+                    }//if (WiFi.getMode() != WIFI_OFF)
 
                     // read / bridge all input
                     ESPCOM::bridge();
@@ -628,10 +674,12 @@ if (onece1)
 #endif // if(stateS == 1){
 #ifdef MESHCOM_UI
             } // if(meshcom.getMode() == 1){
-#endif        // MESHCOM_UI
+#endif // MESHCOM_UI
 #ifdef Gyro_UI
         } // GyroWifiOn
 #endif    // Gyro_UI
+
+// delay(10);
 
 #ifdef ESP_OLED_FEATURE
         static uint32_t last_oled_update = 0;
@@ -704,21 +752,37 @@ if (onece1)
             }
         }
 #endif
+//////////////////////////////////////////////////////////////// loop 5S
+// if(lookline_prog.GetConfigState()==0){
+            /// @brief //// Loop 5 Seconds
+            static uint32_t last_Loop5S_update = 0;
+            uint32_t now_fw = millis();
+            if (now_fw - last_Loop5S_update > (5 * 1000))
+            {   last_Loop5S_update = now_fw;
+                // if(looklineDebug)LOGLN(".");
+#ifdef Switch_UI
+                light.LoadData();       
+#ifdef ServerUpdateFW
+                fwCheck = false;
+#ifdef ARDUINO_ARCH_ESP8266
+                CheckFWloop();
+#else  // ESP32
+                CheckFWloop();
+#endif // ARDUINO_ARCH_
+#endif // ServerUpdateFW
+                LOG(String(light.hours) + ":" + String(light.mins) + "| Lock " + String(light.locks));
+                // Debug_Ser.println(" brightness: " + String(brightness));
+#endif // Switch_UI
+            }//if (now_fw - last_Loop5S_update > (5 * 1000))
+//////////////////////////////////////////////////////////////// loop 5S
 
+// }
 #ifdef DHT_FEATURE
-        if (CONFIG::DHT_type != 255)
-        {
+        if (CONFIG::DHT_type != 255){
             static uint32_t last_dht_update = 0;
             uint32_t now_dht = millis();
-            if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000))
-            {
-                if(CheckFWonce){resent++;if(resent > 30)CheckFWonce = false;
-                    // if(MainUDFW.FirmwareVersionCheck() == 0){
-                        String s = "STATUS: New version";
-                        // LOGLN(s);
-                        socket_server->broadcastTXT(s);
-                    // }
-                }
+            if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000)){
+        
                 last_dht_update = now_dht;
                 float humidity = dht.getHumidity();
                 float temperature = dht.getTemperature();
@@ -741,21 +805,9 @@ if (onece1)
                     }
 #endif
                 }
-#ifdef Switch_UI
-                light.LoadData();
-#ifdef ServerUpdateFW
-                fwCheck = false;
-#ifdef ARDUINO_ARCH_ESP8266
-                CheckFWloop();
-#else  // ESP32
-                CheckFWloop();
-#endif // ARDUINO_ARCH_
-#endif // ServerUpdateFW
-                LOG(String(light.hours) + ":" + String(light.mins) + "| Lock " + String(light.locks));
-                // Debug_Ser.println(" brightness: " + String(brightness));
-#endif // Switch_UI
-            }
-        }
+
+            }//if (now_dht - last_dht_update > (CONFIG::DHT_interval * 1000))
+        }//if (CONFIG::DHT_type != 255)
 #endif
 #ifdef Valve_UI
         valves.valve_loop();
@@ -821,15 +873,31 @@ if (onece1)
 #endif // Gyro_UI
 
 // todo use config
-// CONFIG::wait(0);
+CONFIG::wait(0);
 #ifdef MESHCOM_UI
     }
 #endif // MESHCOM_UI
 #ifdef IOTDEVICE_UI
 // }
 #endif // #ifdef IOTDEVICE_UI
-}
 
-#ifdef ServerUpdateFW
+////////////////////////////////////////////////////////// TIMER ///////////////////
+#ifdef TIMER_INTER_FEATURES
+    if (interruptCounter > 0) {
+        // LOG("| TIMER_INTER_FEATURES |");
+    // lookline_prog.TimerPlanInc();
+        // LOGLN("| ");
+    // static int countTimer = 0;countTimer++;if(countTimer > 1){countTimer = 0;LOGLN("one second");}
+    //for(byte node = 0 ; node < 100 ; node++){Data[3][node]++;}
+    // if(ComMode == MQTT){countermqtt++;if(countermqtt > 50){countermqtt = 55;}}
 
-#endif // ServerUpdateFW
+    portENTER_CRITICAL_ISR(&timerMux);
+    interruptCounter--;
+    portEXIT_CRITICAL_ISR(&timerMux);
+  }
+#endif//#ifdef TIMER_INTER_FEATURES
+///////////////////////////////////////////////////////////////////////////////////
+// digitalWrite(LED_STATUS, !digitalRead(LED_STATUS));
+}//void WIC::process()
+
+

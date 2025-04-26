@@ -1,0 +1,6 @@
+<<<<<<< HEAD
+cd Websource/index/PLC_master 
+=======
+cd Websource/PLC_master 
+>>>>>>> a1491b2e113991920e1483de802e9bbea02b86ed
+tar -czvf index.html.gz index.html

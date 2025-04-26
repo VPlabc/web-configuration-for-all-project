@@ -71,7 +71,10 @@ WIC W;
 #include "nofile.h"
 #include "syncwebserver.h"
 WebSocketsServer * socket_server;
-
+#ifdef PLC_MASTER_UI
+#include "PLC_IoT/PLC_Master.h"
+PLC_MASTER webPLC;
+#endif//PLC_MASTER_UI
 #ifdef Switch_UI
 #include "LightTimer/LightTimer.h"
 LightTimer lights;
@@ -154,6 +157,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
     }
     break;
     case WStype_TEXT:
+    #ifdef PLC_MASTER_UI
+    webPLC.SocketRecive(payload);
+    #endif//PLC_MASTER_UI
 #ifdef Switch_UI    
             lights.reciverDataFromWeb(payload);
 #endif//Switch_UI
@@ -193,6 +199,7 @@ const uint8_t PAGE_CAPTIVE [] PROGMEM = "<HTML>\n<HEAD>\n<title>Captive Portal</
 
 void handle_web_interface_root()
 {
+    
     String path = "/index.html";
     String contentType =  web_interface->getContentType(path);
     String pathWithGz = path + ".gz";
@@ -1100,15 +1107,16 @@ void handleSDCardFileList()
     }
     file = root.openNextFile();
   }
+  
     jsonfile+="],";
     jsonfile+="\"path\":\"" + path + "\",";
     jsonfile+="\"status\":\"" + Status + "\",";
     size_t totalBytes;
     size_t usedBytes;
-    totalBytes = SD.totalBytes();
-    usedBytes = SD.usedBytes();
-    jsonfile+="\"total\":\"" + CONFIG::formatBytes(totalBytes) + "\",";
-    jsonfile+="\"used\":\"" + CONFIG::formatBytes(usedBytes) + "\",";
+    totalBytes = SD.totalBytes() / (1024 * 1024);
+    usedBytes = SD.usedBytes() / (1024 * 1024);
+    jsonfile+="\"total\":\"" + String(totalBytes) + "\",";
+    jsonfile+="\"used\":\"" + String(usedBytes) + "\",";
     jsonfile.concat(F("\"occupation\":\""));
     jsonfile+= CONFIG::intTostr(100*usedBytes/totalBytes);
     jsonfile+="\"";
@@ -1370,6 +1378,10 @@ String webpage = "";
 #ifdef WEB_UPDATE_FEATURE
 void WebUpdateUpload()
 {
+    #ifdef PLC_MASTER_UI
+    webPLC.connectWeb(0);
+    webPLC.UpdateFW(1);
+    #endif//PLC_MASTER_UI
     static size_t last_upload_update;
     static uint32_t maxSketchSpace ;
     //only admin can update FW
